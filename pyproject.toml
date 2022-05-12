@@ -1,0 +1,33 @@
+[project]
+name = "envidat-utils"
+packages = [{include = "envidat", from = "src"}]
+version = "0.1.0"
+description = "Utilities in Python for the WSL EnviDat project."
+authors = [
+    {name = "Sam Woodcock", email = "samuel.woodcock@wsl.ch"},
+]
+dependencies = [
+    "requests==2.27.1",
+    "boto3>=1.22.12",
+]
+requires-python = ">=3.9"
+readme = "README.md"
+license = {text = "MIT"}
+[project.optional-dependencies]
+dotenv = [
+    "python-dotenv>=0.20.0",
+]
+
+[tool.pdm]
+[[tool.pdm.source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+[tool.pdm.dev-dependencies]
+dev = [
+    "python-dotenv>=0.20.0",
+]
+
+[build-system]
+requires = ["pdm-pep517"]
+build-backend = "pdm.pep517.api"
