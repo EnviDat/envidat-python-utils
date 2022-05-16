@@ -1,7 +1,6 @@
 [project]
 name = "envidat-utils"
-packages = [{include = "envidat", from = "src"}]
-version = "0.1.0"
+dynamic = ["version"]
 description = "Utilities in Python for the WSL EnviDat project."
 authors = [
     {name = "Sam Woodcock", email = "samuel.woodcock@wsl.ch"},
@@ -13,21 +12,59 @@ dependencies = [
 requires-python = ">=3.9"
 readme = "README.md"
 license = {text = "MIT"}
+keywords = ["envidat", "s3", "ckan", "wsl"]
+classifiers = [
+    "Topic :: Utilities",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+
+[project.urls]
+homepage = "https://www.envidat.ch"
+documentation = "https://gitlabext.wsl.ch/EnviDat/envidat-python-utils.git"
+repository = "https://gitlabext.wsl.ch/EnviDat/envidat-python-utils.git"
+
 [project.optional-dependencies]
 dotenv = [
     "python-dotenv>=0.20.0",
 ]
 
 [tool.pdm]
+includes = ["envidat"]
+source-includes = ["tests", "CHANGELOG.md", "LICENSE", "README.md"]
+version = {from = "envidat/__version__.py"}
+
 [[tool.pdm.source]]
 name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
+
 [tool.pdm.dev-dependencies]
 dev = [
     "python-dotenv>=0.20.0",
+]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-xdist>=1.31.0"
+]
+doc = [
+    "mkdocs>=1.1",
+    "mkdocs-material>=7.3",
+    "mkdocstrings[python]>=0.18",
+    "markdown-include>=0.5.1",
 ]
 
 [build-system]
 requires = ["pdm-pep517"]
 build-backend = "pdm.pep517.api"
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.0.0"
+version_files = [
+    "pyproject.toml:version",
+    "__version__.py"
+]
