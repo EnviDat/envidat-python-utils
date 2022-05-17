@@ -1,0 +1,18 @@
+stages:
+  - test
+  - package
+
+pytest:
+  stage: test
+
+pip-package:
+  stage: package
+  only:
+    - tags
+  script:
+    - pip install twine
+    - python setup.py sdist bdist_wheel
+    - cd pynimation-viewer
+    - python setup.py sdist bdist_wheel
+    - cd ..
+    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url https://gitlab.inria.fr/api/v4/projects/${CI_PROJECT_ID}/packages/pypi/ dist/* pynimation-viewer/dist/*
