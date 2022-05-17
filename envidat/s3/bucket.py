@@ -1,10 +1,13 @@
 import os
 import logging
 import boto3
+import json
 
-from typing import Any, NoReturn
+from typing import Any, NoReturn, Union
 from pathlib import Path
-from botocore import Config
+from io import BytesIO
+from textwrap import dedent
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from . import exceptions
@@ -24,7 +27,16 @@ class Bucket:
     _AWS_ENDPOINT = os.getenv("AWS_ENDPOINT")
     _AWS_REGION = os.getenv("AWS_REGION", default="")
 
-    def __init__(self, bucket_name: str, create: bool = None, is_public: bool = False):
+    def __init__(
+        self, bucket_name: str = None, new: bool = False, is_public: bool = False
+    ) -> NoReturn:
+        """
+        Init the Bucket object.
+
+        :param bucket_name: Name of the bucket.
+        :param new: If true, creates a new bucket.
+        :param is_public: If true, makes the bucket public on creation.
+        """
 
         log.debug(
             "S3 Bucket object instantiated. "
@@ -37,8 +49,8 @@ class Bucket:
         if not Bucket._AWS_ACCESS_KEY_ID or not Bucket._AWS_SECRET_ACCESS_KEY:
             log.error("Bucket instantiated without access key and secret key set.")
             raise TypeError(
-                "AWS access key ID and AWS Secret access key must be configured."
-                "Set them with environment variables AWS_ACCESS_KEY and AWS_ACCESS_KEY"
+                "AWS Access Key ID and AWS Secret Access Key must be configured. "
+                "Set them with environment variables AWS_ACCESS_KEY and AWS_ACCESS_KEY "
                 "or with Bucket.config(access_key, secret_key, endpoint, region)"
             )
         if bucket_name is None:
@@ -49,33 +61,25 @@ class Bucket:
 
         self.is_public = is_public
 
-        if create is not None:
-            create()
+        if new:
+            self.create()
 
     @classmethod
     def config(
-        cls, access_key: str, secret_key: str, endpoint=None, region=None
+        cls, access_key: str, secret_key: str, endpoint: str = None, region: str = None
     ) -> NoReturn:
+        """
+        Config the bucket connection parameters before init.
+
+        :param access_key: AWS_ACCESS_KEY_ID.
+        :param secret_key: AWS_SECRET_ACCESS_KEY.
+        :param endpoint: Endpoint for the S3, if not AWS.
+        :param region: AWS_REGION.
+        """
         cls._AWS_ACCESS_KEY_ID = access_key
         cls._AWS_SECRET_ACCESS_KEY = secret_key
         cls._AWS_ENDPOINT = endpoint
         cls._AWS_REGION = region
-
-    @staticmethod
-    def _get_boto3_session() -> NoReturn:
-        """
-        Configure boto3 session.
-        """
-
-        session = boto3.Session(
-            aws_access_key_id=Bucket._AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=Bucket._AWS_SECRET_ACCESS_KEY,
-            endpoint_url=Bucket._AWS_ENDPOINT,
-            region_name=Bucket._AWS_REGION,
-            config=Config(signature_version="s3v4"),
-        )
-
-        return session
 
     @staticmethod
     def get_boto3_resource() -> NoReturn:
@@ -83,10 +87,14 @@ class Bucket:
         Configure boto3 resource object.
         """
 
-        _session = Bucket._get_boto3_session()
-        resource = _session.resource("s3")
-
-        return resource
+        return boto3.resource(
+            "s3",
+            aws_access_key_id=Bucket._AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=Bucket._AWS_SECRET_ACCESS_KEY,
+            endpoint_url=Bucket._AWS_ENDPOINT,
+            region_name=Bucket._AWS_REGION,
+            config=Config(signature_version="s3v4"),
+        )
 
     @staticmethod
     def get_boto3_client() -> NoReturn:
@@ -94,10 +102,14 @@ class Bucket:
         Cofigure boto3 client object.
         """
 
-        _session = Bucket._get_boto3_session()
-        resource = _session.client("s3")
-
-        return resource
+        return boto3.client(
+            "s3",
+            aws_access_key_id=Bucket._AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=Bucket._AWS_SECRET_ACCESS_KEY,
+            endpoint_url=Bucket._AWS_ENDPOINT,
+            region_name=Bucket._AWS_REGION,
+            config=Config(signature_version="s3v4"),
+        )
 
     def _handle_boto3_client_error(self, e: ClientError, key=None) -> NoReturn:
         """
@@ -105,10 +117,8 @@ class Bucket:
         The exception type returned from the server is nested here.
         Refer to exceptions.py
 
-        Parameters
-        ----------
-        e: The ClientError to handle
-        key: The S3 object key. Default None.
+        :param e: The ClientError to handle
+        :param key: The S3 object key. Default None.
         """
         error_code: str = e.response.get("Error").get("Code")
 
@@ -125,28 +135,34 @@ class Bucket:
         else:
             raise exceptions.UnknownBucketException(self.bucket_name, e)
 
-    def _raise_file_not_found(self, file_path: str) -> NoReturn:
+    def _raise_file_not_found(self, file_path: str, is_dir: bool = False) -> NoReturn:
         """
         Raise error if expected file not found on disk.
 
-        :param e: The path to the expected file.
+        :param file_path: The path to the expected file.
+        :param is_dir: True if path is a directory.
         """
 
-        msg = f"Referenced file not found on disk: {file_path}"
+        msg = (
+            f"Referenced {'directory' if is_dir else 'file'} "
+            f"not found on disk: {file_path}"
+        )
         log.error(msg)
         raise FileNotFoundError(msg)
 
-    @staticmethod
-    def create(self) -> dict:
+    def create(self) -> "boto3.resource.Bucket":
         """
-        Create an S3 bucket.
+        Create the S3 bucket on the endpoint.
+        Method may be called directly to manipulate the boto3 Bucket object.
+
+        :return: A boto3 Bucket object.
         """
 
         resource = Bucket.get_boto3_resource()
 
         try:
             log.debug("Creating bucket...")
-            response = resource.create_bucket(
+            bucket = resource.create_bucket(
                 ACL="public-read" if self.is_public else "private",
                 Bucket=self.bucket_name,
                 CreateBucketConfiguration={
@@ -155,7 +171,7 @@ class Bucket:
                 ObjectLockEnabledForBucket=False,
             )
             log.debug(f"Created bucket: {self.bucket_name}")
-            return response
+            return bucket
         except ClientError as e:
             self._handle_boto3_client_error(e)
 
@@ -199,7 +215,7 @@ class Bucket:
     def put(
         self,
         key: str,
-        data: str | bytes,
+        data: Union[str, bytes],
         content_type: str = None,
         metadata: dict = {},
     ) -> dict:
@@ -240,17 +256,16 @@ class Bucket:
         :return: Response dictionary from S3.
         """
 
-        resource = Bucket.get_boto3_resource()
-        s3_object = resource.Object(self.bucket_name, key)
+        client = Bucket.get_boto3_client()
 
         try:
-            response = s3_object.delete()
+            response = client.delete_object(Bucket=self.bucket_name, Key=key)
             return response
 
         except ClientError as e:
             self._handle_boto3_client_error(e, key=key)
 
-    def upload_file(self, local_filepath: str | Path, key: str) -> dict:
+    def upload_file(self, key: str, local_filepath: Union[str, Path]) -> bool:
         """
         Upload a local file to the bucket.
         Transparently manages multipart uploads.
@@ -258,7 +273,7 @@ class Bucket:
         :param key: The key, i.e. path within the bucket to store under.
         :param local_filepath: Path string or Pathlib object to upload.
 
-        :return: Response dictionary from S3.
+        :return: True if success, False is failure.
         """
 
         resource = Bucket.get_boto3_resource()
@@ -271,13 +286,15 @@ class Bucket:
             file_path = str(file_path)
 
         try:
-            response = s3_object.upload_file(file_path)
-            return response
+            s3_object.upload_file(file_path)
+            return True
 
         except ClientError as e:
             self._handle_boto3_client_error(e, key=key)
 
-    def download_file(self, key: str, local_filepath: str | Path) -> dict:
+        return False
+
+    def download_file(self, key: str, local_filepath: Union[str, Path]) -> bool:
         """
         Download S3 object to a local file.
         Transparently manages multipart downloads.
@@ -285,21 +302,140 @@ class Bucket:
         :param key: The key, i.e. path within the bucket to store under.
         :param local_filepath: Path string or Pathlib object to download to.
 
-        :return: Response dictionary from S3.
+        :return: True if success, False is failure.
         """
 
         resource = Bucket.get_boto3_resource()
         s3_object = resource.Object(self.bucket_name, key)
 
         file_path = Path(local_filepath).resolve()
-        if not file_path.is_file():
-            self._raise_file_not_found(file_path)
+        if not file_path.parent.is_dir():
+            self._raise_file_not_found(file_path, is_dir=True)
         else:
             file_path = str(file_path)
 
         try:
-            response = s3_object.download_file(file_path)
-            return response
+            s3_object.download_file(file_path)
+            return True
 
         except ClientError as e:
             self._handle_boto3_client_error(e, key=key)
+
+        return False
+
+    def configure_static_website(
+        self, index_file: str = "index.html", error_file: str = "error.html"
+    ) -> bool:
+        """
+        Add static website hosting config to an S3 bucket.
+
+        :param index_file: Name of index html file displaying page content.
+        :param error_file: Name of error html file displaying error content.
+
+        :return: True if success, False is failure.
+
+        Note: WARNING this will set all data to public read policy.
+        """
+
+        client = Bucket.get_boto3_client()
+
+        try:
+            log.debug("Setting public read access policy for static website.")
+            public_policy = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "PublicRead",
+                        "Effect": "Allow",
+                        "Principal": "*",
+                        "Action": "s3:GetObject",
+                        "Resource": f"arn:aws:s3:::{self.bucket_name}/*",
+                    }
+                ],
+            }
+            bucket_policy = json.dumps(public_policy)
+            client.put_bucket_policy(Bucket=self.bucket_name, Policy=bucket_policy)
+            log.info("Public read access policy set for static website.")
+
+            log.debug("Setting S3 static website configuration...")
+            client.put_bucket_website(
+                Bucket=self.bucket_name,
+                WebsiteConfiguration={
+                    "ErrorDocument": {
+                        "Key": error_file,
+                    },
+                    "IndexDocument": {
+                        "Suffix": index_file,
+                    },
+                },
+            )
+            log.info(f"Static website configured for bucket: {self.bucket_name}")
+            return True
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e)
+
+        return False
+
+    def generate_index_html(
+        self, title: str, file_list: Union[list, str], index_file: str = "index.html"
+    ) -> BytesIO:
+        """
+        Write index file to root of S3 bucket, with embedded S3 download links.
+
+        :param title: HTML title tag for page.
+        :param file_list: List of file name to generate access urls for.
+        :param index_file: Name of index html file displaying page content.
+
+        :return: Response dictionary from index file upload.
+        """
+
+        if isinstance(file_list, str):
+            log.debug(f"Converting string file_list into list: {file_list}")
+            file_list = [file_list]
+
+        buf = BytesIO()
+
+        # Start HTML
+        html_block = dedent(
+            f"""
+            <html>
+            <head>
+            <meta charset="utf-8">
+            <title>{title}</title>
+            </head>
+            <body>
+            """
+        ).strip()
+        log.debug(f"Writing start HTML block to buffer: {html_block}")
+        buf.write(html_block.encode("utf_8"))
+
+        # Files
+        log.info("Iterating file list to write S3 links to index.")
+        for file_name in file_list:
+            log.debug(f"File name: {file_name}")
+            html_block = dedent(
+                f"""
+                <div class='flex py-2 xs6'>
+                <a href='https://{self.bucket_name}.s3-zh.os.switch.ch/{file_name}'>
+                    https://{self.bucket_name}.s3-zh.os.switch.ch/{file_name}
+                </a>
+                </div>"""
+            )
+            log.debug(f"Writing file link HTML to buffer: {html_block}")
+            buf.write(html_block.encode("utf_8"))
+
+        # Close
+        html_block = dedent(
+            """
+            </body>
+            </html>"""
+        )
+        log.debug(f"Writing end HTML block to buffer: {html_block}")
+        buf.write(html_block.encode("utf_8"))
+
+        buf.seek(0)
+        decoded_html = buf.read().decode("utf_8")
+
+        response = self.put(index_file, decoded_html, content_type="text/html")
+        return response

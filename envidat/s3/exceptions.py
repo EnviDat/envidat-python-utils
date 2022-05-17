@@ -37,7 +37,7 @@ class NoSuchBucket(BucketException):
 
     def __init__(self, bucket_name):
         self.bucket = bucket_name
-        self.message = f"Bucket {bucket_name} does not exist!"
+        self.message = f"Bucket named '{bucket_name}' does not exist!"
         super().__init__(self.message, self.bucket)
 
 
@@ -48,7 +48,7 @@ class BucketAlreadyExists(BucketException):
 
     def __init__(self, bucket_name):
         self.bucket = bucket_name
-        self.message = f"Bucket named {bucket_name} already exists. Creation failed."
+        self.message = f"Bucket named '{bucket_name}' already exists. Creation failed."
         super().__init__(self.message, self.bucket)
 
 
