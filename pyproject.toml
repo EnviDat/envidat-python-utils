@@ -46,9 +46,7 @@ dev = [
 ]
 test = [
     "pytest",
-    "pytest-cov",
-    "pytest-mock",
-    "pytest-xdist>=1.31.0"
+    "moto>=3.1.9"
 ]
 doc = [
     "mkdocs>=1.1",
