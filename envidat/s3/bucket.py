@@ -28,13 +28,13 @@ class Bucket:
     _AWS_REGION = os.getenv("AWS_REGION", default="")
 
     def __init__(
-        self, bucket_name: str = None, new: bool = False, is_public: bool = False
+        self, bucket_name: str = None, is_new: bool = False, is_public: bool = False
     ) -> NoReturn:
         """
         Init the Bucket object.
 
         :param bucket_name: Name of the bucket.
-        :param new: If true, creates a new bucket.
+        :param is_new: If true, creates a new bucket.
         :param is_public: If true, makes the bucket public on creation.
         """
 
@@ -44,6 +44,8 @@ class Bucket:
             f"Secret key: {Bucket._AWS_SECRET_ACCESS_KEY} | "
             f"Endpoint: {Bucket._AWS_ENDPOINT} | "
             f"Region: {Bucket._AWS_REGION} | "
+            f"is_new: {is_new} | "
+            f"is_public: {is_public}"
         )
         # Ensure credentials are configured
         if not Bucket._AWS_ACCESS_KEY_ID or not Bucket._AWS_SECRET_ACCESS_KEY:
@@ -61,7 +63,7 @@ class Bucket:
 
         self.is_public = is_public
 
-        if new:
+        if is_new:
             self.create()
 
     @classmethod
@@ -87,6 +89,7 @@ class Bucket:
         Configure boto3 resource object.
         """
 
+        log.debug("Accessing boto3 resource.")
         return boto3.resource(
             "s3",
             aws_access_key_id=Bucket._AWS_ACCESS_KEY_ID,
@@ -102,6 +105,7 @@ class Bucket:
         Cofigure boto3 client object.
         """
 
+        log.debug("Accessing boto3 client.")
         return boto3.client(
             "s3",
             aws_access_key_id=Bucket._AWS_ACCESS_KEY_ID,
@@ -161,7 +165,7 @@ class Bucket:
         resource = Bucket.get_boto3_resource()
 
         try:
-            log.debug("Creating bucket...")
+            log.info(f"Creating bucket named {self.bucket_name}")
             bucket = resource.create_bucket(
                 ACL="public-read" if self.is_public else "private",
                 Bucket=self.bucket_name,
@@ -170,7 +174,7 @@ class Bucket:
                 },
                 ObjectLockEnabledForBucket=False,
             )
-            log.debug(f"Created bucket: {self.bucket_name}")
+            log.debug("Bucket created successfully")
             return bucket
         except ClientError as e:
             self._handle_boto3_client_error(e)
@@ -195,7 +199,7 @@ class Bucket:
         s3_object = resource.Object(self.bucket_name, key)
 
         try:
-            log.debug(f"Getting S3 object with key {key}")
+            log.info(f"Getting S3 object with key {key}")
             if response_content_type:
                 response = s3_object.get(ResponseContentType=response_content_type)
             else:
@@ -236,6 +240,12 @@ class Bucket:
         s3_object = resource.Object(self.bucket_name, key)
 
         try:
+            log.info(
+                "Uploading S3 object with: "
+                f"Key: {key} | "
+                f"ContentType: {content_type} | "
+                f"Metadata: {metadata}"
+            )
             if content_type:
                 response = s3_object.put(
                     Body=data, ContentType=content_type, Key=key, Metadata=metadata
@@ -259,6 +269,7 @@ class Bucket:
         client = Bucket.get_boto3_client()
 
         try:
+            log.info(f"Deleting S3 object with key: {key}")
             response = client.delete_object(Bucket=self.bucket_name, Key=key)
             return response
 
@@ -284,8 +295,10 @@ class Bucket:
             self._raise_file_not_found(file_path)
         else:
             file_path = str(file_path)
+        log.debug(f"File to upload: {file_path}")
 
         try:
+            log.info(f"Uploading to S3 from file: File Path: {file_path} | Key: {key}")
             s3_object.upload_file(file_path)
             return True
 
@@ -315,6 +328,9 @@ class Bucket:
             file_path = str(file_path)
 
         try:
+            log.info(
+                f"Downloading from S3 to file: Key: {key} | File Path: {file_path}"
+            )
             s3_object.download_file(file_path)
             return True
 
