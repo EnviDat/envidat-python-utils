@@ -7,6 +7,8 @@ run-tests:
   image: python:3.9
   before_script:
     - pip install pdm pytest
+    - VERSION=$(echo "$PYTHON_VERSION" | grep -Eo '[0-9]\.[0-9]+')
+    - export PYTHONPATH="/usr/local/lib/python$VERSION/site-packages/pdm/pep582"
     - pdm install -G test
   script:
     - pytest -v
