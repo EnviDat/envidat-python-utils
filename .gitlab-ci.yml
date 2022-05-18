@@ -6,7 +6,7 @@ run-tests:
   stage: test
   image: python:3.9
   before_script:
-    - pip install pdm
+    - pip install pdm pytest
     - pdm install -G test
   script:
     - pytest -v
