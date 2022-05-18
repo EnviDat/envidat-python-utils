@@ -38,6 +38,20 @@ class Bucket:
         :param is_public: If true, makes the bucket public on creation.
         """
 
+        if None in [Bucket._AWS_ACCESS_KEY_ID, Bucket._AWS_SECRET_ACCESS_KEY]:
+            missing_vars = {"AWS_ACCESS_KEY", "AWS_SECRET_KEY"} - set(os.environ)
+            if not missing_vars:
+                log.info(
+                    "Environment variables set after Bucket class import. "
+                    "Re-configuring Bucket with specified environment variables."
+                )
+                Bucket.config(
+                    os.getenv("AWS_ACCESS_KEY"),
+                    os.getenv("AWS_SECRET_KEY"),
+                    endpoint=os.getenv("AWS_ENDPOINT"),
+                    region=os.getenv("AWS_REGION", default=""),
+                )
+
         log.debug(
             "S3 Bucket object instantiated. "
             f"Access key: {Bucket._AWS_ACCESS_KEY_ID} | "
