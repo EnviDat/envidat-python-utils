@@ -15,6 +15,7 @@ run-tests:
 
 pip-package:
   stage: package
+  image: python:3.9
   rules:
     - if: "$CI_COMMIT_TAG"
   before_script:
