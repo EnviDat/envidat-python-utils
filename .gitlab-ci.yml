@@ -11,7 +11,7 @@ run-tests:
     - export PYTHONPATH="/usr/local/lib/python$VERSION/site-packages/pdm/pep582"
     - pdm install -G test
   script:
-    - pytest -v
+    - pytest --verbose
 
 pip-package:
   stage: package
@@ -23,6 +23,7 @@ pip-package:
   script:
     - pdm build
     - >
-      TWINE_PASSWORD=${PYPI_USER}
-      TWINE_USERNAME=$(echo "$PYPI_PASS_BASE64" | base64 --decode)
-      twine upload dist/*
+      twine upload
+      -u "__token__"
+      -p "$PYPI_API_TOKEN"
+      dist/* --verbose --skip-existing
