@@ -2,17 +2,24 @@ stages:
   - test
   - package
 
-pytest:
+run-tests:
   stage: test
+  image: python:3.9
+  before_script:
+    - pip install pdm
+    - pdm install -G test
+  script:
+    - pytest -v
 
 pip-package:
   stage: package
-  only:
-    - tags
+  rules:
+    - if: "$CI_COMMIT_TAG"
+  before_script:
+    - pip install pdm twine
   script:
-    - pip install twine
-    - python setup.py sdist bdist_wheel
-    - cd pynimation-viewer
-    - python setup.py sdist bdist_wheel
-    - cd ..
-    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url https://gitlab.inria.fr/api/v4/projects/${CI_PROJECT_ID}/packages/pypi/ dist/* pynimation-viewer/dist/*
+    - pdm build
+    - >
+      TWINE_PASSWORD=${PYPI_USER}
+      TWINE_USERNAME=$(echo "$PYPI_PASS_BASE64" | base64 --decode)
+      twine upload dist/*
