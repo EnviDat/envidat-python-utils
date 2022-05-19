@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.3.0 (2022-05-19)
+
+### Feat
+
+- add s3 bucket functions to list directories
+
 ## 0.2.1 (2022-05-18)
 
 ### Fix
