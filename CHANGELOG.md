@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.3.1 (2022-05-19)
+
+### Fix
+
+- move get_url to utils, add favicon to s3 static website
+
 ## 0.3.0 (2022-05-19)
 
 ### Feat
