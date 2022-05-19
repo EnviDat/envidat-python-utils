@@ -469,3 +469,102 @@ class Bucket:
 
         response = self.put(index_file, decoded_html, content_type="text/html")
         return response
+
+    def list_all(self) -> list:
+        """
+        Get a list of all objects in the bucket.
+
+        :return: List of s3.ObjectSummary dicts, containing object metadata.
+            Or a list of object keys only, if keys_only specified.
+        """
+
+        resource = Bucket.get_boto3_resource()
+
+        try:
+            log.debug(f"Getting bucket named: {self.bucket_name}")
+            bucket = resource.Bucket(self.bucket_name)
+
+            log.debug("Listing all objects in bucket")
+            objects = bucket.objects.all()
+
+            file_names = [os.path.splitext(file.key)[0] for file in objects]
+            log.info(
+                f"Returned {len(file_names)} objects from "
+                f"bucket named {self.bucket_name}"
+            )
+
+            return file_names
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e)
+
+    def list_dir(
+        self,
+        path: str = "",
+        recursive: bool = False,
+        filter_ext: str = "",
+        names_only: bool = False,
+    ) -> list:
+        """
+        Get a list of all objects in a specific directory (s3 path).
+        Returns up to a max of 1000 values.
+
+        :param path: The directory in the bucket. Default to root.
+        :param recursive: To list all objects and subdirectory objects recursively.
+        :param filter_ext: File extension to filter by, e.g. 'txt'
+        :param names_only: Remove file extensions and path, giving only the file name.
+
+        :return: List of s3.ObjectSummary dicts, containing object metadata.
+        """
+
+        resource = Bucket.get_boto3_resource()
+
+        if path:
+            path = path[1:] if path.startswith("/") else path
+            path = (path + "/") if not path.endswith("/") else path
+
+        try:
+            log.debug(f"Getting bucket named: {self.bucket_name}")
+            bucket = resource.Bucket(self.bucket_name)
+
+            log.debug(
+                "Filtering objects in bucket with params: "
+                f"path: {path} | recursive: {recursive} | filter_ext: {filter_ext}"
+            )
+            filtered_objects = bucket.objects.filter(
+                Delimiter="/" if not recursive else "",
+                # EncodingType='url',
+                # Marker='string',
+                # MaxKeys=123,
+                Prefix=path,
+            )
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e)
+
+        # Test if a match is made, else function will return [False]
+        if not isinstance(
+            filtered_objects, boto3.resources.collection.ResourceCollection
+        ):
+            log.info("No matching files for bucket filter parameters.")
+            return []
+
+        if filter_ext:
+            log.debug(f"Further filtering return by file extension: {filter_ext}")
+            file_names = [
+                obj.key for obj in filtered_objects if obj.key.endswith(filter_ext)
+            ]
+        else:
+            file_names = [obj.key for obj in filtered_objects]
+
+        if names_only:
+            log.debug("Removing extensions from file names")
+            file_paths = [Path(file_name) for file_name in file_names]
+            file_names = [str(file_path.stem) for file_path in file_paths]
+
+        log.info(
+            f"Returned {len(file_names)} filtered objects from "
+            f"bucket named {self.bucket_name}"
+        )
+
+        return file_names
