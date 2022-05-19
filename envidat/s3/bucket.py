@@ -10,7 +10,8 @@ from textwrap import dedent
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
-from . import exceptions
+from envidat.s3 import exceptions
+from envidat.utils import get_url
 
 
 log = logging.getLogger(__name__)
@@ -354,13 +355,17 @@ class Bucket:
         return False
 
     def configure_static_website(
-        self, index_file: str = "index.html", error_file: str = "error.html"
+        self,
+        index_file: str = "index.html",
+        error_file: str = "error.html",
+        include_icon: bool = True,
     ) -> bool:
         """
         Add static website hosting config to an S3 bucket.
 
         :param index_file: Name of index html file displaying page content.
         :param error_file: Name of error html file displaying error content.
+        :param include_icon: Include the envidat favicon.ico for the bucket.
 
         :return: True if success, False is failure.
 
@@ -399,7 +404,14 @@ class Bucket:
                     },
                 },
             )
+
+            if include_icon:
+                log.debug("Adding envidat favicon.ico to bucket root")
+                icon = get_url("https://envidat.ch/favicon.ico").content
+                self.put("favicon.ico", icon, content_type="image/x-icon")
+
             log.info(f"Static website configured for bucket: {self.bucket_name}")
+
             return True
 
         except ClientError as e:

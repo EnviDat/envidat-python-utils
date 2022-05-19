@@ -1,6 +1,8 @@
 import os
 import sys
 import logging
+import requests
+
 from typing import Union, NoReturn
 from pathlib import Path
 
@@ -74,3 +76,28 @@ def get_logger() -> logging.basicConfig:
         stream=sys.stdout,
     )
     log.debug("Logger set to STDOUT.")
+
+
+def get_url(url: str) -> requests.Response:
+    "Helper wrapper to get a URL with additional error handling."
+
+    try:
+        log.debug(f"Attempting to get {url}")
+        r = requests.get(url)
+        r.raise_for_status()
+        return r
+    except requests.exceptions.ConnectionError as e:
+        log.error(f"Could not connect to internet on get: {r.request.url}")
+        log.error(e)
+    except requests.exceptions.HTTPError as e:
+        log.error(f"HTTP response error on get: {r.request.url}")
+        log.error(e)
+    except requests.exceptions.RequestException as e:
+        log.error(f"Request error on get: {r.request.url}")
+        log.error(f"Request: {e.request}")
+        log.error(f"Response: {e.response}")
+    except Exception as e:
+        log.error(e)
+        log.error(f"Unhandled exception occured on get: {r.request.url}")
+
+    return None

@@ -1,34 +1,10 @@
 import os
 import logging
-import requests
+
+from envidat.utils import get_url
 
 
 log = logging.getLogger(__name__)
-
-
-def _get_url(url: str) -> requests.Response:
-    "Helper wrapper to get a URL with additional error handling."
-
-    try:
-        log.debug(f"Attempting to get {url}")
-        r = requests.get(url)
-        r.raise_for_status()
-        return r
-    except requests.exceptions.ConnectionError as e:
-        log.error(f"Could not connect to internet on get: {r.request.url}")
-        log.error(e)
-    except requests.exceptions.HTTPError as e:
-        log.error(f"HTTP response error on get: {r.request.url}")
-        log.error(e)
-    except requests.exceptions.RequestException as e:
-        log.error(f"Request error on get: {r.request.url}")
-        log.error(f"Request: {e.request}")
-        log.error(f"Response: {e.response}")
-    except Exception as e:
-        log.error(e)
-        log.error(f"Unhandled exception occured on get: {r.request.url}")
-
-    return None
 
 
 def get_metadata_list(host: str = None, sort_result: bool = None) -> list:
@@ -46,7 +22,7 @@ def get_metadata_list(host: str = None, sort_result: bool = None) -> list:
 
     log.info(f"Getting package list from {host}.")
     try:
-        package_names = _get_url(f"{host}/api/3/action/package_list").json()
+        package_names = get_url(f"{host}/api/3/action/package_list").json()
     except AttributeError as e:
         log.error(e)
         log.error(f"Getting package names from API failed. Returned: {package_names}")
@@ -83,7 +59,7 @@ def get_metadata_list_with_resources(
 
     log.info(f"Getting package list with resources from {host}.")
     try:
-        package_names_with_resources = _get_url(
+        package_names_with_resources = get_url(
             f"{host}/api/3/action/current_package_list_with_resources?limit=100000"
         ).json()
     except AttributeError as e:
