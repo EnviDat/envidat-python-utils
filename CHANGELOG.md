@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.3.3 (2022-05-23)
+
+### Fix
+
+- remove logging secret keys, bugfix endpoint var, remove default utf8 decode
+
 ## 0.3.2 (2022-05-23)
 
 ### Fix
