@@ -1,7 +1,8 @@
 import os
 import logging
-import boto3
 import json
+import mimetypes
+import boto3
 
 from typing import Any, NoReturn, Union
 from pathlib import Path
@@ -151,6 +152,8 @@ class Bucket:
             raise exceptions.NoSuchKey(key, self.bucket_name)
         elif error_code == "BucketAlreadyExists":
             raise exceptions.BucketAlreadyExists(self.bucket_name)
+        elif error_code == "NoSuchCORSConfiguration":
+            raise exceptions.NoSuchCORSConfiguration(self.bucket_name)
         else:
             raise exceptions.UnknownBucketException(self.bucket_name, e)
 
@@ -168,6 +171,21 @@ class Bucket:
         )
         log.error(msg)
         raise FileNotFoundError(msg)
+
+    def _raise_parameter_error(self, param_name, value) -> NoReturn:
+        """
+        Raise error if incorrect parameters are provided.
+
+        :param param_name: The parameter name.
+        :param value: The parameter value.
+        """
+
+        if value is None:
+            msg = f"A value must be set for parameter {param_name}"
+        else:
+            msg = f"Invalid value for parameter {param_name}: {value}"
+        log.error(msg)
+        raise ValueError(msg)
 
     def create(self) -> "boto3.resource.Bucket":
         """
@@ -312,9 +330,15 @@ class Bucket:
             file_path = str(file_path)
         log.debug(f"File to upload: {file_path}")
 
+        log.debug("Guessing file mimetype")
+        mimetype, _ = mimetypes.guess_type(file_path)
+        if mimetype is None:
+            log.debug("Failed to guess mimetype, setting to application/octet-stream")
+            mimetype = "application/octet-stream"
+
         try:
             log.info(f"Uploading to S3 from file: File Path: {file_path} | Key: {key}")
-            s3_object.upload_file(file_path)
+            s3_object.upload_file(file_path, ExtraArgs={"ContentType": mimetype})
             return True
 
         except ClientError as e:
@@ -580,3 +604,70 @@ class Bucket:
         )
 
         return file_names
+
+    def get_cors_config(self) -> dict:
+        """
+        Get the CORS config for a bucket.
+
+        :return: Response dictionary containing CORS config.
+        """
+
+        client = Bucket.get_boto3_client()
+
+        try:
+            log.info(f"Getting CORS config for bucket named {self.bucket_name}")
+            response = client.get_bucket_cors(Bucket=self.bucket_name)
+            cors_rules = (
+                response["CORSRules"][0] if len(response["CORSRules"]) > 0 else None
+            )
+            return cors_rules
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e)
+
+        return None
+
+    def set_cors_config(self, origins: list = None, allow_all: bool = None) -> dict:
+        """
+        Set the CORS config for a bucket.
+
+        :param allow_all: Allow all origins, set to wildcard *.
+
+        :return: True if success, False is failure.
+        """
+
+        client = Bucket.get_boto3_client()
+
+        if allow_all is None and origins is None:
+            log.debug("No origins provided for param allow_all")
+            self._raise_parameter_error("allow_all", allow_all)
+
+        if allow_all:
+            origins = ["*"]
+
+        cors_configuration = {
+            "CORSRules": [
+                {
+                    "AllowedHeaders": ["Authorization"],
+                    "AllowedMethods": ["GET", "PUT"],
+                    "AllowedOrigins": origins,
+                    "ExposeHeaders": ["ETag", "x-amz-request-id"],
+                    "MaxAgeSeconds": 3000,
+                }
+            ]
+        }
+
+        try:
+            log.info(
+                "Setting CORS config for bucket named "
+                f"{self.bucket_name} to origins {origins}"
+            )
+            client.put_bucket_cors(
+                Bucket=self.bucket_name, CORSConfiguration=cors_configuration
+            )
+            return True
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e)
+
+        return False

@@ -63,6 +63,17 @@ class BucketAccessDenied(BucketException):
         super().__init__(self.message, self.bucket)
 
 
+class NoSuchCORSConfiguration(BucketException):
+    """
+    Raised if no CORS configuration is set for a bucket.
+    """
+
+    def __init__(self, bucket_name):
+        self.bucket = bucket_name
+        self.message = f"Bucket {self.bucket} does not have CORS configured."
+        super().__init__(self.message, self.bucket)
+
+
 class UnknownBucketException(BucketException):
     """
     Raised for unknown S3 exceptions.
