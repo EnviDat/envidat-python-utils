@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.3.2 (2022-05-23)
+
+### Fix
+
+- minor feat, add bucket cors set and get, plus restructure tests
+
 ## 0.3.1 (2022-05-19)
 
 ### Fix
