@@ -56,8 +56,8 @@ class Bucket:
 
         log.debug(
             "S3 Bucket object instantiated. "
-            f"Access key: {Bucket._AWS_ACCESS_KEY_ID} | "
-            f"Secret key: {Bucket._AWS_SECRET_ACCESS_KEY} | "
+            f"Access key: {True if Bucket._AWS_ACCESS_KEY_ID else False} | "
+            f"Secret key: {True if Bucket._AWS_SECRET_ACCESS_KEY else False} | "
             f"Endpoint: {Bucket._AWS_ENDPOINT} | "
             f"Region: {Bucket._AWS_REGION} | "
             f"is_new: {is_new} | "
@@ -84,7 +84,7 @@ class Bucket:
 
     @classmethod
     def config(
-        cls, access_key: str, secret_key: str, endpoint: str = None, region: str = None
+        cls, access_key: str, secret_key: str, endpoint: str = None, region: str = ""
     ) -> NoReturn:
         """
         Config the bucket connection parameters before init.
@@ -216,7 +216,7 @@ class Bucket:
         self,
         key: str,
         response_content_type: str = None,
-        response_encoding: str = "utf-8",
+        decode: bool = False,
     ) -> (Any, dict):
         """
         Get an object from the bucket into a memory object.
@@ -224,6 +224,7 @@ class Bucket:
 
         :param key: The key, i.e. path within the bucket to get.
         :param response_content_type: Content type to enforce on the response.
+        :param decode: Decodes using utf-8 if set. Useful for text based files.
 
         :return: tuple of decoded data and a dict containing S3 object metadata.
         """
@@ -238,11 +239,13 @@ class Bucket:
             else:
                 response = s3_object.get()
 
-            log.debug(
-                f"Reading and decoding returned data with encoding {response_encoding}"
-            )
-            data = response.get("Body").read().decode(response_encoding)
+            log.debug("Reading returned data into Python object")
+            data = response.get("Body").read()
             metadata: dict = response.get("Metadata")
+
+            if decode:
+                log.debug("Decoding object with utf-8")
+                data = data.decode("utf-8")
 
             return data, metadata
 

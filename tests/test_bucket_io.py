@@ -20,6 +20,18 @@ def test_bucket_get(bucket):
     assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
     data, metadata = bucket.get("text.txt")
+    assert data == b"test"
+
+
+@mock_s3
+def test_bucket_get_decode(bucket):
+    bucket.create()
+
+    file_text = "test"
+    response = bucket.put("text.txt", file_text)
+    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+    data, metadata = bucket.get("text.txt", decode=True)
     assert data == "test"
 
 
