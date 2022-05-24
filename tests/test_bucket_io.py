@@ -130,7 +130,7 @@ def test_list_dir_ext_no_recursive(bucket):
         response = bucket.put(file_name, "test")
         assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
-    file_list = bucket.list_dir(filter_ext="csv")
+    file_list = bucket.list_dir(file_type="csv")
 
     assert file_list == []
 
@@ -144,7 +144,7 @@ def test_list_dir_ext_recursive(bucket):
         response = bucket.put(file_name, "test")
         assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
-    file_list = bucket.list_dir(recursive=True, filter_ext="csv")
+    file_list = bucket.list_dir(recursive=True, file_type="csv")
 
     assert len(file_list) == 1
     assert file_list[0] == "dir1/dir2/test.csv"
@@ -159,7 +159,7 @@ def test_list_dir_ext_recursive_names_only(bucket):
         response = bucket.put(file_name, "test")
         assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
-    file_list = bucket.list_dir(recursive=True, filter_ext="csv", names_only=True)
+    file_list = bucket.list_dir(recursive=True, file_type="csv", names_only=True)
 
     assert len(file_list) == 1
     assert file_list[0] == "test2"
@@ -174,7 +174,7 @@ def test_list_dir_ext_path(bucket):
         response = bucket.put(file_name, "test")
         assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
-    file_list = bucket.list_dir(path="dir1", filter_ext="csv")
+    file_list = bucket.list_dir(path="dir1", file_type="csv")
 
     assert len(file_list) == 1
     assert file_list[0] == "dir1/test.csv"
