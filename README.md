@@ -1,12 +1,12 @@
 # EnviDat Python Utils
 
-<p align="center">
-  <img src="https://www.envidat.ch/uploads/group/2020-11-04-134216.5237452000px-LogoWSL.svg.png" style="width: 200px;" alt="WSL"></a>
-</p>
-<p align="center">
+<div align="center">
+  <img src="https://www.envidat.ch/uploads/group/2020-11-04-134216.5237452000px-LogoWSL.svg.png" width="200" style="width: 200px;" alt="WSL"></a>
+</div>
+<div align="center">
   <em>Utilities for EnviDat projects in Python.</em>
-</p>
-<p align="center">
+</div>
+<div align="center">
   <a href="https://pypi.org/project/envidat-utils" target="_blank">
       <img src="https://img.shields.io/pypi/v/envidat-utils?color=%2334D058&label=pypi%20package" alt="Package version">
   </a>
@@ -14,9 +14,9 @@
       <img src="https://img.shields.io/pypi/dm/envidat-utils.svg" alt="Downloads">
   </a>
   <a href="https://gitlabext.wsl.ch/EnviDat/envidat-python-utils/-/raw/main/LICENCE" target="_blank">
-      <img src="https://img.shields.io/github/license/EnviDat/envidat-python-utils.svg" alt="Downloads">
+      <img src="https://img.shields.io/github/license/EnviDat/envidat-python-utils.svg" alt="Licence">
   </a>
-</p>
+</div>
 
 ---
 
