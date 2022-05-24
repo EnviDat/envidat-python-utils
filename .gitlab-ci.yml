@@ -1,6 +1,6 @@
 stages:
   - test
-  - package
+  - deploy
 
 run-tests:
   stage: test
@@ -14,10 +14,10 @@ run-tests:
     - pytest --verbose
 
 pip-package:
-  stage: package
+  stage: deploy
   image: python:3.9
   rules:
-    - if: "$CI_COMMIT_TAG"
+    - if: $CI_COMMIT_TAG
   before_script:
     - pip install pdm twine
   script:
@@ -27,3 +27,15 @@ pip-package:
       -u "__token__"
       -p "$PYPI_API_TOKEN"
       dist/* --verbose --skip-existing
+
+pages:
+  stage: deploy
+  image: python:3.9
+  rules:
+    - if: $CI_COMMIT_BRANCH == "development"
+  script:
+    - pip install mkdocs-material
+    - mkdocs build --site-dir public
+  artifacts:
+    paths:
+      - public
