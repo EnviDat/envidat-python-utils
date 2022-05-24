@@ -1,0 +1,35 @@
+sources_dir: docs/api
+templates_dir: templates
+repo: https://github.com/EnviDat/envidat-python-utils
+version: main
+
+pages:
+  - page: "utils.md"
+    source: "../envidat/utils.py"
+    functions:
+      - load_dotenv_if_in_debug_mode
+      - get_logger
+      - get_url
+      - _debugger_is_active
+
+  - page: "metadata/v1.md"
+    source: "../envidat/api/v1.py"
+    functions:
+      - get_metadata_list
+      - get_metadata_list_with_resources
+
+  - page: "s3/bucket.md"
+    source: "../envidat/s3/bucket.py"
+    classes:
+      - Bucket
+
+  - page: "s3/exceptions.md"
+    source: "../envidat/s3/exceptions.py"
+    classes:
+      - BucketException
+      - NoSuchKey
+      - NoSuchBucket
+      - BucketAlreadyExists
+      - BucketAccessDenied
+      - NoSuchCORSConfiguration
+      - UnknownBucketException

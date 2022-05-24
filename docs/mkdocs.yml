@@ -1,1 +1,54 @@
-site_name: EnviDat Docs
+site_name: EnviDat Python Utils
+site_description: Utilities for EnviDat projects in Python. API helpers, S3 wrappers etc.
+
+repo_name: "EnviDat/envidat-python-utils"
+repo_url: "https://github.com/EnviDat/envidat-python-utils"
+edit_uri: "blob/main/docs/docs/"
+site_url: "https://www.envidat.ch/"
+
+extra:
+  social:
+    - icon: "fontawesome/brands/github"
+      link: "https://github.com/EnviDat"
+    - icon: "fontawesome/brands/twitter"
+      link: "https://twitter.com/EnvidatService"
+    - icon: "fontawesome/solid/globe"
+      link: "https://www.envidat.ch/"
+
+plugins:
+  - search
+
+theme:
+  name: material
+  palette:
+    scheme: default
+
+extra_css:
+  - css/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - codehilite:
+      guess_lang: false
+  - def_list
+  - footnotes
+  - pymdownx.arithmatex
+  - pymdownx.betterem
+  - pymdownx.caret:
+      insert: false
+  - pymdownx.details
+  - pymdownx.emoji
+  - pymdownx.escapeall:
+      hardbreak: true
+      nbsp: true
+  - pymdownx.magiclink:
+      hide_protocol: true
+      repo_url_shortener: true
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - toc:
+      permalink: true
