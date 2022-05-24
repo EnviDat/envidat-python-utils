@@ -32,7 +32,7 @@ pages:
   stage: deploy
   image: python:3.9
   rules:
-    - if: $CI_COMMIT_BRANCH == "development"
+    - if: $CI_COMMIT_BRANCH == "main"
   script:
     - pip install mkdocs-material
     - mkdocs build --site-dir public
