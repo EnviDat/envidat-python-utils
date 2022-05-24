@@ -7,9 +7,7 @@ log = logging.getLogger(__name__)
 
 
 class BucketException(Exception):
-    """
-    Parent class to be inherited for consistency.
-    """
+    """Parent class to be inherited for consistency."""
 
     def __init__(self, message, bucket):
         log.error(message)
@@ -19,9 +17,7 @@ class BucketException(Exception):
 
 
 class NoSuchKey(BucketException):
-    """
-    Raised if you try to access a non-existent object.
-    """
+    """Exception for if bucket key does not exist."""
 
     def __init__(self, key, bucket):
         self.key = key
@@ -31,9 +27,7 @@ class NoSuchKey(BucketException):
 
 
 class NoSuchBucket(BucketException):
-    """
-    Raised if you try to access a non-existent bucket.
-    """
+    """Exception for if bucket does not exist."""
 
     def __init__(self, bucket_name):
         self.bucket = bucket_name
@@ -42,9 +36,7 @@ class NoSuchBucket(BucketException):
 
 
 class BucketAlreadyExists(BucketException):
-    """
-    Raised if a bucket already exists.
-    """
+    """Exception for if bucket already exists."""
 
     def __init__(self, bucket_name):
         self.bucket = bucket_name
@@ -53,9 +45,7 @@ class BucketAlreadyExists(BucketException):
 
 
 class BucketAccessDenied(BucketException):
-    """
-    Raised if access to a bucket is denied. Likely because it does not exist.
-    """
+    """Exception for if bucket access is denied."""
 
     def __init__(self, bucket_name):
         self.bucket = bucket_name
@@ -64,9 +54,7 @@ class BucketAccessDenied(BucketException):
 
 
 class NoSuchCORSConfiguration(BucketException):
-    """
-    Raised if no CORS configuration is set for a bucket.
-    """
+    """Exception for if the bucket does not have a CORS configuration."""
 
     def __init__(self, bucket_name):
         self.bucket = bucket_name
@@ -75,9 +63,7 @@ class NoSuchCORSConfiguration(BucketException):
 
 
 class UnknownBucketException(BucketException):
-    """
-    Raised for unknown S3 exceptions.
-    """
+    """Exception to catch all other unknown errors."""
 
     def __init__(self, bucket_name, e: ClientError):
         self.bucket = bucket_name

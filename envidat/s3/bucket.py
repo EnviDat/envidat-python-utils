@@ -19,8 +19,7 @@ log = logging.getLogger(__name__)
 
 
 class Bucket:
-    """
-    Class to handle S3 bucket transactions.
+    """Class to handle S3 bucket transactions.
     Handles boto3 exceptions with custom exception classes.
     """
 
@@ -32,12 +31,12 @@ class Bucket:
     def __init__(
         self, bucket_name: str = None, is_new: bool = False, is_public: bool = False
     ) -> NoReturn:
-        """
-        Init the Bucket object.
+        """Init the Bucket object.
 
-        :param bucket_name: Name of the bucket.
-        :param is_new: If true, creates a new bucket.
-        :param is_public: If true, makes the bucket public on creation.
+        Args:
+            bucket_name (str): Name of the bucket.
+            is_new (bool): If true, creates a new bucket.
+            is_public (bool): If true, makes the bucket public on creation.
         """
 
         if None in [Bucket._AWS_ACCESS_KEY_ID, Bucket._AWS_SECRET_ACCESS_KEY]:
@@ -86,13 +85,15 @@ class Bucket:
     def config(
         cls, access_key: str, secret_key: str, endpoint: str = None, region: str = ""
     ) -> NoReturn:
-        """
-        Config the bucket connection parameters before init.
+        """Config the bucket connection parameters before init.
 
-        :param access_key: AWS_ACCESS_KEY_ID.
-        :param secret_key: AWS_SECRET_ACCESS_KEY.
-        :param endpoint: Endpoint for the S3, if not AWS.
-        :param region: AWS_REGION.
+        Args:
+            access_key (str): AWS_ACCESS_KEY_ID.
+            secret_key (str): AWS_SECRET_ACCESS_KEY.
+            endpoint (str): Endpoint for the S3, if not AWS.
+                Defaults to None.
+            region (str): AWS_REGION.
+                Defaults to empty string "".
         """
         cls._AWS_ACCESS_KEY_ID = access_key
         cls._AWS_SECRET_ACCESS_KEY = secret_key
@@ -101,9 +102,7 @@ class Bucket:
 
     @staticmethod
     def get_boto3_resource() -> NoReturn:
-        """
-        Configure boto3 resource object.
-        """
+        """Configure boto3 resource object."""
 
         log.debug("Accessing boto3 resource.")
         return boto3.resource(
@@ -117,9 +116,7 @@ class Bucket:
 
     @staticmethod
     def get_boto3_client() -> NoReturn:
-        """
-        Cofigure boto3 client object.
-        """
+        """Cofigure boto3 client object."""
 
         log.debug("Accessing boto3 client.")
         return boto3.client(
@@ -131,14 +128,14 @@ class Bucket:
             config=Config(signature_version="s3v4"),
         )
 
-    def _handle_boto3_client_error(self, e: ClientError, key=None) -> NoReturn:
-        """
-        Handle boto3 ClientError.
+    def _handle_boto3_client_error(self, e: ClientError, key: str = None) -> NoReturn:
+        """Handle boto3 ClientError.
         The exception type returned from the server is nested here.
         Refer to exceptions.py
 
-        :param e: The ClientError to handle
-        :param key: The S3 object key. Default None.
+        Args:
+            e (ClientError): The ClientError to handle
+            key (str): The S3 object key. Defaults to None.
         """
         error_code: str = e.response.get("Error").get("Code")
 
@@ -158,11 +155,12 @@ class Bucket:
             raise exceptions.UnknownBucketException(self.bucket_name, e)
 
     def _raise_file_not_found(self, file_path: str, is_dir: bool = False) -> NoReturn:
-        """
-        Raise error if expected file not found on disk.
+        """Raise error if expected file not found on disk.
 
-        :param file_path: The path to the expected file.
-        :param is_dir: True if path is a directory.
+        Args:
+            file_path (str): The path to the expected file.
+            is_dir (bool): True if path is a directory.
+                Defaults to False.
         """
 
         msg = (
@@ -172,12 +170,12 @@ class Bucket:
         log.error(msg)
         raise FileNotFoundError(msg)
 
-    def _raise_parameter_error(self, param_name, value) -> NoReturn:
-        """
-        Raise error if incorrect parameters are provided.
+    def _raise_parameter_error(self, param_name: str, value: str) -> NoReturn:
+        """Raise error if incorrect parameters are provided.
 
-        :param param_name: The parameter name.
-        :param value: The parameter value.
+        Args:
+            param_name (str): The parameter name.
+            value (str): The parameter value.
         """
 
         if value is None:
@@ -188,11 +186,11 @@ class Bucket:
         raise ValueError(msg)
 
     def create(self) -> "boto3.resource.Bucket":
-        """
-        Create the S3 bucket on the endpoint.
+        """Create the S3 bucket on the endpoint.
         Method may be called directly to manipulate the boto3 Bucket object.
 
-        :return: A boto3 Bucket object.
+        Returns:
+            "boto3.resource.Bucket": A boto3 S3 Bucket object.
         """
 
         resource = Bucket.get_boto3_resource()
@@ -218,15 +216,18 @@ class Bucket:
         response_content_type: str = None,
         decode: bool = False,
     ) -> (Any, dict):
-        """
-        Get an object from the bucket into a memory object.
+        """Get an object from the bucket into a memory object.
         Defaults to utf-8 decode, unless specified.
 
-        :param key: The key, i.e. path within the bucket to get.
-        :param response_content_type: Content type to enforce on the response.
-        :param decode: Decodes using utf-8 if set. Useful for text based files.
+        Args:
+            key (str): The key, i.e. path within the bucket to get.
+            response_content_type (str): Content type to enforce on the response.
+                Defaults to None.
+            decode (bool): Decodes using utf-8 if set. Useful for text based files.
+                Defaults to None.
 
-        :return: tuple of decoded data and a dict containing S3 object metadata.
+        Returns:
+            tuple: (data, S3 Metadata dict).
         """
 
         resource = Bucket.get_boto3_resource()
@@ -259,17 +260,20 @@ class Bucket:
         content_type: str = None,
         metadata: dict = {},
     ) -> dict:
-        """
-        Put an in memory object into the bucket.
+        """Put an in memory object into the bucket.
 
-        :param key: The key, i.e. path within the bucket to store as.
-        :param data: The data to store, can be bytes or string.
-        :param content_type: The mime type to store the data as.
-            E.g. important for binary data or html text.
-        :param metadata: Dictionary of metadata.
-            E.g. timestamp or organisation details as string type.
+        Args:
+            key (str): The key, i.e. path within the bucket to store as.
+            data (Union[str, bytes]): The data to store, can be bytes or string.
+            content_type (str): The mime type to store the data as.
+                E.g. important for binary data or html text.
+                Defaults to None.
+            metadata (dict): Dictionary of metadata.
+                E.g. timestamp or organisation details as string type.
+                Defaults to None.
 
-        :return: Response dictionary from S3.
+        Returns:
+            dict: Response dictionary from S3.
         """
 
         resource = Bucket.get_boto3_resource()
@@ -294,12 +298,13 @@ class Bucket:
             self._handle_boto3_client_error(e, key=key)
 
     def delete(self, key: str) -> dict:
-        """
-        Delete specified object of a given key.
+        """Delete specified object of a given key.
 
-        :param key: The key, i.e. path within the bucket to delete.
+        Args:
+            key (str): The key, i.e. path within the bucket to delete.
 
-        :return: Response dictionary from S3.
+        Returns:
+            dict: Response dictionary from S3.
         """
 
         client = Bucket.get_boto3_client()
@@ -313,14 +318,15 @@ class Bucket:
             self._handle_boto3_client_error(e, key=key)
 
     def upload_file(self, key: str, local_filepath: Union[str, Path]) -> bool:
-        """
-        Upload a local file to the bucket.
+        """Upload a local file to the bucket.
         Transparently manages multipart uploads.
 
-        :param key: The key, i.e. path within the bucket to store under.
-        :param local_filepath: Path string or Pathlib object to upload.
+        Args:
+            key (str): The key, i.e. path within the bucket to store as.
+            local_filepath (Union[str, Path]): Path string or Pathlib object to upload.
 
-        :return: True if success, False is failure.
+        Returns:
+            bool: True if success, False is failure.
         """
 
         resource = Bucket.get_boto3_resource()
@@ -350,14 +356,15 @@ class Bucket:
         return False
 
     def download_file(self, key: str, local_filepath: Union[str, Path]) -> bool:
-        """
-        Download S3 object to a local file.
+        """Download S3 object to a local file.
         Transparently manages multipart downloads.
 
-        :param key: The key, i.e. path within the bucket to store under.
-        :param local_filepath: Path string or Pathlib object to download to.
+        Args:
+            key (str): The key, i.e. path within the bucket to download from.
+            local_filepath (Union[str, Path]): Path string or Pathlib object to upload.
 
-        :return: True if success, False is failure.
+        Returns:
+            bool: True if success, False is failure.
         """
 
         resource = Bucket.get_boto3_resource()
@@ -387,16 +394,21 @@ class Bucket:
         error_file: str = "error.html",
         include_icon: bool = True,
     ) -> bool:
-        """
-        Add static website hosting config to an S3 bucket.
+        """Add static website hosting config to an S3 bucket.
 
-        :param index_file: Name of index html file displaying page content.
-        :param error_file: Name of error html file displaying error content.
-        :param include_icon: Include the envidat favicon.ico for the bucket.
+        Note:
+            WARNING this will set all data to public read policy.
 
-        :return: True if success, False is failure.
+        Args:
+            index_file (str): Name of index html file displaying page content.
+                Defaults to 'index.html'.
+            error_file (str): Name of error html file displaying error content.
+                Defaults to 'error.html'.
+            include_icon (bool): Include the envidat favicon.ico for the bucket.
+                Defaults to True.
 
-        Note: WARNING this will set all data to public read policy.
+        Returns:
+            bool: True if success, False is failure.
         """
 
         client = Bucket.get_boto3_client()
@@ -449,14 +461,16 @@ class Bucket:
     def generate_index_html(
         self, title: str, file_list: Union[list, str], index_file: str = "index.html"
     ) -> BytesIO:
-        """
-        Write index file to root of S3 bucket, with embedded S3 download links.
+        """Write index file to root of S3 bucket, with embedded S3 download links.
 
-        :param title: HTML title tag for page.
-        :param file_list: List of file name to generate access urls for.
-        :param index_file: Name of index html file displaying page content.
+        Args:
+            title (str): HTML title tag for page.
+            file_list (Union[list, str]): List of file name to generate access urls for.
+            index_file (str): Name of index html file displaying page content.
+                Defaults to 'index.html'.
 
-        :return: Response dictionary from index file upload.
+        Returns:
+            dict: Response dictionary from index file upload.
         """
 
         if isinstance(file_list, str):
@@ -510,11 +524,10 @@ class Bucket:
         return response
 
     def list_all(self) -> list:
-        """
-        Get a list of all objects in the bucket.
+        """Get a list of all objects in the bucket.
 
-        :return: List of s3.ObjectSummary dicts, containing object metadata.
-            Or a list of object keys only, if keys_only specified.
+        Returns:
+            list: List of s3.ObjectSummary dicts, containing object metadata.
         """
 
         resource = Bucket.get_boto3_resource()
@@ -541,19 +554,25 @@ class Bucket:
         self,
         path: str = "",
         recursive: bool = False,
-        filter_ext: str = "",
+        file_type: str = "",
         names_only: bool = False,
     ) -> list:
-        """
-        Get a list of all objects in a specific directory (s3 path).
+        """Get a list of all objects in a specific directory (s3 path).
         Returns up to a max of 1000 values.
 
-        :param path: The directory in the bucket. Default to root.
-        :param recursive: To list all objects and subdirectory objects recursively.
-        :param filter_ext: File extension to filter by, e.g. 'txt'
-        :param names_only: Remove file extensions and path, giving only the file name.
+        Args:
+            path (str): The directory in the bucket.
+                Defaults to root ("").
+            recursive (bool): To list all objects and subdirectory objects recursively.
+                Defaults to False.
+            file_type (str): File extension to filter by, e.g. 'txt'
+                Defaults to blank string ("").
+            names_only (bool): Remove file extensions and path,
+                giving only the file name.
+                Defaults to False.
 
-        :return: List of s3.ObjectSummary dicts, containing object metadata.
+        Returns:
+            list: List of s3.ObjectSummary dicts, containing object metadata.
         """
 
         resource = Bucket.get_boto3_resource()
@@ -568,7 +587,7 @@ class Bucket:
 
             log.debug(
                 "Filtering objects in bucket with params: "
-                f"path: {path} | recursive: {recursive} | filter_ext: {filter_ext}"
+                f"path: {path} | recursive: {recursive} | file_type: {file_type}"
             )
             filtered_objects = bucket.objects.filter(
                 Delimiter="/" if not recursive else "",
@@ -588,10 +607,10 @@ class Bucket:
             log.info("No matching files for bucket filter parameters.")
             return []
 
-        if filter_ext:
-            log.debug(f"Further filtering return by file extension: {filter_ext}")
+        if file_type:
+            log.debug(f"Further filtering return by file extension: {file_type}")
             file_names = [
-                obj.key for obj in filtered_objects if obj.key.endswith(filter_ext)
+                obj.key for obj in filtered_objects if obj.key.endswith(file_type)
             ]
         else:
             file_names = [obj.key for obj in filtered_objects]
@@ -609,10 +628,10 @@ class Bucket:
         return file_names
 
     def get_cors_config(self) -> dict:
-        """
-        Get the CORS config for a bucket.
+        """Get the CORS config for a bucket.
 
-        :return: Response dictionary containing CORS config.
+        Returns:
+            dict: Response dictionary containing CORS config.
         """
 
         client = Bucket.get_boto3_client()
@@ -630,18 +649,22 @@ class Bucket:
 
         return None
 
-    def set_cors_config(self, origins: list = None, allow_all: bool = None) -> dict:
-        """
-        Set the CORS config for a bucket.
+    def set_cors_config(self, origins: list = None, allow_all: bool = False) -> dict:
+        """Set the CORS config for a bucket.
 
-        :param allow_all: Allow all origins, set to wildcard *.
+        Args:
+            origins (list): List of allowed origins in CORS headers.
+                Defaults to None.
+            allow_all (bool): Allow all origins, set to wildcard *.
+                Defaults to False
 
-        :return: True if success, False is failure.
+        Returns:
+            bool: True if success, False is failure.
         """
 
         client = Bucket.get_boto3_client()
 
-        if allow_all is None and origins is None:
+        if allow_all is False and origins is None:
             log.debug("No origins provided for param allow_all")
             self._raise_parameter_error("allow_all", allow_all)
 

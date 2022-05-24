@@ -8,12 +8,17 @@ log = logging.getLogger(__name__)
 
 
 def get_metadata_list(host: str = None, sort_result: bool = None) -> list:
-    """
-    Get package/metadata list from API.
+    """Get package/metadata list from API.
     Host url as a parameter or from environment.
 
-    :param host: API host url. Attempts to get from environment if omitted.
-    :param sort_result: Sort result alphabetically by metadata name.
+    Args:
+        host (str): API host url. Attempts to get from environment if omitted.
+            Defaults to None
+        sort_result (bool): Sort result alphabetically by metadata name.
+            Default to None
+
+    Returns:
+        list: List of JSON formatted packages.
     """
 
     if host is None:
@@ -43,14 +48,20 @@ def get_metadata_list(host: str = None, sort_result: bool = None) -> list:
 def get_metadata_list_with_resources(
     host: str = None, sort_result: bool = None
 ) -> list:
-    """
-    Get package/metadata list with associated resources from API.
+    """Get package/metadata list with associated resources from API.
     Host url as a parameter or from environment.
 
-    :param host: API host url. Attempts to get from environment if omitted.
-    :param sort_result: Sort result alphabetically by metadata name.
+    Args:
+        host (str): API host url. Attempts to get from environment if omitted.
+            Defaults to None
+        sort_result (bool): Sort result alphabetically by metadata name.
+            Default to None
 
-    Note: uses limit 100000, otherwise returns only 10 results.
+    Note:
+        Limits results to 100000, otherwise returns only 10 results.
+
+    Returns:
+        list: List of JSON formatted packages, with nested resources.
     """
 
     if host is None:

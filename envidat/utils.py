@@ -11,17 +11,22 @@ log = logging.getLogger(__name__)
 
 
 def _debugger_is_active() -> bool:
-    """Check to see if running in debug mode."""
+    """Check to see if running in debug mode.
+
+    Returns:
+        bool: if a debug trace is present or not.
+    """
 
     gettrace = getattr(sys, "gettrace", lambda: None)
     return gettrace() is not None
 
 
 def load_dotenv_if_in_debug_mode(env_file: Union[Path, str]) -> NoReturn:
-    """
-    Load secret .env variables from repo for debugging.
+    """Load secret .env variables from repo for debugging.
 
-    :param env_file: String or Path like object pointer to secret dot env file to read.
+    Args:
+        env_file (Union[Path, str]): String or Path like object pointer to
+            secret dot env file to read.
     """
 
     try:
@@ -60,10 +65,10 @@ def load_dotenv_if_in_debug_mode(env_file: Union[Path, str]) -> NoReturn:
 
 
 def get_logger() -> logging.basicConfig:
-    """
-    Set logger parameters with log level from environment.
+    """Set logger parameters with log level from environment.
 
-    Note: defaults to DEBUG level.
+    Note:
+        Defaults to DEBUG level, unless specified by LOG_LEVEL env var.
     """
 
     logging.basicConfig(
@@ -79,7 +84,11 @@ def get_logger() -> logging.basicConfig:
 
 
 def get_url(url: str) -> requests.Response:
-    "Helper wrapper to get a URL with additional error handling."
+    """Helper wrapper to get a URL with additional error handling.
+
+    Args:
+        url (str): The URL to GET.
+    """
 
     try:
         log.debug(f"Attempting to get {url}")
