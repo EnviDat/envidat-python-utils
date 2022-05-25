@@ -7,23 +7,25 @@ from envidat.utils import get_url
 log = logging.getLogger(__name__)
 
 
-def get_metadata_list(host: str = None, sort_result: bool = None) -> list:
+def get_metadata_list(
+    host: str = "https://www.envidat.ch", sort_result: bool = None
+) -> list:
     """Get package/metadata list from API.
     Host url as a parameter or from environment.
 
     Args:
         host (str): API host url. Attempts to get from environment if omitted.
-            Defaults to None
+            Defaults to https://www.envidat.ch.
         sort_result (bool): Sort result alphabetically by metadata name.
-            Default to None
+            Default to None.
 
     Returns:
         list: List of JSON formatted packages.
     """
 
-    if host is None:
-        log.debug("No API host specified, getting from environment.")
-        host = os.getenv("API_HOST", default="https://www.envidat.ch")
+    if "API_HOST" in os.environ:
+        log.debug("Getting API host from environment variable.")
+        host = os.getenv("API_HOST")
 
     log.info(f"Getting package list from {host}.")
     try:
@@ -46,16 +48,16 @@ def get_metadata_list(host: str = None, sort_result: bool = None) -> list:
 
 
 def get_metadata_list_with_resources(
-    host: str = None, sort_result: bool = None
+    host: str = "https://www.envidat.ch", sort_result: bool = None
 ) -> list:
     """Get package/metadata list with associated resources from API.
     Host url as a parameter or from environment.
 
     Args:
         host (str): API host url. Attempts to get from environment if omitted.
-            Defaults to None
+            Defaults to https://www.envidat.ch.
         sort_result (bool): Sort result alphabetically by metadata name.
-            Default to None
+            Default to None.
 
     Note:
         Limits results to 100000, otherwise returns only 10 results.
@@ -64,9 +66,9 @@ def get_metadata_list_with_resources(
         list: List of JSON formatted packages, with nested resources.
     """
 
-    if host is None:
-        log.debug("No API host specified, getting from environment.")
-        host = os.getenv("API_HOST", default="https://www.envidat.ch")
+    if "API_HOST" in os.environ:
+        log.debug("Getting API host from environment variable.")
+        host = os.getenv("API_HOST")
 
     log.info(f"Getting package list with resources from {host}.")
     try:

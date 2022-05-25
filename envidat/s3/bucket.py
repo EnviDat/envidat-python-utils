@@ -29,12 +29,16 @@ class Bucket:
     _AWS_REGION = os.getenv("AWS_REGION", default="")
 
     def __init__(
-        self, bucket_name: str = None, is_new: bool = False, is_public: bool = False
+        self,
+        bucket_name: str = None,
+        is_new: bool = False,
+        is_public: bool = False,
     ) -> NoReturn:
         """Init the Bucket object.
 
         Args:
             bucket_name (str): Name of the bucket.
+                If AWS_BUCKET_NAME is set in the environment, this is overriden.
             is_new (bool): If true, creates a new bucket.
             is_public (bool): If true, makes the bucket public on creation.
         """
@@ -70,7 +74,7 @@ class Bucket:
                 "Set them with environment variables AWS_ACCESS_KEY and AWS_ACCESS_KEY "
                 "or with Bucket.config(access_key, secret_key, endpoint, region)"
             )
-        if bucket_name is None:
+        if "AWS_BUCKET_NAME" in os.environ:
             log.debug("Getting bucket name from environment variable.")
             self.bucket_name = os.getenv("AWS_BUCKET_NAME")
         else:
