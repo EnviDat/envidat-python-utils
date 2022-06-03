@@ -1,6 +1,7 @@
 import os
 import pytest
 
+from tempfile import NamedTemporaryFile
 from moto import mock_s3
 
 from envidat.s3.bucket import Bucket
@@ -36,3 +37,16 @@ def bucket():
     Bucket.config("testing", "testing", endpoint=None, region="testing")
     new_bucket = Bucket("testing")
     return new_bucket
+
+
+@pytest.fixture
+def create_tempfile(scope="function"):
+    def nested_tempfile(file_type, temp_dir=None, delete=True):
+        temp_file = NamedTemporaryFile(
+            dir=temp_dir, delete=delete, suffix=f".{file_type}"
+        )
+        with open(temp_file.name, "w", encoding="UTF-8") as f:
+            f.write("test")
+        return temp_file
+
+    return nested_tempfile
