@@ -65,3 +65,14 @@ version_files = [
     "pyproject.toml:version",
     "envidat/__version__.py"
 ]
+
+[tool.isort]
+profile = "black"
+atomic = true
+known_first_party = ["envidat"]
+
+[tool.pytest.ini_options]
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
