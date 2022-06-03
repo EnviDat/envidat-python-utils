@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 0.4.1 (2022-06-03)
+
+### Fix
+
+- minor feat, add clean multipart function, sort imports
+
+### Refactor
+
+- use isort to sort all imports
+
 ## 0.4.0 (2022-06-03)
 
 ### Feat
