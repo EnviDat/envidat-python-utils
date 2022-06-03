@@ -2,7 +2,6 @@ import logging
 
 from botocore.exceptions import ClientError
 
-
 log = logging.getLogger(__name__)
 
 

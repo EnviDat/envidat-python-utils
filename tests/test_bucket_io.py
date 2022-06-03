@@ -1,6 +1,7 @@
-from moto import mock_s3
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from moto import mock_s3
 
 
 @mock_s3

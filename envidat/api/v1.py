@@ -1,8 +1,7 @@
-import os
 import logging
+import os
 
 from envidat.utils import get_url
-
 
 log = logging.getLogger(__name__)
 

@@ -1,11 +1,10 @@
 import os
-import pytest
-
 from tempfile import NamedTemporaryFile
+
+import pytest
 from moto import mock_s3
 
 from envidat.s3.bucket import Bucket
-
 
 os.environ["MOTO_ALLOW_NONEXISTENT_REGION"] = "True"
 

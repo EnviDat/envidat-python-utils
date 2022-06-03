@@ -1,11 +1,10 @@
+import logging
 import os
 import sys
-import logging
-import requests
-
-from typing import Union, NoReturn
 from pathlib import Path
+from typing import NoReturn, Union
 
+import requests
 
 log = logging.getLogger(__name__)
 

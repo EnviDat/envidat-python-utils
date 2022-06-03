@@ -1,5 +1,4 @@
 import pytest
-
 from moto import mock_s3
 
 from envidat.s3.exceptions import NoSuchCORSConfiguration
