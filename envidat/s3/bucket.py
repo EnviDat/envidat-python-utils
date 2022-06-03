@@ -327,7 +327,7 @@ class Bucket:
 
         Args:
             key (str): The key, i.e. path within the bucket to store as.
-            local_filepath (Union[str, Path]): Path string or Pathlib object to upload.
+            local_filepath (Union[str, Path]): Path string or Pathlib path to upload.
 
         Returns:
             bool: True if success, False is failure.
@@ -365,7 +365,8 @@ class Bucket:
 
         Args:
             key (str): The key, i.e. path within the bucket to download from.
-            local_filepath (Union[str, Path]): Path string or Pathlib object to upload.
+            local_filepath (Union[str, Path]): Path string or Pathlib path
+                to download to.
 
         Returns:
             bool: True if success, False is failure.
@@ -391,6 +392,193 @@ class Bucket:
             self._handle_boto3_client_error(e, key=key)
 
         return False
+
+    def list_all(self) -> list:
+        """Get a list of all objects in the bucket.
+
+        Returns:
+            list: List of s3.ObjectSummary dicts, containing object metadata.
+        """
+
+        resource = Bucket.get_boto3_resource()
+
+        try:
+            log.debug(f"Getting bucket named: {self.bucket_name}")
+            bucket = resource.Bucket(self.bucket_name)
+
+            log.debug("Listing all objects in bucket")
+            objects = bucket.objects.all()
+
+            file_names = [os.path.splitext(file.key)[0] for file in objects]
+            log.info(
+                f"Returned {len(file_names)} objects from "
+                f"bucket named {self.bucket_name}"
+            )
+
+            return file_names
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e)
+
+    def list_dir(
+        self,
+        path: str = "",
+        recursive: bool = False,
+        file_type: str = "",
+        names_only: bool = False,
+    ) -> list:
+        """Get a list of all objects in a specific directory (s3 path).
+        Returns up to a max of 1000 values.
+
+        Args:
+            path (str): The directory in the bucket.
+                Defaults to root ("").
+            recursive (bool): To list all objects and subdirectory objects recursively.
+                Defaults to False.
+            file_type (str): File extension to filter by, e.g. 'txt'
+                Defaults to blank string ("").
+            names_only (bool): Remove file extensions and path,
+                giving only the file name.
+                Defaults to False.
+
+        Returns:
+            list: List of s3.ObjectSummary dicts, containing object metadata.
+        """
+
+        resource = Bucket.get_boto3_resource()
+
+        if path:
+            path = path[1:] if path.startswith("/") else path
+            path = (path + "/") if not path.endswith("/") else path
+
+        try:
+            log.debug(f"Getting bucket named: {self.bucket_name}")
+            bucket = resource.Bucket(self.bucket_name)
+
+            log.debug(
+                "Filtering objects in bucket with params: "
+                f"path: {path} | recursive: {recursive} | file_type: {file_type}"
+            )
+            filtered_objects = bucket.objects.filter(
+                Delimiter="/" if not recursive else "",
+                # EncodingType='url',
+                # Marker='string',
+                # MaxKeys=123,
+                Prefix=path,
+            )
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e)
+
+        # Test if a match is made, else function will return [False]
+        if not isinstance(
+            filtered_objects, boto3.resources.collection.ResourceCollection
+        ):
+            log.info("No matching files for bucket filter parameters.")
+            return []
+
+        if file_type:
+            log.debug(f"Further filtering return by file extension: {file_type}")
+            file_names = [
+                obj.key for obj in filtered_objects if obj.key.endswith(file_type)
+            ]
+        else:
+            file_names = [obj.key for obj in filtered_objects]
+
+        if names_only:
+            log.debug("Removing extensions from file names")
+            file_paths = [Path(file_name) for file_name in file_names]
+            file_names = [str(file_path.stem) for file_path in file_paths]
+
+        log.info(
+            f"Returned {len(file_names)} filtered objects from "
+            f"bucket named {self.bucket_name}"
+        )
+
+        return file_names
+
+    def download_dir(
+        self,
+        s3_path: str,
+        local_dir: Union[str, Path],
+        file_type: str = "",
+    ) -> bool:
+        """
+        Download an entire S3 path, including subpaths, to a local directory.
+
+        Args:
+            s3_path (str): The path within the bucket to download.
+            local_dir (Union[str, Path]): Directory to download files into.
+            file_type (str): Download files with extension only, e.g. txt.
+
+        Returns:
+            dict: key:value pair of file_name:download_status.
+                download_status True if downloaded, False if failed.
+        """
+
+        status_dict = {}
+
+        local_dir_path = Path(local_dir)
+        log.debug(f"Top level directory to download to: {local_dir_path}")
+
+        s3_keys = self.list_dir(path=s3_path, recursive=True, file_type=file_type)
+
+        for key in s3_keys:
+            log.debug(f"S3 key to download: {key}")
+
+            file_path = local_dir_path / key.replace("/", "", 1)
+            log.debug(f"Creating parent download directory: {file_path.parent}")
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+
+            status_dict[key] = self.download_file(key, file_path)
+
+        return status_dict
+
+    def upload_dir(
+        self,
+        s3_path: str,
+        local_dir: Union[str, Path],
+        file_type: str = "",
+    ) -> bool:
+        """
+        Upload an entire local directory to a bucket path.
+
+        Args:
+            s3_path (str): The path within the bucket to upload to.
+            local_dir (Union[str, Path]): Directory to upload files from.
+            file_type (str): Upload files with extension only, e.g. txt.
+
+        Returns:
+            dict: key:value pair of file_name:upload_status.
+                upload_status True if uploaded, False if failed.
+        """
+
+        status_dict = {}
+
+        local_dir_path = Path(local_dir).resolve()
+        log.debug(f"Full directory path to upload: {local_dir_path}")
+
+        parent_parts = local_dir_path.parent.parts
+        log.debug(f"Part directory parts: {parent_parts}")
+        num_parents = len(parent_parts)
+
+        all_subdirs = list(local_dir_path.glob("**"))
+
+        for dir_path in all_subdirs:
+            log.debug(f"Searching for files in directory: {dir_path}")
+
+            file_names = dir_path.glob(f"*{('.' + file_type) if file_type else ''}")
+
+            # Only return valid files
+            file_names = [f for f in file_names if f.is_file()]
+            log.debug(f"Files found: {list(file_names)}")
+
+            for i, file_name in enumerate(file_names):
+                s3_key = str(Path(s3_path) / Path(*file_name.parts[num_parents:]))
+                log.debug(f"S3 key to upload: {s3_key}")
+                status_dict[str(file_name)] = self.upload_file(s3_key, file_name)
+
+        return status_dict
 
     def configure_static_website(
         self,
@@ -526,110 +714,6 @@ class Bucket:
 
         response = self.put(index_file, decoded_html, content_type="text/html")
         return response
-
-    def list_all(self) -> list:
-        """Get a list of all objects in the bucket.
-
-        Returns:
-            list: List of s3.ObjectSummary dicts, containing object metadata.
-        """
-
-        resource = Bucket.get_boto3_resource()
-
-        try:
-            log.debug(f"Getting bucket named: {self.bucket_name}")
-            bucket = resource.Bucket(self.bucket_name)
-
-            log.debug("Listing all objects in bucket")
-            objects = bucket.objects.all()
-
-            file_names = [os.path.splitext(file.key)[0] for file in objects]
-            log.info(
-                f"Returned {len(file_names)} objects from "
-                f"bucket named {self.bucket_name}"
-            )
-
-            return file_names
-
-        except ClientError as e:
-            self._handle_boto3_client_error(e)
-
-    def list_dir(
-        self,
-        path: str = "",
-        recursive: bool = False,
-        file_type: str = "",
-        names_only: bool = False,
-    ) -> list:
-        """Get a list of all objects in a specific directory (s3 path).
-        Returns up to a max of 1000 values.
-
-        Args:
-            path (str): The directory in the bucket.
-                Defaults to root ("").
-            recursive (bool): To list all objects and subdirectory objects recursively.
-                Defaults to False.
-            file_type (str): File extension to filter by, e.g. 'txt'
-                Defaults to blank string ("").
-            names_only (bool): Remove file extensions and path,
-                giving only the file name.
-                Defaults to False.
-
-        Returns:
-            list: List of s3.ObjectSummary dicts, containing object metadata.
-        """
-
-        resource = Bucket.get_boto3_resource()
-
-        if path:
-            path = path[1:] if path.startswith("/") else path
-            path = (path + "/") if not path.endswith("/") else path
-
-        try:
-            log.debug(f"Getting bucket named: {self.bucket_name}")
-            bucket = resource.Bucket(self.bucket_name)
-
-            log.debug(
-                "Filtering objects in bucket with params: "
-                f"path: {path} | recursive: {recursive} | file_type: {file_type}"
-            )
-            filtered_objects = bucket.objects.filter(
-                Delimiter="/" if not recursive else "",
-                # EncodingType='url',
-                # Marker='string',
-                # MaxKeys=123,
-                Prefix=path,
-            )
-
-        except ClientError as e:
-            self._handle_boto3_client_error(e)
-
-        # Test if a match is made, else function will return [False]
-        if not isinstance(
-            filtered_objects, boto3.resources.collection.ResourceCollection
-        ):
-            log.info("No matching files for bucket filter parameters.")
-            return []
-
-        if file_type:
-            log.debug(f"Further filtering return by file extension: {file_type}")
-            file_names = [
-                obj.key for obj in filtered_objects if obj.key.endswith(file_type)
-            ]
-        else:
-            file_names = [obj.key for obj in filtered_objects]
-
-        if names_only:
-            log.debug("Removing extensions from file names")
-            file_paths = [Path(file_name) for file_name in file_names]
-            file_names = [str(file_path.stem) for file_path in file_paths]
-
-        log.info(
-            f"Returned {len(file_names)} filtered objects from "
-            f"bucket named {self.bucket_name}"
-        )
-
-        return file_names
 
     def get_cors_config(self) -> dict:
         """Get the CORS config for a bucket.
