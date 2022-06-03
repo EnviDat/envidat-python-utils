@@ -1,19 +1,18 @@
-import os
-import logging
 import json
+import logging
 import mimetypes
-import boto3
-
-from typing import Any, NoReturn, Union
-from pathlib import Path
+import os
 from io import BytesIO
+from pathlib import Path
 from textwrap import dedent
+from typing import Any, NoReturn, Union
+
+import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from envidat.s3 import exceptions
 from envidat.utils import get_url
-
 
 log = logging.getLogger(__name__)
 
@@ -512,7 +511,7 @@ class Bucket:
             file_type (str): Download files with extension only, e.g. txt.
 
         Returns:
-            dict: key:value pair of file_name:download_status.
+            dict: key:value pair of s3_key:download_status.
                 download_status True if downloaded, False if failed.
         """
 
@@ -579,6 +578,55 @@ class Bucket:
                 status_dict[str(file_name)] = self.upload_file(s3_key, file_name)
 
         return status_dict
+
+    def clean_multiparts(self) -> bool:
+        """
+        Clean up failed multipart uploads in a bucket.
+
+        Returns:
+            dict: key:value pair of s3_multipart_key:clean_status.
+                clean_status True if removed, False if failed.
+        """
+
+        status_dict = {}
+        success_counter = 0
+        failure_counter = 0
+
+        client = Bucket.get_boto3_client()
+
+        try:
+            log.debug(f"Getting multipart uploads for bucket {self.bucket_name}")
+            response = client.list_multipart_uploads(Bucket=self.bucket_name)
+
+            files = response["Uploads"]
+            log.info(
+                f"Returned {len(files)} objects from "
+                f"bucket named {self.bucket_name}"
+            )
+
+            log.info("Cleaning multipart parts if present")
+            for file in files:
+                response = client.abort_multipart_upload(
+                    Bucket=self.bucket_name,
+                    Key=file["Key"],
+                    UploadId=file["UploadId"],
+                )
+
+                if response["ResponseMetadata"]["HTTPStatusCode"] == 204:
+                    log.debug(f"Multipart successfully deleted: {file}")
+                    success_counter += 1
+                    status_dict[file["Key"]] = True
+                else:
+                    log.debug(f"Multipart deletion failed: {file}")
+                    failure_counter += 1
+                    status_dict[file["Key"]] = False
+
+            log.info(f"Successful: {success_counter} | Failed: {failure_counter}")
+
+            return status_dict
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e)
 
     def configure_static_website(
         self,
