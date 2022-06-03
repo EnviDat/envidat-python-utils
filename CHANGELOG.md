@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 0.4.0 (2022-06-03)
+
+### Feat
+
+- add upload and download directory functions for s3 bucket
+
+### Refactor
+
+- update setting bucket name and api host, allow env var override if set as func var
+
 ## 0.3.3 (2022-05-23)
 
 ### Fix
