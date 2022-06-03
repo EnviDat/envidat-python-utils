@@ -19,7 +19,7 @@ Handles boto3 exceptions with custom exception classes.
 
 ### .create
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L188)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L192)
 
 ```python
 .create()
@@ -36,7 +36,7 @@ Method may be called directly to manipulate the boto3 Bucket object.
 
 ### .get
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L213)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L217)
 
 ```python
 .get(
@@ -63,7 +63,7 @@ Defaults to utf-8 decode, unless specified.
 
 ### .put
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L256)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L260)
 
 ```python
 .put(
@@ -92,7 +92,7 @@ Put an in memory object into the bucket.
 
 ### .delete
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L300)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L304)
 
 ```python
 .delete(
@@ -114,7 +114,7 @@ Delete specified object of a given key.
 
 ### .upload_file
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L320)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L324)
 
 ```python
 .upload_file(
@@ -130,7 +130,7 @@ Transparently manages multipart uploads.
 **Args**
 
 - **key** (str) : The key, i.e. path within the bucket to store as.
-- **local_filepath** (Union[str, Path]) : Path string or Pathlib object to upload.
+- **local_filepath** (Union[str, Path]) : Path string or Pathlib path to upload.
 
 **Returns**
 
@@ -138,7 +138,7 @@ Transparently manages multipart uploads.
 
 ### .download_file
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L358)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L362)
 
 ```python
 .download_file(
@@ -154,15 +154,129 @@ Transparently manages multipart downloads.
 **Args**
 
 - **key** (str) : The key, i.e. path within the bucket to download from.
-- **local_filepath** (Union[str, Path]) : Path string or Pathlib object to upload.
+- **local_filepath** (Union[str, Path]) : Path string or Pathlib path
+  to download to.
 
 **Returns**
 
 - **bool** : True if success, False is failure.
 
+### .list_all
+
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L396)
+
+```python
+.list_all()
+```
+
+---
+
+Get a list of all objects in the bucket.
+
+**Returns**
+
+- **list** : List of s3.ObjectSummary dicts, containing object metadata.
+
+### .list_dir
+
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L423)
+
+```python
+.list_dir(
+   path: str = '', recursive: bool = False, file_type: str = '', names_only: bool = False
+)
+```
+
+---
+
+Get a list of all objects in a specific directory (s3 path).
+Returns up to a max of 1000 values.
+
+**Args**
+
+- **path** (str) : The directory in the bucket.
+  Defaults to root ("").
+- **recursive** (bool) : To list all objects and subdirectory objects recursively.
+  Defaults to False.
+- **file_type** (str) : File extension to filter by, e.g. 'txt'
+  Defaults to blank string ("").
+- **names_only** (bool) : Remove file extensions and path,
+  giving only the file name.
+  Defaults to False.
+
+**Returns**
+
+- **list** : List of s3.ObjectSummary dicts, containing object metadata.
+
+### .download_dir
+
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L500)
+
+```python
+.download_dir(
+   s3_path: str, local_dir: Union[str, Path], file_type: str = ''
+)
+```
+
+---
+
+Download an entire S3 path, including subpaths, to a local directory.
+
+**Args**
+
+- **s3_path** (str) : The path within the bucket to download.
+- **local_dir** (Union[str, Path]) : Directory to download files into.
+- **file_type** (str) : Download files with extension only, e.g. txt.
+
+**Returns**
+
+- **dict** : key:value pair of file_name:download_status.
+  download_status True if downloaded, False if failed.
+
+### .upload_dir
+
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L537)
+
+```python
+.upload_dir(
+   s3_path: str, local_dir: Union[str, Path], file_type: str = ''
+)
+```
+
+---
+
+Upload an entire local directory to a bucket path.
+
+**Args**
+
+- **s3_path** (str) : The path within the bucket to upload to.
+- **local_dir** (Union[str, Path]) : Directory to upload files from.
+- **file_type** (str) : Upload files with extension only, e.g. txt.
+
+**Returns**
+
+- **dict** : key:value pair of file_name:upload_status.
+  upload_status True if uploaded, False if failed.
+
+### .clean_multiparts
+
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L583)
+
+```python
+.clean_multiparts()
+```
+
+---
+
+Clean up failed multipart uploads in a bucket.
+
+**Returns**
+
+- **bool** : True if parts found and deleted, else False.
+
 ### .configure_static_website
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L391)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L634)
 
 ```python
 .configure_static_website(
@@ -194,7 +308,7 @@ WARNING this will set all data to public read policy.
 
 ### .generate_index_html
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L461)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L704)
 
 ```python
 .generate_index_html(
@@ -217,56 +331,9 @@ Write index file to root of S3 bucket, with embedded S3 download links.
 
 - **dict** : Response dictionary from index file upload.
 
-### .list_all
-
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L526)
-
-```python
-.list_all()
-```
-
----
-
-Get a list of all objects in the bucket.
-
-**Returns**
-
-- **list** : List of s3.ObjectSummary dicts, containing object metadata.
-
-### .list_dir
-
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L553)
-
-```python
-.list_dir(
-   path: str = '', recursive: bool = False, file_type: str = '', names_only: bool = False
-)
-```
-
----
-
-Get a list of all objects in a specific directory (s3 path).
-Returns up to a max of 1000 values.
-
-**Args**
-
-- **path** (str) : The directory in the bucket.
-  Defaults to root ("").
-- **recursive** (bool) : To list all objects and subdirectory objects recursively.
-  Defaults to False.
-- **file_type** (str) : File extension to filter by, e.g. 'txt'
-  Defaults to blank string ("").
-- **names_only** (bool) : Remove file extensions and path,
-  giving only the file name.
-  Defaults to False.
-
-**Returns**
-
-- **list** : List of s3.ObjectSummary dicts, containing object metadata.
-
 ### .get_cors_config
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L630)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L769)
 
 ```python
 .get_cors_config()
@@ -282,7 +349,7 @@ Get the CORS config for a bucket.
 
 ### .set_cors_config
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L652)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L791)
 
 ```python
 .set_cors_config(
