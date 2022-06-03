@@ -6,7 +6,7 @@ authors = [
     {name = "Sam Woodcock", email = "samuel.woodcock@wsl.ch"},
 ]
 dependencies = [
-    "requests==2.27.1",
+    "requests>=2.27.1",
     "boto3>=1.22.12",
 ]
 requires-python = ">=3.9"
