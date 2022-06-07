@@ -20,6 +20,8 @@ def test_get_s3_client(bucket):
 def test_bucket_create_public(bucket):
     bucket.is_public = True
     new_bucket = bucket.create()
+    # Must reset class variable override for other tests
+    bucket.is_public = False
 
     response = new_bucket.meta.client.head_bucket(Bucket="testing")
     assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
