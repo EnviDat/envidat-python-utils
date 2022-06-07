@@ -209,6 +209,11 @@ class Bucket:
                 ObjectLockEnabledForBucket=False,
             )
             log.debug("Bucket created successfully")
+
+            if self.is_public:
+                log.info("Setting CORS config for bucket to allow all origins.")
+                self.set_cors_config(allow_all=True)
+
             return bucket
         except ClientError as e:
             self._handle_boto3_client_error(e)
@@ -791,6 +796,7 @@ class Bucket:
         Args:
             origins (list): List of allowed origins in CORS headers.
                 Defaults to None.
+                Origins must be in format {schema}://{domain}:{port}.
             allow_all (bool): Allow all origins, set to wildcard *.
                 Defaults to False
 
@@ -798,21 +804,20 @@ class Bucket:
             bool: True if success, False is failure.
         """
 
-        client = Bucket.get_boto3_client()
-
         if allow_all is False and origins is None:
-            log.debug("No origins provided for param allow_all")
-            self._raise_parameter_error("allow_all", allow_all)
+            log.debug("No origins provided and allow_all not set. Skipping")
+            self._raise_parameter_error("origins", origins)
 
-        if allow_all:
-            origins = ["*"]
+        client = Bucket.get_boto3_client()
 
         cors_configuration = {
             "CORSRules": [
                 {
-                    "AllowedHeaders": ["Authorization"],
+                    "AllowedHeaders": ["*"]
+                    if allow_all
+                    else ["Authorization", "Content-Type"],
                     "AllowedMethods": ["GET", "PUT"],
-                    "AllowedOrigins": origins,
+                    "AllowedOrigins": ["*"] if allow_all else origins,
                     "ExposeHeaders": ["ETag", "x-amz-request-id"],
                     "MaxAgeSeconds": 3000,
                 }
