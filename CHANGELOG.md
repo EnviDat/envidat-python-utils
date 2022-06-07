@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 0.4.2 (2022-06-07)
+
+### Fix
+
+- add cors config allow all origins if public
+
+### Refactor
+
+- update license with envidat
+
 ## 0.4.1 (2022-06-03)
 
 ### Fix
