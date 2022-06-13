@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.4.3 (2022-06-13)
+
+### Fix
+
+- add check_file_exists function to bucket class
+
 ## 0.4.2 (2022-06-07)
 
 ### Fix
