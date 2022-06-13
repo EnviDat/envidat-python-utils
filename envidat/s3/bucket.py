@@ -584,6 +584,37 @@ class Bucket:
 
         return status_dict
 
+    def check_file_exists(self, key: str) -> bool:
+        """Check an object exists in the bucket.
+
+        Args:
+            key (str): The key, i.e. path within the bucket to check for.
+
+        Returns:
+            bool: True if exists, False if not.
+        """
+
+        client = Bucket.get_boto3_client()
+
+        try:
+            log.info(f"Retrieving S3 object metadata with key: {key}")
+            response = client.head_object(Bucket=self.bucket_name, Key=key)
+
+            if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+                return True
+            return False
+
+        except ClientError as e:
+            try:
+                code = int(e.response["Error"]["Code"])
+            except KeyError:
+                log.error("Unable to access error code in S3 response.")
+                self._handle_boto3_client_error(e, key=key)
+            if code == 404:
+                return False
+
+            self._handle_boto3_client_error(e, key=key)
+
     def clean_multiparts(self) -> bool:
         """
         Clean up failed multipart uploads in a bucket.

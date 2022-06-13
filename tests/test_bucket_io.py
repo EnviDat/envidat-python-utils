@@ -14,6 +14,28 @@ def test_bucket_put(bucket):
 
 
 @mock_s3
+def test_file_exists(bucket):
+    bucket.create()
+
+    file_text = "test"
+    response = bucket.put("text.txt", file_text)
+    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+    success = bucket.check_file_exists("text.txt")
+    assert success is True
+
+    file_text = "test"
+    response = bucket.put("subdir/text.txt", file_text)
+    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+    success = bucket.check_file_exists("subdir/text.txt")
+    assert success is True
+
+    success = bucket.check_file_exists("doesnotexist/text.txt")
+    assert success is False
+
+
+@mock_s3
 def test_bucket_get(bucket):
     bucket.create()
 
