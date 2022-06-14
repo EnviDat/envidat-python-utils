@@ -10,6 +10,7 @@ from typing import Any, NoReturn, Union
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
+from s3transfer.manager import TransferConfig, TransferManager
 
 from envidat.s3 import exceptions
 from envidat.utils import get_url
@@ -394,6 +395,48 @@ class Bucket:
 
         except ClientError as e:
             self._handle_boto3_client_error(e, key=key)
+
+        return False
+
+    def transfer(self, source_key: str, dest_bucket: str, dest_key: str = None) -> bool:
+        """Fast efficient transfer bucket --> bucket using TransferManager.
+        This function avoids downloading to memory and uses the underlying
+        operations that aws-cli uses to transfer.
+
+        Args:
+            source_key (str): The key / path to copy from.
+            dest_bucket (str): Name of the destination bucket.
+            dest_key (str): The key / path to copy to.
+                Optional, defaults to None.
+
+        Returns:
+            bool: True if success, False is failure.
+        """
+
+        client = Bucket.get_boto3_client()
+
+        if dest_key is None:
+            dest_key = source_key
+
+        try:
+            log.info(
+                f"Transferring key {source_key} from bucket {self.bucket_name} "
+                f"to bucket {dest_bucket} with key {dest_key}"
+            )
+
+            manager = TransferManager(
+                client, TransferConfig(max_request_concurrency=20)
+            )
+            manager.copy(
+                bucket=dest_bucket,
+                key=dest_key,
+                copy_source={"Bucket": self.bucket_name, "Key": source_key},
+            ).result()
+
+            return True
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e, key=source_key)
 
         return False
 

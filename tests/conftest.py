@@ -38,6 +38,14 @@ def bucket():
     return new_bucket
 
 
+@pytest.fixture(scope="session")
+@mock_s3
+def bucket2():
+    Bucket.config("testing", "testing", endpoint=None, region="testing")
+    new_bucket = Bucket("testing2")
+    return new_bucket
+
+
 @pytest.fixture
 def create_tempfile(scope="function"):
     def nested_tempfile(file_type, temp_dir=None, delete=True):
