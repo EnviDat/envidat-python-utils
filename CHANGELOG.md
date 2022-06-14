@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.5.0 (2022-06-14)
+
+### Feat
+
+- add s3 transfer function for efficient data move between buckets
+
 ## 0.4.3 (2022-06-13)
 
 ### Fix
