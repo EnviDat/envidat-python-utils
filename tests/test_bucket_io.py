@@ -117,6 +117,24 @@ def test_bucket_transfer(bucket, bucket2, create_tempfile):
 
 
 @mock_s3
+def test_bucket_transfer_exists(bucket, bucket2, create_tempfile):
+    bucket.create()
+    bucket2.create()
+
+    with create_tempfile("txt") as upload:
+        filename = upload.name
+
+        success = bucket.upload_file(upload.name, upload.name)
+        assert success is True
+
+        success = bucket2.upload_file(upload.name, upload.name)
+        assert success is True
+
+    success = bucket.transfer(filename, "testing2", filename)
+    assert success is True
+
+
+@mock_s3
 def test_list_all(bucket):
     bucket.create()
 

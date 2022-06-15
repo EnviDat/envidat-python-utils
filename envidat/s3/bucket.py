@@ -419,6 +419,14 @@ class Bucket:
             dest_key = source_key
 
         try:
+            dest_bucket_obj = Bucket(dest_bucket)
+            if dest_bucket_obj.check_file_exists(dest_key):
+                log.info(
+                    f"Key {dest_key} already exists in bucket {dest_bucket}. "
+                    "Skipping copy..."
+                )
+                return True
+
             log.info(
                 f"Transferring key {source_key} from bucket {self.bucket_name} "
                 f"to bucket {dest_bucket} with key {dest_key}"
