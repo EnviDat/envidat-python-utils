@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.5.1 (2022-06-15)
+
+### Fix
+
+- check if key exists in dest bucket, prior to transfer
+
 ## 0.5.0 (2022-06-14)
 
 ### Feat
