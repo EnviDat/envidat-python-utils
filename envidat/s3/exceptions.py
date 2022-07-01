@@ -1,3 +1,5 @@
+"""S3 bucket exceptions wrapper, for error clarity."""
+
 import logging
 
 from botocore.exceptions import ClientError

@@ -1,3 +1,5 @@
+"""Extra utils used internally and within EnviDat projects."""
+
 import logging
 import os
 import sys
@@ -15,7 +17,6 @@ def _debugger_is_active() -> bool:
     Returns:
         bool: if a debug trace is present or not.
     """
-
     gettrace = getattr(sys, "gettrace", lambda: None)
     return gettrace() is not None
 
@@ -27,7 +28,6 @@ def load_dotenv_if_in_debug_mode(env_file: Union[Path, str]) -> NoReturn:
         env_file (Union[Path, str]): String or Path like object pointer to
             secret dot env file to read.
     """
-
     try:
         from dotenv import load_dotenv
     except ImportError as e:
@@ -69,7 +69,6 @@ def get_logger() -> logging.basicConfig:
     Note:
         Defaults to DEBUG level, unless specified by LOG_LEVEL env var.
     """
-
     logging.basicConfig(
         level=os.getenv("LOG_LEVEL", default="DEBUG"),
         format=(
@@ -83,12 +82,11 @@ def get_logger() -> logging.basicConfig:
 
 
 def get_url(url: str) -> requests.Response:
-    """Helper wrapper to get a URL with additional error handling.
+    """Get a URL with additional error handling.
 
     Args:
         url (str): The URL to GET.
     """
-
     try:
         log.debug(f"Attempting to get {url}")
         r = requests.get(url)

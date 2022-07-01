@@ -1,3 +1,5 @@
+"""V1 CKAN based API."""
+
 import logging
 import os
 
@@ -10,6 +12,7 @@ def get_metadata_list(
     host: str = "https://www.envidat.ch", sort_result: bool = None
 ) -> list:
     """Get package/metadata list from API.
+
     Host url as a parameter or from environment.
 
     Args:
@@ -21,7 +24,6 @@ def get_metadata_list(
     Returns:
         list: List of JSON formatted packages.
     """
-
     if "API_HOST" in os.environ:
         log.debug("Getting API host from environment variable.")
         host = os.getenv("API_HOST")
@@ -50,6 +52,7 @@ def get_metadata_list_with_resources(
     host: str = "https://www.envidat.ch", sort_result: bool = None
 ) -> list:
     """Get package/metadata list with associated resources from API.
+
     Host url as a parameter or from environment.
 
     Args:
@@ -64,7 +67,6 @@ def get_metadata_list_with_resources(
     Returns:
         list: List of JSON formatted packages, with nested resources.
     """
-
     if "API_HOST" in os.environ:
         log.debug("Getting API host from environment variable.")
         host = os.getenv("API_HOST")
