@@ -337,3 +337,21 @@ def test_download_dir_with_file_type(bucket, create_tempfile):
 
     key = Path(*Path(csv.name).parts[2:])
     assert status_dict[str("/" / key)] is True
+
+
+@mock_s3
+def test_rename_file(bucket):
+    bucket.create()
+
+    file_text = "test"
+    response = bucket.put("text.txt", file_text)
+    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+    success = bucket.rename_file("text.txt", "text_renamed.txt")
+    assert success is True
+
+    success = bucket.check_file_exists("text.txt")
+    assert success is False
+
+    success = bucket.check_file_exists("text_renamed.txt")
+    assert success is True
