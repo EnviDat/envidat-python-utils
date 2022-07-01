@@ -105,14 +105,15 @@ def test_bucket_transfer(bucket, bucket2, create_tempfile):
 
     with create_tempfile("txt") as upload:
         filename = upload.name
+        key = filename.lstrip("/")
 
-        success = bucket.upload_file(upload.name, upload.name)
+        success = bucket.upload_file(key, filename)
         assert success is True
 
-    success = bucket.transfer(filename, "testing2", f"/newkey/{filename}")
+    success = bucket.transfer(key, "testing2", f"newkey/{key}")
     assert success is True
 
-    exists = bucket2.check_file_exists(f"/newkey/{filename}")
+    exists = bucket2.check_file_exists(f"newkey/{key}")
     assert exists is True
 
 
@@ -251,6 +252,48 @@ def test_upload_dir(bucket, create_tempfile):
     name_list = [f.name for f in [temp1, temp2, temp3, temp4, temp5]]
     for name in name_list:
         assert status_dict[name] is True
+        exists = bucket.check_file_exists(name.split("/tmp/")[1])
+        assert exists
+
+
+@mock_s3
+def test_upload_dir_contents_only(bucket, create_tempfile):
+    bucket.create()
+
+    with TemporaryDirectory() as temp_dir1:
+        with TemporaryDirectory(dir=temp_dir1) as temp_dir2:
+            with TemporaryDirectory(dir=temp_dir2) as temp_dir3:
+                with TemporaryDirectory(dir=temp_dir3) as temp_dir4:
+
+                    temp1 = create_tempfile("txt", temp_dir=temp_dir4, delete=False)
+                    temp2 = create_tempfile("txt", temp_dir=temp_dir4, delete=False)
+                    temp3 = create_tempfile("csv", temp_dir=temp_dir4, delete=False)
+
+                    temp_subdir = TemporaryDirectory(dir=temp_dir4)
+                    temp4 = create_tempfile(
+                        "txt", temp_dir=temp_subdir.name, delete=False
+                    )
+                    temp5 = create_tempfile(
+                        "txt", temp_dir=temp_subdir.name, delete=False
+                    )
+
+                    temp_subdir2 = TemporaryDirectory(dir=temp_dir4)
+                    temp6 = create_tempfile(
+                        "txt", temp_dir=temp_subdir2.name, delete=False
+                    )
+
+                    temp_subdir3 = TemporaryDirectory(dir=temp_subdir2.name)
+                    temp7 = create_tempfile(
+                        "txt", temp_dir=temp_subdir3.name, delete=False
+                    )
+
+                    status_dict = bucket.upload_dir(temp_dir4, contents_only=True)
+
+    name_list = [f.name for f in [temp1, temp2, temp3, temp4, temp5, temp6, temp7]]
+    for name in name_list:
+        assert status_dict[name] is True
+        exists = bucket.check_file_exists(name.split(temp_dir4)[1])
+        assert exists
 
 
 @mock_s3
@@ -270,10 +313,13 @@ def test_upload_dir_with_file_type(bucket, create_tempfile):
         status_dict = bucket.upload_dir(temp_dir, s3_path="/testing", file_type="csv")
 
     assert status_dict[csv.name] is True
+    csv_key = "testing/" + csv.name.split("/tmp/")[1]
+    exists = bucket.check_file_exists(csv_key)
+    assert exists
 
 
 @mock_s3
-def test_download_dir(bucket, create_tempfile):
+def test_download_all(bucket, create_tempfile):
     bucket.create()
 
     with TemporaryDirectory() as upload_dir:
@@ -291,10 +337,12 @@ def test_download_dir(bucket, create_tempfile):
     name_list = [f.name for f in [temp1, temp2, temp3, temp4, temp5]]
     for name in name_list:
         assert status_dict[name] is True
+        exists = bucket.check_file_exists(name.split("/tmp/")[1])
+        assert exists
 
     with TemporaryDirectory() as download_dir:
 
-        status_dict = bucket.download_dir("/", download_dir)
+        status_dict = bucket.download_all(download_dir)
 
         for file in Path(download_dir).glob("**/*"):
             if file.is_file():
@@ -303,7 +351,7 @@ def test_download_dir(bucket, create_tempfile):
 
     for name in name_list:
         key = Path(*Path(name).parts[2:])
-        assert status_dict[str("/" / key)] is True
+        assert status_dict[str(key)] is True
 
 
 @mock_s3
@@ -320,7 +368,7 @@ def test_download_dir_with_file_type(bucket, create_tempfile):
         txt3 = create_tempfile("txt", temp_dir=upload_subdir.name, delete=False)
         txt4 = create_tempfile("txt", temp_dir=upload_subdir.name, delete=False)
 
-        status_dict = bucket.upload_dir(upload_dir)
+        status_dict = bucket.upload_dir(upload_dir, s3_path="/testing")
 
     name_list = [f.name for f in [txt1, txt2, csv, txt3, txt4]]
     for name in name_list:
@@ -328,15 +376,15 @@ def test_download_dir_with_file_type(bucket, create_tempfile):
 
     with TemporaryDirectory() as download_dir:
 
-        status_dict = bucket.download_dir("/", download_dir, file_type="csv")
+        status_dict = bucket.download_dir("/testing", download_dir, file_type="csv")
 
         for file in Path(download_dir).glob("**/*"):
             if file.is_file():
                 with open(file, encoding="UTF-8") as f:
                     assert f.read() == "test"
 
-    key = Path(*Path(csv.name).parts[2:])
-    assert status_dict[str("/" / key)] is True
+    key = "testing" / Path(*Path(csv.name).parts[2:])
+    assert status_dict[str(key)] is True
 
 
 @mock_s3
