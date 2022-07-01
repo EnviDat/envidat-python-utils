@@ -590,17 +590,18 @@ class Bucket:
 
     def upload_dir(
         self,
-        s3_path: str,
         local_dir: Union[str, Path],
+        s3_path: str = None,
         file_type: str = "",
     ) -> bool:
         """
-        Upload an entire local directory to a bucket path.
+        Upload the content of a local directory to a bucket path.
 
         Args:
-            s3_path (str): The path within the bucket to upload to.
             local_dir (Union[str, Path]): Directory to upload files from.
-            file_type (str): Upload files with extension only, e.g. txt.
+            s3_path (str, optional): The path within the bucket to upload to.
+                If omitted, the bucket root is used.
+            file_type (str, optional): Upload files with extension only, e.g. txt.
 
         Returns:
             dict: key:value pair of file_name:upload_status.
@@ -611,10 +612,7 @@ class Bucket:
         local_dir_path = Path(local_dir).resolve()
         log.debug(f"Full directory path to upload: {local_dir_path}")
 
-        parent_parts = local_dir_path.parent.parts
-        log.debug(f"Part directory parts: {parent_parts}")
-        num_parents = len(parent_parts)
-
+        num_subdirs = len(local_dir_path.parent.parts)
         all_subdirs = list(local_dir_path.glob("**"))
 
         for dir_path in all_subdirs:
@@ -627,7 +625,10 @@ class Bucket:
             log.debug(f"Files found: {list(file_names)}")
 
             for i, file_name in enumerate(file_names):
-                s3_key = str(Path(s3_path) / Path(*file_name.parts[num_parents:]))
+                if s3_path is None:
+                    s3_key = "/" + str(Path(*file_name.parts[num_subdirs:]))
+                else:
+                    s3_key = str(Path(s3_path) / Path(*file_name.parts[num_subdirs:]))
                 log.debug(f"S3 key to upload: {s3_key}")
                 status_dict[str(file_name)] = self.upload_file(s3_key, file_name)
 
