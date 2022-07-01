@@ -308,7 +308,7 @@ class Bucket:
         except ClientError as e:
             self._handle_boto3_client_error(e, key=key)
 
-    def delete(self, key: str) -> dict:
+    def delete_file(self, key: str) -> dict:
         """Delete specified object of a given key.
 
         Args:
@@ -655,6 +655,41 @@ class Bucket:
                 )
                 log.debug(f"S3 key to upload: {s3_key}")
                 status_dict[str(file_name)] = self.upload_file(s3_key, file_name)
+
+        return status_dict
+
+    def delete_dir(
+        self,
+        s3_path: str,
+        file_type: str = "",
+    ) -> bool:
+        """
+        Delete an entire S3 path, including subpaths.
+
+        USE WITH CAUTION!
+
+        Args:
+            s3_path (str): The path within the bucket to delete.
+            file_type (str): Delete files with extension only, e.g. txt.
+
+        Returns:
+            dict: key:value pair of s3_key:deletion_status.
+                deletion_status True if deleted, False if failed.
+        """
+        status_dict = {}
+
+        s3_keys = self.list_dir(path=s3_path, recursive=True, file_type=file_type)
+
+        for key in s3_keys:
+            log.info(f"Deleting key: {key}")
+            response = self.delete_file(key)
+
+            if response["ResponseMetadata"]["HTTPStatusCode"] == 204:
+                log.debug("Key successfully deleted.")
+                status_dict[key] = True
+            else:
+                log.debug("Key deletion failed.")
+                status_dict[key] = False
 
         return status_dict
 
