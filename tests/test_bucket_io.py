@@ -67,7 +67,7 @@ def test_bucket_delete(bucket):
     response = bucket.put("text.txt", file_text)
     assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
-    response = bucket.delete("text.txt")
+    response = bucket.delete_file("text.txt")
     assert response["ResponseMetadata"]["HTTPStatusCode"] == 204
 
 
@@ -385,6 +385,57 @@ def test_download_dir_with_file_type(bucket, create_tempfile):
 
     key = "testing" / Path(*Path(csv.name).parts[2:])
     assert status_dict[str(key)] is True
+
+
+@mock_s3
+def test_delete_dir(bucket, create_tempfile):
+    bucket.create()
+
+    with TemporaryDirectory() as temp_dir:
+
+        temp1 = create_tempfile("txt", temp_dir=temp_dir, delete=False)
+        temp_subdir = TemporaryDirectory(dir=temp_dir)
+        temp2 = create_tempfile("txt", temp_dir=temp_subdir.name, delete=False)
+
+        status_dict = bucket.upload_dir(temp_dir)
+
+    name_list = [f.name for f in [temp1, temp2]]
+    for name in name_list:
+        assert status_dict[name] is True
+
+        s3_key = name.split("/tmp/")[1]
+        exists = bucket.check_file_exists(s3_key)
+        assert exists
+    
+    status_dict = bucket.delete_dir(temp_subdir.name.split("/tmp/")[1])
+    assert status_dict[temp2.name.split("/tmp/")[1]] is True
+
+
+@mock_s3
+def test_delete_dir_with_file_type(bucket, create_tempfile):
+    bucket.create()
+
+    with TemporaryDirectory() as temp_dir:
+
+        create_tempfile("txt", temp_dir=temp_dir, delete=False)
+        create_tempfile("txt", temp_dir=temp_dir, delete=False)
+        csv = create_tempfile("csv", temp_dir=temp_dir, delete=False)
+
+        temp_subdir = TemporaryDirectory(dir=temp_dir)
+        create_tempfile("txt", temp_dir=temp_subdir.name, delete=False)
+        create_tempfile("txt", temp_dir=temp_subdir.name, delete=False)
+
+        status_dict = bucket.upload_dir(temp_dir, s3_path="/testing")
+
+    assert status_dict[csv.name] is True
+    csv_key = "testing/" + csv.name.split("/tmp/")[1]
+    exists = bucket.check_file_exists(csv_key)
+    assert exists
+
+    status_dict = bucket.delete_dir("testing", file_type="csv")
+    assert status_dict[csv_key] is True
+    exists = bucket.check_file_exists(csv_key)
+    assert not exists
 
 
 @mock_s3
