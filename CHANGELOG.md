@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.0.1 (2022-07-01)
+
+### Fix
+
+- double slash in path for upload dir with root
+
 ## 1.0.0 (2022-07-01)
 
 ### Fix
