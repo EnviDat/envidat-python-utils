@@ -449,7 +449,7 @@ class Bucket:
         """Get a list of all objects in the bucket.
 
         Returns:
-            list: List of s3.ObjectSummary dicts, containing object metadata.
+            list: All keys in the bucket.
         """
         resource = Bucket.get_boto3_resource()
 
@@ -460,7 +460,7 @@ class Bucket:
             log.debug("Listing all objects in bucket")
             objects = bucket.objects.all()
 
-            file_names = [os.path.splitext(file.key)[0] for file in objects]
+            file_names = [file.key for file in objects]
             log.info(
                 f"Returned {len(file_names)} objects from "
                 f"bucket named {self.bucket_name}"
