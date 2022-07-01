@@ -246,7 +246,7 @@ def test_upload_dir(bucket, create_tempfile):
         temp4 = create_tempfile("txt", temp_dir=temp_subdir.name, delete=False)
         temp5 = create_tempfile("txt", temp_dir=temp_subdir.name, delete=False)
 
-        status_dict = bucket.upload_dir("/", temp_dir)
+        status_dict = bucket.upload_dir(temp_dir)
 
     name_list = [f.name for f in [temp1, temp2, temp3, temp4, temp5]]
     for name in name_list:
@@ -267,7 +267,7 @@ def test_upload_dir_with_file_type(bucket, create_tempfile):
         create_tempfile("txt", temp_dir=temp_subdir.name, delete=False)
         create_tempfile("txt", temp_dir=temp_subdir.name, delete=False)
 
-        status_dict = bucket.upload_dir("/testing", temp_dir, file_type="csv")
+        status_dict = bucket.upload_dir(temp_dir, s3_path="/testing", file_type="csv")
 
     assert status_dict[csv.name] is True
 
@@ -286,7 +286,7 @@ def test_download_dir(bucket, create_tempfile):
         temp4 = create_tempfile("txt", temp_dir=upload_subdir.name, delete=False)
         temp5 = create_tempfile("txt", temp_dir=upload_subdir.name, delete=False)
 
-        status_dict = bucket.upload_dir("/", upload_dir)
+        status_dict = bucket.upload_dir(upload_dir)
 
     name_list = [f.name for f in [temp1, temp2, temp3, temp4, temp5]]
     for name in name_list:
@@ -320,7 +320,7 @@ def test_download_dir_with_file_type(bucket, create_tempfile):
         txt3 = create_tempfile("txt", temp_dir=upload_subdir.name, delete=False)
         txt4 = create_tempfile("txt", temp_dir=upload_subdir.name, delete=False)
 
-        status_dict = bucket.upload_dir("/", upload_dir)
+        status_dict = bucket.upload_dir(upload_dir)
 
     name_list = [f.name for f in [txt1, txt2, csv, txt3, txt4]]
     for name in name_list:
