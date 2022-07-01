@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.0.0 (2022-07-01)
+
+### Fix
+
+- make boto3 logging optional via environment variable
+
 ## 0.6.0 (2022-07-01)
 
 ### Fix
