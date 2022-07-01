@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 0.6.0 (2022-07-01)
+
+### Fix
+
+- fix s3 list_all function returning without file extensions
+
+### Feat
+
+- add rename_file function, fix minor docstring lint errors
+
 ## 0.5.1 (2022-06-15)
 
 ### Fix
