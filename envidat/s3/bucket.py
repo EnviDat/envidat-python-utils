@@ -18,6 +18,10 @@ from envidat.s3 import exceptions
 from envidat.utils import get_url
 
 log = logging.getLogger(__name__)
+if "DEBUG_BOTO" not in os.environ:
+    logging.getLogger("boto3").setLevel(logging.CRITICAL)
+    logging.getLogger("botocore").setLevel(logging.CRITICAL)
+    logging.getLogger("s3transfer").setLevel(logging.CRITICAL)
 
 
 class Bucket:
