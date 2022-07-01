@@ -243,7 +243,7 @@ class Bucket:
             tuple: (data, S3 Metadata dict).
         """
         resource = Bucket.get_boto3_resource()
-        s3_object = resource.Object(self.bucket_name, key)
+        s3_object = resource.Object(self.bucket_name, key.lstrip("/"))
 
         try:
             log.info(f"Getting S3 object with key {key}")
@@ -288,7 +288,7 @@ class Bucket:
             dict: Response dictionary from S3.
         """
         resource = Bucket.get_boto3_resource()
-        s3_object = resource.Object(self.bucket_name, key)
+        s3_object = resource.Object(self.bucket_name, key.lstrip("/"))
 
         try:
             log.info(
@@ -340,7 +340,7 @@ class Bucket:
             bool: True if success, False is failure.
         """
         resource = Bucket.get_boto3_resource()
-        s3_object = resource.Object(self.bucket_name, key)
+        s3_object = resource.Object(self.bucket_name, key.lstrip("/"))
 
         file_path = Path(local_filepath).resolve()
         if not file_path.is_file():
@@ -379,7 +379,7 @@ class Bucket:
             bool: True if success, False is failure.
         """
         resource = Bucket.get_boto3_resource()
-        s3_object = resource.Object(self.bucket_name, key)
+        s3_object = resource.Object(self.bucket_name, key.lstrip("/"))
 
         file_path = Path(local_filepath).resolve()
         if not file_path.parent.is_dir():
@@ -573,7 +573,7 @@ class Bucket:
         status_dict = {}
 
         local_dir_path = Path(local_dir)
-        log.debug(f"Top level directory to download to: {local_dir_path}")
+        log.debug(f"Downloading S3 directory to: {str(local_dir)}")
 
         s3_keys = self.list_dir(path=s3_path, recursive=True, file_type=file_type)
 
@@ -588,11 +588,32 @@ class Bucket:
 
         return status_dict
 
+    def download_all(
+        self,
+        local_dir: Union[str, Path],
+        file_type: str = "",
+    ) -> bool:
+        """
+        Download an entire S3 bucket, including subpaths, to a local directory.
+
+        Args:
+            local_dir (Union[str, Path]): Directory to download files into.
+            file_type (str): Download files with extension only, e.g. txt.
+
+        Returns:
+            dict: key:value pair of s3_key:download_status.
+                download_status True if downloaded, False if failed.
+        """
+        status_dict = self.download_dir("", local_dir, file_type)
+
+        return status_dict
+
     def upload_dir(
         self,
         local_dir: Union[str, Path],
-        s3_path: str = None,
+        s3_path: str = "/",
         file_type: str = "",
+        contents_only: bool = False,
     ) -> bool:
         """
         Upload the content of a local directory to a bucket path.
@@ -602,6 +623,8 @@ class Bucket:
             s3_path (str, optional): The path within the bucket to upload to.
                 If omitted, the bucket root is used.
             file_type (str, optional): Upload files with extension only, e.g. txt.
+            contents_only (bool): Used to copy only the directory contents to the
+                specified path, not the directory itself.
 
         Returns:
             dict: key:value pair of file_name:upload_status.
@@ -610,25 +633,26 @@ class Bucket:
         status_dict = {}
 
         local_dir_path = Path(local_dir).resolve()
-        log.debug(f"Full directory path to upload: {local_dir_path}")
+        log.debug(f"Directory to upload: {local_dir_path}")
 
-        num_subdirs = len(local_dir_path.parent.parts)
-        all_subdirs = list(local_dir_path.glob("**"))
+        all_subdirs = local_dir_path.glob("**")
 
         for dir_path in all_subdirs:
-            log.debug(f"Searching for files in directory: {dir_path}")
 
+            log.debug(f"Searching for files in directory: {dir_path}")
             file_names = dir_path.glob(f"*{('.' + file_type) if file_type else ''}")
 
             # Only return valid files
             file_names = [f for f in file_names if f.is_file()]
             log.debug(f"Files found: {list(file_names)}")
 
-            for i, file_name in enumerate(file_names):
-                if s3_path is None:
-                    s3_key = "/" + str(Path(*file_name.parts[num_subdirs:]))
-                else:
-                    s3_key = str(Path(s3_path) / Path(*file_name.parts[num_subdirs:]))
+            for _, file_name in enumerate(file_names):
+                s3_key = str(
+                    Path(s3_path)
+                    / file_name.relative_to(
+                        local_dir_path if contents_only else local_dir_path.parent
+                    )
+                )
                 log.debug(f"S3 key to upload: {s3_key}")
                 status_dict[str(file_name)] = self.upload_file(s3_key, file_name)
 
@@ -647,7 +671,7 @@ class Bucket:
 
         try:
             log.info(f"Retrieving S3 object metadata with key: {key}")
-            response = client.head_object(Bucket=self.bucket_name, Key=key)
+            response = client.head_object(Bucket=self.bucket_name, Key=key.lstrip("/"))
 
             if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
                 return True
