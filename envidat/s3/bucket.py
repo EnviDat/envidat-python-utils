@@ -1,3 +1,5 @@
+"""S3 bucket helper utilities."""
+
 import json
 import logging
 import mimetypes
@@ -20,6 +22,7 @@ log = logging.getLogger(__name__)
 
 class Bucket:
     """Class to handle S3 bucket transactions.
+
     Handles boto3 exceptions with custom exception classes.
     """
 
@@ -42,7 +45,6 @@ class Bucket:
             is_new (bool): If true, creates a new bucket.
             is_public (bool): If true, makes the bucket public on creation.
         """
-
         if None in [Bucket._AWS_ACCESS_KEY_ID, Bucket._AWS_SECRET_ACCESS_KEY]:
             missing_vars = {"AWS_ACCESS_KEY", "AWS_SECRET_KEY"} - set(os.environ)
             if not missing_vars:
@@ -107,7 +109,6 @@ class Bucket:
     @staticmethod
     def get_boto3_resource() -> NoReturn:
         """Configure boto3 resource object."""
-
         log.debug("Accessing boto3 resource.")
         return boto3.resource(
             "s3",
@@ -121,7 +122,6 @@ class Bucket:
     @staticmethod
     def get_boto3_client() -> NoReturn:
         """Cofigure boto3 client object."""
-
         log.debug("Accessing boto3 client.")
         return boto3.client(
             "s3",
@@ -134,6 +134,7 @@ class Bucket:
 
     def _handle_boto3_client_error(self, e: ClientError, key: str = None) -> NoReturn:
         """Handle boto3 ClientError.
+
         The exception type returned from the server is nested here.
         Refer to exceptions.py
 
@@ -166,7 +167,6 @@ class Bucket:
             is_dir (bool): True if path is a directory.
                 Defaults to False.
         """
-
         msg = (
             f"Referenced {'directory' if is_dir else 'file'} "
             f"not found on disk: {file_path}"
@@ -181,7 +181,6 @@ class Bucket:
             param_name (str): The parameter name.
             value (str): The parameter value.
         """
-
         if value is None:
             msg = f"A value must be set for parameter {param_name}"
         else:
@@ -191,12 +190,12 @@ class Bucket:
 
     def create(self) -> "boto3.resource.Bucket":
         """Create the S3 bucket on the endpoint.
+
         Method may be called directly to manipulate the boto3 Bucket object.
 
         Returns:
             "boto3.resource.Bucket": A boto3 S3 Bucket object.
         """
-
         resource = Bucket.get_boto3_resource()
 
         try:
@@ -226,6 +225,7 @@ class Bucket:
         decode: bool = False,
     ) -> (Any, dict):
         """Get an object from the bucket into a memory object.
+
         Defaults to utf-8 decode, unless specified.
 
         Args:
@@ -238,7 +238,6 @@ class Bucket:
         Returns:
             tuple: (data, S3 Metadata dict).
         """
-
         resource = Bucket.get_boto3_resource()
         s3_object = resource.Object(self.bucket_name, key)
 
@@ -284,7 +283,6 @@ class Bucket:
         Returns:
             dict: Response dictionary from S3.
         """
-
         resource = Bucket.get_boto3_resource()
         s3_object = resource.Object(self.bucket_name, key)
 
@@ -315,7 +313,6 @@ class Bucket:
         Returns:
             dict: Response dictionary from S3.
         """
-
         client = Bucket.get_boto3_client()
 
         try:
@@ -328,6 +325,7 @@ class Bucket:
 
     def upload_file(self, key: str, local_filepath: Union[str, Path]) -> bool:
         """Upload a local file to the bucket.
+
         Transparently manages multipart uploads.
 
         Args:
@@ -337,7 +335,6 @@ class Bucket:
         Returns:
             bool: True if success, False is failure.
         """
-
         resource = Bucket.get_boto3_resource()
         s3_object = resource.Object(self.bucket_name, key)
 
@@ -366,6 +363,7 @@ class Bucket:
 
     def download_file(self, key: str, local_filepath: Union[str, Path]) -> bool:
         """Download S3 object to a local file.
+
         Transparently manages multipart downloads.
 
         Args:
@@ -376,7 +374,6 @@ class Bucket:
         Returns:
             bool: True if success, False is failure.
         """
-
         resource = Bucket.get_boto3_resource()
         s3_object = resource.Object(self.bucket_name, key)
 
@@ -400,6 +397,7 @@ class Bucket:
 
     def transfer(self, source_key: str, dest_bucket: str, dest_key: str = None) -> bool:
         """Fast efficient transfer bucket --> bucket using TransferManager.
+
         This function avoids downloading to memory and uses the underlying
         operations that aws-cli uses to transfer.
 
@@ -412,7 +410,6 @@ class Bucket:
         Returns:
             bool: True if success, False is failure.
         """
-
         client = Bucket.get_boto3_client()
 
         if dest_key is None:
@@ -454,7 +451,6 @@ class Bucket:
         Returns:
             list: List of s3.ObjectSummary dicts, containing object metadata.
         """
-
         resource = Bucket.get_boto3_resource()
 
         try:
@@ -483,6 +479,7 @@ class Bucket:
         names_only: bool = False,
     ) -> list:
         """Get a list of all objects in a specific directory (s3 path).
+
         Returns up to a max of 1000 values.
 
         Args:
@@ -499,7 +496,6 @@ class Bucket:
         Returns:
             list: List of s3.ObjectSummary dicts, containing object metadata.
         """
-
         resource = Bucket.get_boto3_resource()
 
         if path:
@@ -570,7 +566,6 @@ class Bucket:
             dict: key:value pair of s3_key:download_status.
                 download_status True if downloaded, False if failed.
         """
-
         status_dict = {}
 
         local_dir_path = Path(local_dir)
@@ -607,7 +602,6 @@ class Bucket:
             dict: key:value pair of file_name:upload_status.
                 upload_status True if uploaded, False if failed.
         """
-
         status_dict = {}
 
         local_dir_path = Path(local_dir).resolve()
@@ -644,7 +638,6 @@ class Bucket:
         Returns:
             bool: True if exists, False if not.
         """
-
         client = Bucket.get_boto3_client()
 
         try:
@@ -666,6 +659,41 @@ class Bucket:
 
             self._handle_boto3_client_error(e, key=key)
 
+    def rename_file(self, key: str, dest_key: str) -> bool:
+        """Rename a file in a bucket, i.e. move then delete source.
+
+        Args:
+            key (str): The key, i.e. path within the bucket.
+            dest_key (str): The key destination to move to.
+
+        Returns:
+            bool: True if success, False if skipped or failure.
+        """
+        resource = Bucket.get_boto3_resource()
+
+        try:
+            if not self.check_file_exists(key):
+                log.info("File does not exist, cannot rename.")
+                return False
+
+            log.info(f"Copying file: {key} to destination: {dest_key}")
+            response = resource.Object(self.bucket_name, dest_key).copy_from(
+                CopySource={"Bucket": self.bucket_name, "Key": key}
+            )
+            log.debug(f"Copy file response: {response}")
+
+            if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+                log.info(f"Deleting original file: {key}")
+                resource.Object(self.bucket_name, key).delete()
+                return True
+
+            else:
+                log.error(f"Copying file {key} failed. Aborting deletion")
+                return False
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e, key=key)
+
     def clean_multiparts(self) -> bool:
         """
         Clean up failed multipart uploads in a bucket.
@@ -674,7 +702,6 @@ class Bucket:
             dict: key:value pair of s3_multipart_key:clean_status.
                 clean_status True if removed, False if failed.
         """
-
         status_dict = {}
         success_counter = 0
         failure_counter = 0
@@ -737,7 +764,6 @@ class Bucket:
         Returns:
             bool: True if success, False is failure.
         """
-
         client = Bucket.get_boto3_client()
 
         try:
@@ -799,7 +825,6 @@ class Bucket:
         Returns:
             dict: Response dictionary from index file upload.
         """
-
         if isinstance(file_list, str):
             log.debug(f"Converting string file_list into list: {file_list}")
             file_list = [file_list]
@@ -856,7 +881,6 @@ class Bucket:
         Returns:
             dict: Response dictionary containing CORS config.
         """
-
         client = Bucket.get_boto3_client()
 
         try:
@@ -885,7 +909,6 @@ class Bucket:
         Returns:
             bool: True if success, False is failure.
         """
-
         if allow_all is False and origins is None:
             log.debug("No origins provided and allow_all not set. Skipping")
             self._raise_parameter_error("origins", origins)
