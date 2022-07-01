@@ -406,7 +406,7 @@ def test_delete_dir(bucket, create_tempfile):
         s3_key = name.split("/tmp/")[1]
         exists = bucket.check_file_exists(s3_key)
         assert exists
-    
+
     status_dict = bucket.delete_dir(temp_subdir.name.split("/tmp/")[1])
     assert status_dict[temp2.name.split("/tmp/")[1]] is True
 

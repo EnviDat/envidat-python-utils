@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.0.2 (2022-07-01)
+
+### Fix
+
+- add s3 delete_dir functionality
+- s3 issues with dir funcs, strip preceeding slash, add download_all
+
 ## 1.0.1 (2022-07-01)
 
 ### Fix
