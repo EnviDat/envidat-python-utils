@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.0.3 (2022-07-12)
+
+### Fix
+
+- logger year format to 4 digit, for clarity in logs
+
 ## 1.0.2 (2022-07-01)
 
 ### Fix
