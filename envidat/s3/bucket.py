@@ -6,7 +6,7 @@ import mimetypes
 import os
 from io import BytesIO
 from pathlib import Path
-from textwrap import dedent
+from textwrap import dedent, indent
 from typing import Any, NoReturn, Union
 
 import boto3
@@ -906,7 +906,7 @@ class Bucket:
             <body>
             """
         ).strip()
-        log.debug(f"Writing start HTML block to buffer: {html_block}")
+        log.debug(f"Writing start HTML block to buffer: {indent(html_block, '  ')}")
         buf.write(html_block.encode("utf_8"))
 
         # Files
@@ -921,7 +921,7 @@ class Bucket:
                 </a>
                 </div>"""
             )
-            log.debug(f"Writing file link HTML to buffer: {html_block}")
+            log.debug(f"Writing file link HTML to buffer: {indent(html_block, '  ')}")
             buf.write(html_block.encode("utf_8"))
 
         # Close
@@ -930,7 +930,7 @@ class Bucket:
             </body>
             </html>"""
         )
-        log.debug(f"Writing end HTML block to buffer: {html_block}")
+        log.debug(f"Writing end HTML block to buffer: {indent(html_block, '  ')}")
         buf.write(html_block.encode("utf_8"))
 
         buf.seek(0)
