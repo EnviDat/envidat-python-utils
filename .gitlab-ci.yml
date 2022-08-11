@@ -2,6 +2,13 @@ stages:
   - test
   - deploy
 
+workflow:
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "main"
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: always
+
 run-tests:
   stage: test
   image: python:3.9
