@@ -74,6 +74,7 @@ def get_metadata_list_with_resources(
     log.info(f"Getting package list with resources from {host}.")
     try:
         package_names_with_resources = get_url(
+            # TODO possible add this string as an environment variable
             f"{host}/api/3/action/current_package_list_with_resources?limit=100000"
         ).json()
     except AttributeError as e:
@@ -94,5 +95,43 @@ def get_metadata_list_with_resources(
         package_names_with_resources = sorted(
             package_names_with_resources, key=lambda x: x["name"], reverse=False
         )
+
+    return package_names_with_resources
+
+
+def get_metadata_json_with_resources(
+        host: str = "https://www.envidat.ch"
+) -> str:
+    """Get package/metadata as string in JSON format with associated resources from API.
+
+    Host url as a parameter or from environment.
+
+    Args:
+        host (str): API host url. Attempts to get from environment if omitted.
+            Defaults to https://www.envidat.ch.
+    Note:
+        Limits results to 100000, otherwise returns only 10 results.
+
+    Returns:
+        string:  String of JSON formatted packages, with nested resources.
+    """
+    if "API_HOST" in os.environ:
+        log.debug("Getting API host from environment variable.")
+        host = os.getenv("API_HOST")
+
+    log.info(f"Getting package list with resources from {host}.")
+    try:
+        package_names_with_resources = get_url(
+            # TODO possible add this string as an environment variable
+            f"{host}/api/3/action/current_package_list_with_resources?limit=100000"
+        ).json()
+    except AttributeError as e:
+        log.error(e)
+        log.error(
+            "Getting package names with resources from API failed. "
+            f"Returned: {package_names_with_resources}"
+        )
+        raise AttributeError("Failed to extract package names as JSON.")
+
 
     return package_names_with_resources
