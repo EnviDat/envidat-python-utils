@@ -68,10 +68,10 @@ def get_metadata_json_with_resources(
     Returns:
         string:  String of JSON formatted packages, with nested resources.
     """
-    if "API_HOST" in os.environ and "API_PATH" in os.environ:
+    if "API_HOST" in os.environ and "API_PATH_CURRENT_PACKAGE_LIST_WITH_RESOURCES" in os.environ:
         log.debug("Getting API host and path from environment variables.")
         host = os.getenv("API_HOST")
-        path = os.getenv("API_PATH")
+        path = os.getenv("API_PATH_CURRENT_PACKAGE_LIST_WITH_RESOURCES")
 
     log.info(f"Getting package list with resources from {host}.")
     try:
