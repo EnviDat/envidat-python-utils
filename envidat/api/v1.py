@@ -52,21 +52,21 @@ def get_metadata_list(
 
 # TODO determine how to obtain id_kwarg argument from prop in metadata detail page vue component
 def get_package(
-        id_kwarg: str,
+        package_name: str,
         host: str = "https://www.envidat.ch",
         path: str = "/api/action/package_show?id="
-) -> str:
-    """Get individual package (metadata entry) as string in JSON format with associated resources from API.
+) -> dict:
+    """Get individual package (metadata entry) as dictionary from API.
 
     Args:
-        id_kwarg (str): API package 'name' or 'id' value.
+        package_name (str): API package 'name' or 'id' value.
         host: (str): API host url. Attempts to get from environment if omitted.
             Defaults to https://www.envidat.ch
         path (str): API host path. Attempts to get from environment if omitted.
             Defaults to api/action/package_show?id=
 
     Returns:
-        string: String of JSON format package
+        dict: Dictionary of package (metadata entry).
     """
     if "API_HOST" in os.environ and "API_PACKAGE_SHOW" in os.environ:
         log.debug("Getting API host and path from environment variables.")
@@ -75,7 +75,9 @@ def get_package(
 
     log.info(f"Getting package from {host}.")
     try:
-        package = get_url(f'{host}{path}{id_kwarg}').json()
+        # Extract result dictionary from API call
+        json_data = get_url(f'{host}{path}{package_name}').json()
+        package = json_data['result']
     except AttributeError as e:
         log.error(e)
         log.error("Getting package from API failed.")
@@ -87,8 +89,8 @@ def get_package(
 def get_metadata_json_with_resources(
         host: str = "https://www.envidat.ch",
         path: str = "/api/3/action/current_package_list_with_resources?limit=100000"
-) -> str:
-    """Get all current package/metadata as string in JSON format with associated resources from API.
+) -> dict:
+    """Get all current package/metadata as dictionary with associated resources from API.
 
     Args:
         host (str): API host url. Attempts to get from environment if omitted.
@@ -100,7 +102,7 @@ def get_metadata_json_with_resources(
         Limits results to 100000, otherwise returns only 10 results.
 
     Returns:
-        string:  String of JSON formatted packages, with nested resources.
+        dict:  Dictionary of packages, with nested resources.
     """
     if "API_HOST" in os.environ and "API_PATH_CURRENT_PACKAGE_LIST_WITH_RESOURCES" in os.environ:
         log.debug("Getting API host and path from environment variables.")
@@ -131,7 +133,7 @@ def get_metadata_list_with_resources(
         Limits results to 100000, otherwise returns only 10 results.
 
     Returns:
-        list: List of JSON formatted packages, with nested resources.
+        list: List of packages, with nested resources.
     """
 
     # Get package/metadata as string in JSON format with associated resources from API

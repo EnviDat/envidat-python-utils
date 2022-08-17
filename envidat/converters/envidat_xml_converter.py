@@ -1,5 +1,7 @@
 """Converter: EnviDat API Format to XML Format"""
 
+# TODO update documentation of functions in GitLab
+
 import logging
 from xmltodict import unparse
 from envidat.api.v1 import get_metadata_json_with_resources
@@ -29,4 +31,3 @@ def envidat_to_xml_converter() -> str:
     except Exception as e:
         log.error("ERROR: Cannot convert EnviDat packages to XML format.")
         log.error(e)
-
