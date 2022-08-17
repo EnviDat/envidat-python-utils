@@ -1,5 +1,7 @@
 """V1 CKAN based API."""
 
+# TODO update documentation of functions in GitLab
+
 import logging
 import os
 
@@ -48,17 +50,49 @@ def get_metadata_list(
     return package_names
 
 
+# TODO determine how to obtain id_kwarg argument from prop in metadata detail page vue component
+def get_package(
+        id_kwarg: str,
+        host: str = "https://www.envidat.ch",
+        path: str = "/api/action/package_show?id="
+) -> str:
+    """Get individual package (metadata entry) as string in JSON format with associated resources from API.
+
+    Args:
+        id_kwarg (str): API package 'name' or 'id' value.
+        host: (str): API host url. Attempts to get from environment if omitted.
+            Defaults to https://www.envidat.ch
+        path (str): API host path. Attempts to get from environment if omitted.
+            Defaults to api/action/package_show?id=
+
+    Returns:
+        string: String of JSON format package
+    """
+    if "API_HOST" in os.environ and "API_PACKAGE_SHOW" in os.environ:
+        log.debug("Getting API host and path from environment variables.")
+        host = os.getenv("API_HOST")
+        path = os.getenv("API_PACKAGE_SHOW")
+
+    log.info(f"Getting package from {host}.")
+    try:
+        package = get_url(f'{host}{path}{id_kwarg}').json()
+    except AttributeError as e:
+        log.error(e)
+        log.error("Getting package from API failed.")
+        raise AttributeError("Failed to extract package as JSON.")
+
+    return package
+
+
 def get_metadata_json_with_resources(
         host: str = "https://www.envidat.ch",
         path: str = "/api/3/action/current_package_list_with_resources?limit=100000"
 ) -> str:
-    """Get package/metadata as string in JSON format with associated resources from API.
-
-    Host url as a parameter or from environment.
+    """Get all current package/metadata as string in JSON format with associated resources from API.
 
     Args:
         host (str): API host url. Attempts to get from environment if omitted.
-            Defaults to https://www.envidat.ch.
+            Defaults to https://www.envidat.ch
         path (str): API host path. Attempts to get from environment if omitted.
             Defaults to /api/3/action/current_package_list_with_resources?limit=100000
 
@@ -75,12 +109,10 @@ def get_metadata_json_with_resources(
 
     log.info(f"Getting package list with resources from {host}.")
     try:
-        package_names_with_resources = get_url(f"{host}/{path}").json()
+        package_names_with_resources = get_url(f"{host}{path}").json()
     except AttributeError as e:
         log.error(e)
-        log.error(
-            "Getting package names with resources from API failed. "
-        )
+        log.error("Getting package names with resources from API failed.")
         raise AttributeError("Failed to extract package names as JSON.")
 
     return package_names_with_resources
@@ -89,7 +121,7 @@ def get_metadata_json_with_resources(
 def get_metadata_list_with_resources(
         sort_result: bool = None
 ) -> list:
-    """Get package/metadata as list of results with associated resources from API.
+    """Get all current package/metadata as list of results with associated resources from API.
 
     Args:
         sort_result (bool): Sort result alphabetically by metadata name.
