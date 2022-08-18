@@ -26,15 +26,11 @@ class Iso19139Converter:
         self.schema = schema
 
     def convert(self, package_name: str):
-
         # Try to convert package dictionary to XML compatible with ISO19139 standard format
         try:
             package = get_package(package_name)  # Get package dictionary from API
             converted_dict = self._iso_convert_dataset(package)  # Convert package to OrderedDict
             converted_package = unparse(converted_dict, pretty=True)  # Convert OrderedDict to XML
-            # Compare output with current API using https://www.textcompare.org/xml/
-            with open('test.xml', 'w', encoding="utf-8") as package_xml:
-                package_xml.write(converted_package)
             return converted_package
         except AttributeError as e:
             log.error(e)
@@ -485,8 +481,3 @@ class Iso19139Converter:
             }
         }
         return online_resource_dataset
-
-
-# TESTS
-# iso_converter = Iso19139Converter()
-# iso_converter.convert('preprocessing-antarctic-weather-station-aws-data-in-python')
