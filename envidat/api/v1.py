@@ -1,9 +1,11 @@
 """V1 CKAN based API."""
 
 # TODO update documentation of functions in GitLab
+# TODO test functions to make sure they can read environment variables
 
 import logging
 import os
+from typing import Tuple
 
 from envidat.utils import get_url
 
@@ -50,6 +52,30 @@ def get_metadata_list(
     return package_names
 
 
+def get_protocol_and_domain(
+        protocol: str = "https",
+        domain: str = "www.envidat.ch"
+) -> Tuple[str, str]:
+    """Returns tuple with protocol string and domain string from API host.
+
+    Args:
+        protocol (str): API host protocol. Attempts to get from environment if omitted.
+            Defaults to https
+        domain (str): API host domain. Attempts to get from environment if omitted.
+            Defaults to www.envidat.ch
+
+    Returns:
+        tuple (<str: protocol>, <str: domain>): Protocol and domain from API host.
+    """
+    if "API_HOST" in os.environ:
+        host = os.getenv("API_HOST")
+        protocol = host.partition('://')[0]
+        domain = host.partition('://')[2]
+        return protocol, domain
+
+    return protocol, domain
+
+
 # TODO determine how to obtain id_kwarg argument from prop in metadata detail page vue component
 def get_package(
         package_name: str,
@@ -60,7 +86,7 @@ def get_package(
 
     Args:
         package_name (str): API package 'name' or 'id' value.
-        host: (str): API host url. Attempts to get from environment if omitted.
+        host (str): API host url. Attempts to get from environment if omitted.
             Defaults to https://www.envidat.ch
         path (str): API host path. Attempts to get from environment if omitted.
             Defaults to api/action/package_show?id=
