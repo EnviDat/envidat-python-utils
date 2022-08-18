@@ -1,35 +1,23 @@
-# import ckanext
-#
-# import ckan.lib.helpers as helpers
-# import ckan.plugins.toolkit as toolkit
-#
-# from ckanext.package_converter.model.metadata_format import MetadataFormats
-# from ckanext.package_converter.model.converter import BaseConverter
-# from ckanext.package_converter.model.record import Record, JSONRecord, XMLRecord
-
 import collections
 from xmltodict import unparse
+from urllib.parse import urlparse
 import json
 from dateutil.parser import parse
 import string
 import copy
 
-from envidat.api.v1 import get_package
+from envidat.api.v1 import get_package, get_protocol_and_domain
 
 from logging import getLogger
 
 log = getLogger(__name__)
 
 
-# TODO finish refactoring class Iso19139Converter from original version that depended on CKAN
-
 # TODO document class and functions with strings compatible with auto generated documentation
+
+
 # This converter is only valid for the metadata schema for EnviDat
 class Iso19139Converter:
-
-    # def __init__(self):
-    # iso_output_format = MetadataFormats().get_metadata_formats('iso19139')[0]
-    # BaseConverter.__init__(self, iso_output_format)
 
     def __init__(self,
                  namespace='http://www.isotc211.org/2005/gmd',
@@ -37,46 +25,23 @@ class Iso19139Converter:
         self.namespace = namespace
         self.schema = schema
 
-    def convert(self,
-                package_name: str):
+    def convert(self, package_name: str):
 
-        # Get package result dictionary from API
-        package = get_package(package_name)
-
-        # Try to convert JSON package to XML compatible with ISO19139 standard format
+        # Try to convert package dictionary to XML compatible with ISO19139 standard format
         try:
-            # TODO change _iso_convert_dataset() to return converted content as Python dictionary
-            # package_dict = json.load(package)
-            converted_dict = self._iso_convert_dataset(package)
-            pass
+            package = get_package(package_name)  # Get package dictionary from API
+            converted_dict = self._iso_convert_dataset(package)  # Convert package to OrderedDict
+            converted_package = unparse(converted_dict, pretty=True)  # Convert OrderedDict to XML
+            # Compare output with current API using https://www.textcompare.org/xml/
+            with open('test.xml', 'w', encoding="utf-8") as package_xml:
+                package_xml.write(converted_package)
+            return converted_package
         except AttributeError as e:
             log.error(e)
             log.error("Cannot convert package to ISO19139 format.")
             raise AttributeError("Failed to convert package to ISO19139 format.")
 
-        # TODO parse to XML format
-
-        return
-
-        # if self.can_convert(record):
-        #     dataset_dict = record.get_json_dict()
-        #     converted_content = self._iso_convert_dataset(dataset_dict)
-        #     converted_record = XMLRecord.from_record(Record(self.output_format, converted_content))
-        #     # log.debug(" **** Validating record..." + str(converted_record.validate()) + ' ****')
-        #     return converted_record
-        # else:
-        #     raise TypeError(('Converter is not compatible with the record format {record_format}({record_version}). ' +
-        #                      'Accepted format is CKAN {input_format}.').format(
-        #         record_format=record.get_metadata_format().get_format_name(),
-        #         record_version=record.get_metadata_format().get_version(),
-        #         input_format=self.get_input_format().get_format_name()))
-
-    # def __unicode__(self):
-    #     return super(Iso19139Converter, self).__unicode__() + u'ISO19139 Converter '
-
-
-    def _iso_convert_dataset(self,
-                             dataset_dict: dict):
+    def _iso_convert_dataset(self, dataset_dict: dict):
 
         extras_dict = self._extras_as_dict(dataset_dict.get('extras', {}))
 
@@ -223,7 +188,7 @@ class Iso19139Converter:
         # graphic overview (TODO)
 
         # keywords (type default to theme)
-        keywords = self.get_keywords(dataset_dict)
+        keywords = self._get_keywords(dataset_dict)
         if keywords:
             keyword_type = {'gmd:MD_KeywordTypeCode': {'@codeListValue': 'theme',
                                                        '@codeList': 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode'}}
@@ -317,7 +282,7 @@ class Iso19139Converter:
                     'gmd:EX_BoundingPolygon': {'gmd:polygon': {'gml:MultiPoint': multi_point_element}}}
             else:
                 coordinates = spatial.get('coordinates', [])[0]
-                if self.is_a_box(coordinates):
+                if self._is_a_box(coordinates):
                     bounding_box = collections.OrderedDict()
                     bounding_box['gmd:westBoundLongitude'] = {
                         'gco:Decimal': str(min(coordinates[0][0], coordinates[2][0]))}
@@ -366,47 +331,52 @@ class Iso19139Converter:
         md_metadata_dict['gmd:distributionInfo'] = collections.OrderedDict()
         md_metadata_dict['gmd:distributionInfo']['gmd:MD_Distribution'] = md_data_dist
 
-        # print(md_metadata_dict)
-        # return md_metadata_dict
+        # Dataset url as information
+        protocol, host = get_protocol_and_domain()
+        package_name = dataset_dict.get('name', '')
+        package_url = f'{protocol}://{host}/dataset/{package_name}'
 
         # transfer options
-        # online_resources = []
-        #
-        # # dataset url as information
-        # protocol, host = helpers.get_site_protocol_and_host()
-        # package_url = protocol + '://' + host + toolkit.url_for(controller='dataset', action='read',
-        #                                                         id=dataset_dict.get('name', ''))
-        # online_resource_dataset = self.get_online_resource(package_url, 'dataset metadata', 'information')
-        # online_resources += [online_resource_dataset]
+        online_resources = []
+        online_resource_dataset = self._get_online_resource(package_url, 'dataset metadata', 'information')
+        online_resources += [online_resource_dataset]
 
-        # # loop through resources
-        # for resource in dataset_dict.get('resources', []):
-        #     resource_name = resource.get('name', resource.get('id', 'DATASET RESOURCE'))
-        #     resource_url = resource.get('url', toolkit.url_for(controller='resource', action='read',
-        #                                                        id=dataset_dict.get('id', ''),
-        #                                                        resource_id=resource.get('id', '')))
-        #     # check if restricted
-        #     if not helpers.is_url(resource_url):
-        #         log.debug('resource is restricted: ' + resource_name)
-        #         resource_url = package_url + '/resource/' + resource.get('id', '')
-        #
-        #     log.debug([resource_url, resource_name])
-        #     online_resource = self.get_online_resource(resource_url, resource_name)
-        #     online_resources += [online_resource]
+        # loop through resources
+        for resource in dataset_dict.get('resources', []):
 
-    #     # assign to parent
-    #     md_metadata_dict['gmd:distributionInfo']['gmd:MD_Distribution']['gmd:transferOptions'] = {
-    #         'gmd:MD_DigitalTransferOptions': {'gmd:onLine': online_resources}}
-    #
-    #     # Root element
-    #     iso_dict = collections.OrderedDict()
-    #     iso_dict['gmd:MD_Metadata'] = md_metadata_dict
-    #
-    #     # Convert to xml
-    #     converted_package = unparse(iso_dict, pretty=True)
-    #
-    #     return converted_package
-    #
+            resource_name = resource.get('name', resource.get('id', 'DATASET RESOURCE'))
+            resource_id = resource.get('id', '')
+            resource_url = resource.get('url', '')
+
+            # check if restricted
+            if not self._is_url(str(resource_url)):
+                log.debug(f'resource is restricted: {resource_name}')
+                resource_url = f'{package_url}/{resource}/{resource_id}'
+
+            log.debug([resource_url, resource_name])
+            online_resource = self._get_online_resource(resource_url, resource_name)
+            online_resources += [online_resource]
+
+        # assign to parent
+        md_metadata_dict['gmd:distributionInfo']['gmd:MD_Distribution']['gmd:transferOptions'] = {
+            'gmd:MD_DigitalTransferOptions': {'gmd:onLine': online_resources}}
+
+        # Root element
+        iso_dict = collections.OrderedDict()
+        iso_dict['gmd:MD_Metadata'] = md_metadata_dict
+
+        return iso_dict
+
+    # Replicates functionality of CKAN method ckan.lib.helpers.is_url()
+    # Returns True if argument parses as a http, https or ftp URL; else returns False
+    @staticmethod
+    def _is_url(url_str):
+        parts = urlparse(url_str)
+        scheme = parts.scheme
+        if scheme in ['http', 'https', 'ftp']:
+            return True
+        return False
+
     def _get_or_missing(self, data_dict, tag, ignore_case=False):
         if ignore_case:
             if self._get_ignore_case(data_dict, tag):
@@ -417,7 +387,8 @@ class Iso19139Converter:
 
         return {'gco:CharacterString': '', '@gco:nilReason': "missing"}
 
-    def _get_ignore_case(self, data_dict, tag, ignore_blanks=True):
+    @staticmethod
+    def _get_ignore_case(data_dict, tag, ignore_blanks=True):
         tag_lower = tag.lower()
         if ignore_blanks:
             tag_lower = tag_lower.replace(' ', '')
@@ -432,15 +403,15 @@ class Iso19139Converter:
         return data_dict.get(tag_key)
 
     # Translate to 3-letter code http://www.loc.gov/standards/iso639-2/ISO-639-2_utf-8.txt
-    def _get_iso_language_code(self, code):
+    @staticmethod
+    def _get_iso_language_code(code):
         lookup_dict = {'en': 'eng', 'de': 'ger', 'it': 'ita', 'fr': 'fre', 'ro': 'roh'}
         return lookup_dict.get(code, 'eng').title()
 
-
     # Take date of type Available or the publication year
-    def _get_publication_date(self, data_dict):
+    @staticmethod
+    def _get_publication_date(data_dict):
         publication_date = ''
-        dates = []
         try:
             dates = json.loads(data_dict.get('date', '[]'))
         except:
@@ -454,7 +425,8 @@ class Iso19139Converter:
         return publication_date
 
     # Make capcase code
-    def _cap_code(self, text):
+    @staticmethod
+    def _cap_code(text):
         if text:
             text = text.strip()
             if text.find(' ') >= 0 and len(text) >= 3:
@@ -466,14 +438,16 @@ class Iso19139Converter:
         return text
 
     # extras as a simple dictionary
-    def _extras_as_dict(self, extras):
+    @staticmethod
+    def _extras_as_dict(extras):
         extras_dict = {}
         for extra in extras:
             extras_dict[extra.get('key')] = extra.get('value')
         return extras_dict
 
     # checks spatially if the polygon is a box
-    def is_a_box(self, coordinates):
+    @staticmethod
+    def _is_a_box(coordinates):
         if len(coordinates) == 5:
             if coordinates[0] == coordinates[4]:
                 if ((coordinates[1] == [coordinates[0][0], coordinates[2][1]]) and
@@ -484,31 +458,35 @@ class Iso19139Converter:
         return False
 
     # extract keywords from tags
-    def get_keywords(self, data_dict):
+    @staticmethod
+    def _get_keywords(data_dict):
         keywords = []
         for tag in data_dict.get('tags', []):
             name = tag.get('display_name', '').upper()
             keywords += [{'gco:CharacterString': name}]
         return keywords
 
-    # # Create a online resource digital transfer element
-    # def get_online_resource(self, url, name, function='download'):
-    #     protocol = url.split(':')[0]
-    #
-    #     online_resource_dataset = {'gmd:CI_OnlineResource': collections.OrderedDict()}
-    #
-    #     online_resource_dataset['gmd:CI_OnlineResource']['gmd:linkage'] = {'gmd:URL': url}
-    #     online_resource_dataset['gmd:CI_OnlineResource']['gmd:protocol'] = {'gco:CharacterString': protocol.upper()}
-    #     online_resource_dataset['gmd:CI_OnlineResource']['gmd:name'] = {'gco:CharacterString': name.upper()}
-    #     online_resource_dataset['gmd:CI_OnlineResource']['gmd:function'] = {'gmd:CI_OnLineFunctionCode':
-    #         {
-    #             '@codeList': "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_OnLineFunctionCode",
-    #             '@codeListValue': function,
-    #             '#text': function}}
-    #     return online_resource_dataset
+    # Create a online resource digital transfer element
+    @staticmethod
+    def _get_online_resource(url, name, function='download'):
+        protocol = url.split(':')[0]
+
+        online_resource_dataset = {'gmd:CI_OnlineResource': collections.OrderedDict()}
+
+        online_resource_dataset['gmd:CI_OnlineResource']['gmd:linkage'] = {'gmd:URL': url}
+        online_resource_dataset['gmd:CI_OnlineResource']['gmd:protocol'] = {'gco:CharacterString': protocol.upper()}
+        online_resource_dataset['gmd:CI_OnlineResource']['gmd:name'] = {'gco:CharacterString': name.upper()}
+        online_resource_dataset['gmd:CI_OnlineResource']['gmd:function'] = {
+            'gmd:CI_OnLineFunctionCode':
+            {
+                '@codeList': "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_OnLineFunctionCode",
+                '@codeListValue': function,
+                '#text': function
+            }
+        }
+        return online_resource_dataset
 
 
 # TESTS
 # iso_converter = Iso19139Converter()
-# # print(iso_converter.convert('preprocessing-antarctic-weather-station-aws-data-in-python'))
-# print(iso_converter.convert('preprocessing-antarctic-weather-station-aws-data-in-python'))
+# iso_converter.convert('preprocessing-antarctic-weather-station-aws-data-in-python')
