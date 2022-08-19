@@ -170,7 +170,7 @@ def get_metadata_list_with_resources(
     package_names_with_resources = list(package_names_with_resources["result"])
     log.info(f"Returned {len(package_names_with_resources)} metadata entries from API.")
 
-    # If sort_result true sort by name key alpahebetically
+    # If sort_result true sort by name key alphabetically
     if sort_result:
         log.debug("Sorting return by nested 'name' key alphabetically.")
         package_names_with_resources = sorted(
