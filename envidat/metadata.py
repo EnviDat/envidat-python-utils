@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import NoReturn
+from typing import Literal, NoReturn, Union
 
 from envidat.api.v1 import get_metadata_list_with_resources, get_package
 from envidat.converters.iso import convert_iso
@@ -11,14 +11,24 @@ from envidat.converters.xml import convert_xml
 log = logging.getLogger(__name__)
 
 
+def validate_json(json_data):
+    """Test if JSON parses and is valid."""
+    try:
+        json.loads(json_data)
+    except ValueError:
+        return False
+    return True
+
+
 class Record:
     """Class manipulate an EnviDat record in various ways."""
 
+    content = None
+
     def __init__(
         self,
-        package_json: str = None,
-        package_dict: dict = None,
-        package_name: str = None,
+        input_data: Union[str, dict],
+        extract: Literal["str", "xml", "iso"] = None,
     ) -> NoReturn:
         """
         Init the Record object.
@@ -26,42 +36,53 @@ class Record:
         Only one argument should be passed for data format.
 
         Args:
-            package_json (str): JSON input.
-            package_dict (dict): dictionary input.
-            package_name (str): package name input string, calls API for JSON.
+            input_data [str, dict]: Data input, in JSON or dict form.
+                Can also accept a package name to extract a record from the API.
+            extract ["str", "xml", "iso"]: Extract the content immediately,
+                converted to specified type.
         """
-        # if package_json and package_dict and package_name:
-        #     raise TypeError(
-        #         "Only one argument can be used from:"
-        #         " package_json, package_dict, package_name"
-        #     )
+        if isinstance(input_data, dict):
+            log.debug("Dictionary input provided, reading as JSON")
+            self.content = json.dumps(input, indent=4)
 
-        if package_json:
-            self.content = package_json
+        elif isinstance(input_data, str):
+            if validate_json(input_data):
+                log.debug("Valid input JSON parsed")
+                self.content = input_data
+            else:
+                log.debug("Attempting to get package JSON from API")
+                self.content = get_package(input_data)
 
-        if package_dict:
-            self.content = json.dumps(package_dict, indent=4)
+        else:
+            log.error("Input is not a valid type from (str,dict)")
+            raise TypeError("Input must be of type string or dict")
 
-        if package_name:
-            self.content = get_package(package_name)
+        if extract:
+            mapping = {
+                "str": self.to_string,
+                "xml": self.to_xml,
+                "iso": self.to_iso,
+            }
+            mapping[extract]()
+            return self.get_content()
 
-    def get_content(self):
+    def get_content(self) -> str:
         """Get current content of Record."""
         return self.content
 
-    def validate(self):
+    def validate(self) -> bool:
         """Validate JSON record."""
-        pass
+        return validate_json(self.input)
 
-    def to_string(self):
+    def to_string(self) -> str:
         """Convert content to string."""
         return json.dumps(self.content)
 
-    def to_xml(self):
+    def to_xml(self) -> str:
         """Convert content to XML record."""
         return convert_xml(self.content)
 
-    def to_iso(self):
+    def to_iso(self) -> str:
         """Convert content to ISO record."""
         return convert_iso(self.content)
 
