@@ -57,6 +57,7 @@ class Record:
             log.error("Input is not a valid type from (str,dict)")
             raise TypeError("Input must be of type string or dict")
 
+        # TODO refactor so that desired format is returned after calling conversion functions below
         if extract:
             mapping = {
                 "str": self.to_string,
@@ -64,7 +65,9 @@ class Record:
                 "iso": self.to_iso,
             }
             mapping[extract]()
-            return self.get_content()
+            # Commented out line below because it causes this error:
+            # # TypeError: __init__() should return None, not 'str'
+            # return self.get_content()
 
     def get_content(self) -> str:
         """Get current content of Record."""
