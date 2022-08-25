@@ -5,8 +5,8 @@ import logging
 from typing import Literal, NoReturn, Union
 
 from envidat.api.v1 import get_metadata_list_with_resources, get_package
-from envidat.converters.iso import convert_iso
-from envidat.converters.xml import convert_xml
+from envidat.converters.iso_converter import convert_iso
+from envidat.converters.xml_converter import convert_xml
 
 log = logging.getLogger(__name__)
 
