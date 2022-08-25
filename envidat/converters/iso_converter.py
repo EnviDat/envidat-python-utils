@@ -13,12 +13,18 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-# TODO document class and functions with strings compatible with auto generated documentation
-
-
-# This converter is only valid for the metadata schema for EnviDat
-# Convert package dictionary to XML compatible with ISO19139 standard format
 def convert_iso(package_json: str) -> str:
+    """Returns XML formatted string compatible with ISO19139 standard
+
+    Note: Converter is only valid for the metadata schema for EnviDat
+
+    Args:
+        package_json (str): Individual EnviDat metadata entry record in JSON format.
+
+    Returns:
+        str: XML formatted string compatible with ISO9139 standard.
+
+    """
     try:
         package_dict = json.loads(package_json)   # Convert package JSON to dictionary
         converted_dict = iso_convert_dataset(package_dict)  # Convert package dictionary to OrderedDict
@@ -31,7 +37,6 @@ def convert_iso(package_json: str) -> str:
 
 
 def iso_convert_dataset(dataset_dict: dict):
-    extras_dict = extras_as_dict(dataset_dict.get('extras', {}))
 
     md_metadata_dict = collections.OrderedDict()
 
@@ -142,6 +147,9 @@ def iso_convert_dataset(dataset_dict: dict):
     # abstract
     md_data_id['gmd:abstract'] = {
         'gco:CharacterString': dataset_dict.get('notes', '').replace('\n', ' ').replace('\r', ' ')}
+
+    # Get extras_dict
+    extras_dict = extras_as_dict(dataset_dict.get('extras', {}))
 
     # purpose (only in extras)
     purpose = get_ignore_case(extras_dict, 'purpose')

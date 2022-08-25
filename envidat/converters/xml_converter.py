@@ -1,6 +1,5 @@
 """Converter: EnviDat API Format to XML Format"""
 
-# TODO update documentation of functions in GitLab
 
 import logging
 from xmltodict import unparse
