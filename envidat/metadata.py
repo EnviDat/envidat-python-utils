@@ -43,7 +43,7 @@ class Record:
         """
         if isinstance(input_data, dict):
             log.debug("Dictionary input provided, reading as JSON")
-            self.content = json.dumps(input, indent=4)
+            self.content = json.dumps(input_data, indent=4)
 
         elif isinstance(input_data, str):
             if validate_json(input_data):
@@ -107,9 +107,9 @@ def get_all_metadata_as_record_list(as_xml: bool = False, as_iso: bool = False) 
     record_list = []
     for json_entry in metadata:
         if as_xml:
-            record_list.append(Record(package_json=json_entry).to_xml())
+            record_list.append(Record(input_data=json_entry).to_xml())
         elif as_iso:
-            record_list.append(Record(package_json=json_entry).to_iso())
+            record_list.append(Record(input_data=json_entry).to_iso())
         else:
-            record_list.append(Record(package_json=json_entry))
+            record_list.append(Record(input_data=json_entry))
     return record_list
