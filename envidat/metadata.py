@@ -6,6 +6,7 @@ from typing import Literal, NoReturn, Union
 
 from envidat.api.v1 import get_metadata_list_with_resources, get_package
 from envidat.converters.bibtex_converter import convert_bibtex
+from envidat.converters.dif_converter import convert_dif
 from envidat.converters.iso_converter import convert_iso
 from envidat.converters.ris_converter import convert_ris
 from envidat.converters.xml_converter import convert_xml
@@ -99,6 +100,10 @@ class Record:
     def to_bibtex(self):
         """Convert content to BibTeX format."""
         return convert_bibtex(self.content)
+
+    def to_dif(self):
+        """Convert content to GCMD DIF 10.2 format."""
+        return convert_dif(self.content)
 
 
 def get_all_metadata_as_record_list(as_xml: bool = False, as_iso: bool = False) -> list:
