@@ -6,7 +6,9 @@ from typing import Literal, NoReturn, Union
 
 from envidat.api.v1 import get_metadata_list_with_resources, get_package
 from envidat.converters.iso_converter import convert_iso
+from envidat.converters.ris_converter import convert_ris
 from envidat.converters.xml_converter import convert_xml
+
 
 log = logging.getLogger(__name__)
 
@@ -88,6 +90,10 @@ class Record:
     def to_iso(self) -> str:
         """Convert content to ISO record."""
         return convert_iso(self.content)
+
+    def to_ris(self):
+        """Convert content to RIS format."""
+        return convert_ris(self.content)
 
 
 def get_all_metadata_as_record_list(as_xml: bool = False, as_iso: bool = False) -> list:

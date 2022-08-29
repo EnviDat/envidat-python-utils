@@ -14,9 +14,9 @@ log = getLogger(__name__)
 
 
 def convert_iso(package_json: str) -> str:
-    """Returns XML formatted string compatible with ISO19139 standard
+    """Returns XML formatted string compatible with ISO19139 standard.
 
-    Note: Converter is only valid for the metadata schema for EnviDat
+    Note: Converter is only valid for the metadata schema for EnviDat.
 
     Args:
         package_json (str): Individual EnviDat metadata entry record in JSON format.
