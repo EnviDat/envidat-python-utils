@@ -8,5 +8,8 @@ record1 = Record(input_data=test_package, extract='iso')
 # result_iso = record1.to_iso()
 # print(result_iso)
 
-result_ris = record1.to_ris()
-print(result_ris)
+# result_ris = record1.to_ris()
+# print(result_ris)
+
+result_bibtex = record1.to_bibtex()
+print(result_bibtex)
