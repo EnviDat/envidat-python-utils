@@ -3,7 +3,8 @@ from envidat.metadata import Record
 from envidat.api.v1 import get_package
 
 test_package = get_package('number_of_forest_plots-125')
-record1 = Record(input_data=test_package, extract='iso')
+# record1 = Record(input_data=test_package, extract='iso')
+record1 = Record(input_data=test_package)
 
 test_package_2 = get_package('seilaplan-tutorial-dhm-kacheln-zusammenfugen')
 record2 = Record(input_data=test_package_2)
@@ -22,3 +23,9 @@ record2 = Record(input_data=test_package_2)
 
 # result_dif_2 = record2.to_dif()
 # print(result_dif_2)
+
+result_datacite = record1.to_datacite()
+print(result_datacite)
+
+result_datacite_2 = record2.to_datacite()
+print(result_datacite_2)
