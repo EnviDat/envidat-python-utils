@@ -1,4 +1,3 @@
-
 # TODO WIP finish refactoring and segregating DataCite package converter from CKAN
 
 
@@ -103,10 +102,8 @@ FIELD_NAME = 'field_name'
 #             log.debug('Cannot map single value for ' + format_tag)
 #
 #         return (value)
-#
-#     def _joinTags(self, tag_list, sep='.'):
-#         return (sep.join([tag for tag in tag_list if tag]))
-#
+
+
 #     def _get_complex_mapped_value(self, group_tag, element_tag, field_tags, dataset_dict, metadata_map):
 #         values_list = []
 #         # Simple fields
@@ -179,8 +176,8 @@ def convert_datacite(package_json: str) -> str:
         """
     try:
         package_dict = json.loads(package_json)  # Convert package JSON to dictionary
-        # converted_dict = datacite_convert_dataset(package_dict)  # Convert package to OrderedDict
-        return package_dict
+        converted_dict = datacite_convert_dataset(package_dict)  # Convert package to OrderedDict
+        return converted_dict
     except ValueError as e:
         log.error(e)
         log.error("Cannot convert package to DataCite format.")
@@ -259,23 +256,33 @@ def datacite_convert_dataset(dataset_dict: dict):
     # datacite_dict['resource']['@xmlns'] = '{namespace}'.format(namespace=self.output_format.get_namespace())
     datacite_dict['resource']['@xmlns:xsi'] = 'http://www.w3.org/2001/XMLSchema-instance'
 
-    # TODO get DOI from dataset_dict, assign '' as default value
     # Identifier*
-    # datacite_identifier_tag = 'identifier'
+    datacite_identifier_tag = 'identifier'
+    doi = dataset_dict.get('doi', '')
     # datacite_dict['resource'][datacite_identifier_tag] = {
     #     '#text': self._get_single_mapped_value(datacite_identifier_tag, dataset_dict, metadata_map),
     #     '@identifierType': 'DOI'}
+    datacite_dict['resource'][datacite_identifier_tag] = {
+        '#text': doi,
+        '@identifierType': 'DOI'}
 
-#     # Creators
-#     datacite_creators_tag = 'creators'
-#     datacite_creator_tag = 'creator'
-#
-#     datacite_creator_subfields = ['creatorName', 'givenName', 'familyName', 'affiliation', 'nameIdentifier',
-#                                   'nameIdentifier.nameIdentifierScheme']
-#
-#     datacite_dict['resource'][datacite_creators_tag] = {datacite_creator_tag: []}
-#     ckan_creators = self._get_complex_mapped_value(datacite_creators_tag, datacite_creator_tag,
-#                                                    datacite_creator_subfields, dataset_dict, metadata_map)
+    # Creators
+    datacite_creators_tag = 'creators'
+    datacite_creator_tag = 'creator'
+
+    datacite_creator_subfields = ['creatorName', 'givenName', 'familyName', 'affiliation', 'nameIdentifier',
+                                  'nameIdentifier.nameIdentifierScheme']
+
+    datacite_dict['resource'][datacite_creators_tag] = {datacite_creator_tag: []}
+
+    # authors = get_complex_mapped_value(datacite_creators_tag, datacite_creator_tag,
+    #                                                datacite_creator_subfields, dataset_dict, metadata_map)
+    authors = dataset_dict.get('author', [])
+    try:
+        authors_list = json.loads(authors)
+    except ValueError:
+        authors_list = []
+
 #     for ckan_creator in ckan_creators:
 #         datacite_creator = collections.OrderedDict()
 #
@@ -300,13 +307,37 @@ def datacite_convert_dataset(dataset_dict: dict):
 #         datacite_creator['affiliation'] = ckan_creator.get(self._joinTags([datacite_creator_tag, 'affiliation']),
 #                                                            '')
 #         datacite_dict['resource'][datacite_creators_tag][datacite_creator_tag] += [datacite_creator]
-#
-#     # Titles*
-#     datacite_titles_tag = 'titles'
-#     datacite_title_tag = 'title'
-#     datacite_xml_lang_tag = 'xml:lang'
-#     datacite_dict['resource'][datacite_titles_tag] = {datacite_title_tag: []}
-#     datacite_title_type_tag = 'titleType'
+    for author in authors_list:
+
+        datacite_creator = collections.OrderedDict()
+
+        creator_family_name = author.get('name', '')
+        creator_given_name = author.get('given_name', '')
+
+        if creator_given_name:
+            datacite_creator['givenName'] = creator_given_name
+            datacite_creator['familyName'] = creator_family_name
+            datacite_creator['creatorName'] = f'{creator_given_name} {creator_family_name}'
+        else:
+            datacite_creator['creatorName'] = creator_family_name
+
+        creator_identifier = author.get('identifier', '')
+        if creator_identifier:
+            datacite_creator['nameIdentifier'] = {
+                '#text': creator_identifier,
+                '@nameIdentifierScheme': 'ORCHID'
+            }
+
+        datacite_creator['affiliation'] = author.get('affiliation', '')
+
+        datacite_dict['resource'][datacite_creators_tag][datacite_creator_tag] += [datacite_creator]
+
+    # Titles*
+    datacite_titles_tag = 'titles'
+    datacite_title_tag = 'title'
+    datacite_xml_lang_tag = 'xml:lang'
+    datacite_dict['resource'][datacite_titles_tag] = {datacite_title_tag: []}
+    datacite_title_type_tag = 'titleType'
 #     ckan_titles = self._get_complex_mapped_value(datacite_titles_tag, datacite_title_tag,
 #                                                  ['', datacite_title_type_tag, datacite_xml_lang_tag], dataset_dict,
 #                                                  metadata_map)
@@ -319,6 +350,7 @@ def datacite_convert_dataset(dataset_dict: dict):
 #             datacite_title['@' + datacite_title_type_tag] = self._valueToDataciteCV(ckan_title_type,
 #                                                                                     datacite_title_type_tag)
 #         datacite_dict['resource'][datacite_titles_tag][datacite_title_tag] += [datacite_title]
+    # TODO refactor title logic
 #
 #     # Publication year*
 #     datacite_publication_year_tag = 'publicationYear'
@@ -717,3 +749,93 @@ def datacite_convert_dataset(dataset_dict: dict):
 #         else:
 #             output_list += self._flatten_list(item, reverse)
 #     return output_list
+
+def join_tags(tag_list, sep='.'):
+    return sep.join([tag for tag in tag_list if tag])
+
+
+def get_complex_mapped_value(group_tag, element_tag, field_tags, dataset_dict, metadata_map):
+
+    values_list = []
+
+    # Simple fields
+    simple_fields_object = collections.OrderedDict()
+    for field in field_tags:
+        simple_field_tag = join_tags([element_tag, field])
+        group_field_tag = join_tags([group_tag, simple_field_tag])
+
+        ckan_tag = metadata_map.get(group_field_tag, {FIELD_NAME: ''})[FIELD_NAME]
+        value = dataset_dict.get(ckan_tag, '')
+        if value:
+            simple_fields_object[simple_field_tag] = value
+    if simple_fields_object:
+        values_list += [simple_fields_object]
+
+    # Composite ( repeating )
+    ckan_tag = metadata_map.get(group_tag, {FIELD_NAME: ''})[FIELD_NAME]
+    ckan_subfields = metadata_map.get(group_tag, {'subfields': []})['subfields']
+
+    if dataset_dict.get(ckan_tag, ''):
+        try:
+            json_field = dataset_dict[ckan_tag]
+            if type(json_field) not in [list, dict]:
+                json_field = json.loads(json_field)
+            if type(json_field) is not list:
+                json_field = [json_field]
+            for ckan_element in json_field:
+                composite_object = collections.OrderedDict()
+                for field in field_tags:
+                    field_tag = join_tags([element_tag, field])
+                    ckan_subfield_tag = ckan_subfields.get(field_tag, {FIELD_NAME: ''})[FIELD_NAME]
+                    if not isinstance(ckan_subfield_tag, list):
+                        subfield_value = ckan_element.get(ckan_subfield_tag, '')
+                    else:
+                        subfield_value = []
+                        for ckan_subfield_tag_item in ckan_subfield_tag:
+                            extra_value = ckan_element.get(ckan_subfield_tag_item, '')
+                            if extra_value:
+                                subfield_value += [extra_value]
+                    if subfield_value:
+                        composite_object[field_tag] = subfield_value
+                if composite_object:
+                    values_list += [composite_object]
+        except ValueError:
+            log.debug('Cannot get composite value: (' + ', '.join(
+                [group_tag, element_tag] + field_tags) + '): ' + ckan_tag)
+
+    return values_list
+
+
+def map_fields(schema, format_name):
+    map_dict = {}
+    for field in schema:
+        format_field = ''
+        if field.get(format_name, False):
+            format_field = field[format_name]
+            map_dict[format_field] = {FIELD_NAME: field[FIELD_NAME], 'subfields': {}}
+        for subfield in field.get('subfields', []):
+            if subfield.get(format_name, False):
+                format_subfield = subfield[format_name]
+                if format_field:
+                    if not map_dict[format_field]['subfields'].get(format_subfield, False):
+                        map_dict[format_field]['subfields'][format_subfield] = {
+                            FIELD_NAME: subfield[FIELD_NAME]}
+                    else:
+                        value = map_dict[format_field]['subfields'][format_subfield][FIELD_NAME]
+                        if isinstance(value, list):
+                            map_dict[format_field]['subfields'][format_subfield] = {
+                                FIELD_NAME: value + [subfield[FIELD_NAME]]}
+                        else:
+                            map_dict[format_field]['subfields'][format_subfield] = {
+                                FIELD_NAME: [value, subfield[FIELD_NAME]]}
+                else:
+                    map_dict[format_subfield] = {FIELD_NAME: field[FIELD_NAME] + '.' + subfield[FIELD_NAME]}
+    return map_dict
+
+
+def get_schema_map(format_name):
+    schema = helpers.scheming_get_schema('dataset', 'dataset')
+    schema_map = {'format_name': format_name,
+                  'metadata': map_fields(schema['dataset_fields'], format_name),
+                  'metadata_resource': map_fields(schema['resource_fields'], format_name)}
+    return schema_map
