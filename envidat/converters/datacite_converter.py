@@ -199,70 +199,32 @@ def convert_datacite(package_json: str) -> str:
     #         input_format=self.get_input_format().get_format_name(), input_version=self.input_format.get_version()))
 
 
-def _valueToDataciteCV(self, value, datacite_tag, default=''):
-    # Constant definitions
-    datacite_cv = {}
-    datacite_cv['titleType'] = {'alternativetitle': 'AlternativeTitle', 'subtitle': 'Subtitle',
-                                'translatedtitle': 'TranslatedTitle', 'other': 'Other'}
-    datacite_cv['resourceTypeGeneral'] = {'audiovisual': 'Audiovisual', 'collection': 'Collection',
-                                          'dataset': 'Dataset', 'event': 'Event', 'image': 'Image',
-                                          'interactiveresource': 'InteractiveResource', 'model': 'Model',
-                                          'physicalobject': 'PhysicalObject',
-                                          'service': 'Service', 'software': 'Software', 'sound': 'Sound',
-                                          'text': 'Text', 'workflow': 'Workflow', 'other': 'Other'}
-    datacite_cv['descriptionType'] = {'abstract': 'Abstract', 'methods': 'Methods',
-                                      'seriesinformation': 'SeriesInformation',
-                                      'tableofcontents': 'TableOfContents', 'other': 'Other'}
-    datacite_cv['contributorType'] = {'contactperson': 'ContactPerson', 'datacollector': 'DataCollector',
-                                      'datacurator': 'DataCurator', 'datamanager': 'DataManager',
-                                      'distributor': 'Distributor', 'editor': 'Editor', 'funder': 'Funder',
-                                      'hostinginstitution': 'HostingInstitution', 'other': 'Other',
-                                      'producer': 'Producer', 'projectleader': 'ProjectLeader',
-                                      'projectmanager': 'ProjectManager', 'projectmember': 'ProjectMember',
-                                      'registrationagency': 'RegistrationAgency',
-                                      'registrationauthority': 'RegistrationAuthority',
-                                      'relatedperson': 'RelatedPerson',
-                                      'researchgroup': 'ResearchGroup', 'rightsholder': 'RightsHolder',
-                                      'researcher': 'Researcher',
-                                      'sponsor': 'Sponsor', 'supervisor': 'Supervisor',
-                                      'workpackageleader': 'WorkPackageLeader'}
-    datacite_cv['rightsIdentifier'] = {'odc-odbl': 'ODbL-1.0', 'cc-by-sa': 'CC-BY-SA-4.0',
-                                       'cc-by-nc': 'CC-BY-NC-4.0'}
-
-    # Matching ignoring blanks, case, symbols
-    value_to_match = value.lower().replace(' ', '').replace('_', '')
-    match_cv = datacite_cv.get(datacite_tag, {}).get(value_to_match, default)
-
-    return (match_cv)
-
-
-def datacite_convert_dataset(dataset_dict: dict):
-
+def datacite_convert_dataset(dataset: dict):
     # schema_map = self._get_schema_map(self.output_format.get_format_name().split('_')[0])
     # metadata_map = schema_map['metadata']
     # metadata_resource_map = schema_map['metadata_resource']
 
-    datacite_dict = collections.OrderedDict()
+    datacite = collections.OrderedDict()
 
     # Header
-    datacite_dict['resource'] = collections.OrderedDict()
-    # datacite_dict['resource']['@xsi:schemaLocation'] = '{namespace} {schema}'.format(
+    datacite['resource'] = collections.OrderedDict()
+    # datacite['resource']['@xsi:schemaLocation'] = '{namespace} {schema}'.format(
     #     namespace=self.output_format.get_namespace(),
     #     schema=self.output_format.get_xsd_url())
     namespace = 'http://datacite.org/schema/kernel-4'
     schema = 'http://schema.datacite.org/meta/kernel-4.4/metadata.xsd'
-    datacite_dict['resource']['@xsi:schemaLocation'] = f'{namespace} {schema}'
-    datacite_dict['resource']['@xmlns'] = f'{namespace}'
-    # datacite_dict['resource']['@xmlns'] = '{namespace}'.format(namespace=self.output_format.get_namespace())
-    datacite_dict['resource']['@xmlns:xsi'] = 'http://www.w3.org/2001/XMLSchema-instance'
+    datacite['resource']['@xsi:schemaLocation'] = f'{namespace} {schema}'
+    datacite['resource']['@xmlns'] = f'{namespace}'
+    # datacite['resource']['@xmlns'] = '{namespace}'.format(namespace=self.output_format.get_namespace())
+    datacite['resource']['@xmlns:xsi'] = 'http://www.w3.org/2001/XMLSchema-instance'
 
     # Identifier*
     datacite_identifier_tag = 'identifier'
-    doi = dataset_dict.get('doi', '')
-    # datacite_dict['resource'][datacite_identifier_tag] = {
-    #     '#text': self._get_single_mapped_value(datacite_identifier_tag, dataset_dict, metadata_map),
+    doi = dataset.get('doi', '')
+    # datacite['resource'][datacite_identifier_tag] = {
+    #     '#text': self._get_single_mapped_value(datacite_identifier_tag, dataset, metadata_map),
     #     '@identifierType': 'DOI'}
-    datacite_dict['resource'][datacite_identifier_tag] = {
+    datacite['resource'][datacite_identifier_tag] = {
         '#text': doi,
         '@identifierType': 'DOI'}
 
@@ -755,8 +717,43 @@ def join_tags(tag_list, sep='.'):
     return sep.join([tag for tag in tag_list if tag])
 
 
-def get_complex_mapped_value(group_tag, element_tag, field_tags, dataset_dict, metadata_map):
+def value_to_datacite_cv(value, datacite_tag, default=''):
+    # Constant definitions
+    datacite_cv = {'titleType': {'alternativetitle': 'AlternativeTitle', 'subtitle': 'Subtitle',
+                                 'translatedtitle': 'TranslatedTitle', 'other': 'Other'},
+                   'resourceTypeGeneral': {'audiovisual': 'Audiovisual', 'collection': 'Collection',
+                                           'dataset': 'Dataset', 'event': 'Event', 'image': 'Image',
+                                           'interactiveresource': 'InteractiveResource', 'model': 'Model',
+                                           'physicalobject': 'PhysicalObject',
+                                           'service': 'Service', 'software': 'Software', 'sound': 'Sound',
+                                           'text': 'Text', 'workflow': 'Workflow', 'other': 'Other'},
+                   'descriptionType': {'abstract': 'Abstract', 'methods': 'Methods',
+                                       'seriesinformation': 'SeriesInformation',
+                                       'tableofcontents': 'TableOfContents', 'other': 'Other'},
+                   'contributorType': {'contactperson': 'ContactPerson', 'datacollector': 'DataCollector',
+                                       'datacurator': 'DataCurator', 'datamanager': 'DataManager',
+                                       'distributor': 'Distributor', 'editor': 'Editor', 'funder': 'Funder',
+                                       'hostinginstitution': 'HostingInstitution', 'other': 'Other',
+                                       'producer': 'Producer', 'projectleader': 'ProjectLeader',
+                                       'projectmanager': 'ProjectManager', 'projectmember': 'ProjectMember',
+                                       'registrationagency': 'RegistrationAgency',
+                                       'registrationauthority': 'RegistrationAuthority',
+                                       'relatedperson': 'RelatedPerson',
+                                       'researchgroup': 'ResearchGroup', 'rightsholder': 'RightsHolder',
+                                       'researcher': 'Researcher',
+                                       'sponsor': 'Sponsor', 'supervisor': 'Supervisor',
+                                       'workpackageleader': 'WorkPackageLeader'},
+                   'rightsIdentifier': {'odc-odbl': 'ODbL-1.0', 'cc-by-sa': 'CC-BY-SA-4.0',
+                                        'cc-by-nc': 'CC-BY-NC-4.0'}}
 
+    # Matching ignoring blanks, case, symbols
+    value_to_match = value.lower().replace(' ', '').replace('_', '')
+    match_cv = datacite_cv.get(datacite_tag, {}).get(value_to_match, default)
+
+    return match_cv
+
+
+def get_complex_mapped_value(group_tag, element_tag, field_tags, dataset, metadata_map):
     values_list = []
 
     # Simple fields
