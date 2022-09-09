@@ -67,11 +67,11 @@ FIELD_NAME = 'field_name'
 #                       'metadata_resource': _map_fields(schema['resource_fields'], format_name)}
 #         return schema_map
 #
-#     def _get_single_mapped_value(self, format_tag, dataset_dict, metadata_map, default=''):
+#     def _get_single_mapped_value(self, format_tag, dataset, metadata_map, default=''):
 #
 #         # standard field
 #         ckan_tag = metadata_map.get(format_tag, {FIELD_NAME: ''})[FIELD_NAME]
-#         value = dataset_dict.get(ckan_tag, '')
+#         value = dataset.get(ckan_tag, '')
 #
 #         # repeating (get first)
 #         if value:
@@ -87,7 +87,7 @@ FIELD_NAME = 'field_name'
 #             field = ckan_tag.split('.', 1)[0]
 #             subfield = ckan_tag.split('.', 1)[1]
 #             try:
-#                 json_field = dataset_dict[field]
+#                 json_field = dataset[field]
 #                 if type(json_field) not in [list, dict]:
 #                     json_field = json.loads(json_field)
 #                 if type(json_field) is list:
@@ -104,7 +104,7 @@ FIELD_NAME = 'field_name'
 #         return (value)
 
 
-#     def _get_complex_mapped_value(self, group_tag, element_tag, field_tags, dataset_dict, metadata_map):
+#     def _get_complex_mapped_value(self, group_tag, element_tag, field_tags, dataset, metadata_map):
 #         values_list = []
 #         # Simple fields
 #         simple_fields_object = collections.OrderedDict()
@@ -113,7 +113,7 @@ FIELD_NAME = 'field_name'
 #             group_field_tag = self._joinTags([group_tag, simple_field_tag])
 #
 #             ckan_tag = metadata_map.get(group_field_tag, {FIELD_NAME: ''})[FIELD_NAME]
-#             value = dataset_dict.get(ckan_tag, '')
+#             value = dataset.get(ckan_tag, '')
 #             if value:
 #                 simple_fields_object[simple_field_tag] = value
 #         if simple_fields_object:
@@ -125,9 +125,9 @@ FIELD_NAME = 'field_name'
 #         ckan_tag = metadata_map.get(group_tag, {FIELD_NAME: ''})[FIELD_NAME]
 #         ckan_subfields = metadata_map.get(group_tag, {'subfields': []})['subfields']
 #
-#         if dataset_dict.get(ckan_tag, ''):
+#         if dataset.get(ckan_tag, ''):
 #             try:
-#                 json_field = dataset_dict[ckan_tag]
+#                 json_field = dataset[ckan_tag]
 #                 if type(json_field) not in [list, dict]:
 #                     json_field = json.loads(json_field)
 #                 if type(json_field) is not list:
@@ -175,18 +175,18 @@ def convert_datacite(package_json: str) -> str:
 
         """
     try:
-        package_dict = json.loads(package_json)  # Convert package JSON to dictionary
-        converted_dict = datacite_convert_dataset(package_dict)  # Convert package to OrderedDict
-        return converted_dict
+        package = json.loads(package_json)  # Convert package JSON to dictionary
+        converted_package = datacite_convert_dataset(package)  # Convert package to OrderedDict
+        return converted_package
     except ValueError as e:
         log.error(e)
         log.error("Cannot convert package to DataCite format.")
         raise ValueError("Failed to convert package to DataCite format.")
 
     # if self.can_convert(record):
-    #     dataset_dict = record.get_json_dict()
-    #     # log.debug('dataset_dict = ' + repr(dataset_dict))
-    #     converted_content = self._datacite_converter_schema(dataset_dict)
+    #     dataset = record.get_json_dict()
+    #     # log.debug('dataset = ' + repr(dataset))
+    #     converted_content = self._datacite_converter_schema(dataset)
     #     converted_record = Record(self.output_format, converted_content)
     #     converted_xml_record = XMLRecord.from_record(converted_record)
     #     # log.debug("Validating record..." + str(converted_xml_record.validate()))
@@ -402,7 +402,7 @@ def datacite_convert_dataset(dataset_dict: dict):
 #                                       'contributorType', 'nameIdentifier', 'nameIdentifier.nameIdentifierScheme']
 #     datacite_contributors = []
 #     ckan_contributors = self._get_complex_mapped_value(datacite_contributors_tag, datacite_contributor_tag,
-#                                                        datacite_contributor_subfields, dataset_dict, metadata_map)
+#                                                        datacite_contributor_subfields, dataset, metadata_map)
 #     for ckan_contributor in ckan_contributors:
 #         datacite_contributor = collections.OrderedDict()
 #
@@ -431,65 +431,66 @@ def datacite_convert_dataset(dataset_dict: dict):
 #             self._joinTags([datacite_contributor_tag, 'affiliation']), '')
 #         ckan_contributor_type = ckan_contributor.get(self._joinTags([datacite_contributor_tag, 'contributorType']),
 #                                                      'ContactPerson')
-#         datacite_contributor['@contributorType'] = self._valueToDataciteCV(ckan_contributor_type, 'contributorType')
+#         datacite_contributor['@contributorType'] = self.value_to_datacite_cv(ckan_contributor_type, 'contributorType')
 #         datacite_contributors += [datacite_contributor]
-#
+
 #     if datacite_contributors:
-#         datacite_dict['resource'][datacite_contributors_tag] = {datacite_contributor_tag: datacite_contributors}
+#         datacite['resource'][datacite_contributors_tag] = {datacite_contributor_tag: datacite_contributors}
 #
+    # TODO refactor dates
 #     # Dates
 #     datacite_dates_tag = 'dates'
 #     datacite_date_tag = 'date'
 #     datacite_date_type_tag = 'dateType'
 #     datacite_dates = []
 #     ckan_dates = self._get_complex_mapped_value(datacite_dates_tag, datacite_date_tag, ['', datacite_date_type_tag],
-#                                                 dataset_dict, metadata_map)
+#                                                 dataset, metadata_map)
 #     for ckan_date in ckan_dates:
 #         datacite_date = {'#text': ckan_date.get(datacite_date_tag, ''),
 #                          '@' + datacite_date_type_tag: ckan_date.get(
 #                              self._joinTags([datacite_date_tag, datacite_date_type_tag]), 'Valid').title()}
 #         datacite_dates += [datacite_date]
 #     if datacite_dates:
-#         datacite_dict['resource'][datacite_dates_tag] = {datacite_date_tag: datacite_dates}
+#         datacite['resource'][datacite_dates_tag] = {datacite_date_tag: datacite_dates}
 #
 #     # Language
 #     datacite_language_tag = 'language'
-#     datacite_dict['resource'][datacite_language_tag] = {
-#         '#text': self._get_single_mapped_value(datacite_language_tag, dataset_dict, metadata_map, 'en')}
+#     datacite['resource'][datacite_language_tag] = {
+#         '#text': self._get_single_mapped_value(datacite_language_tag, dataset, metadata_map, 'en')}
 #
 #     # ResourceType
 #     datacite_resource_type_tag = 'resourceType'
 #     datacite_resource_type_general_tag = 'resourceTypeGeneral'
 #     ckan_resource_type = self._get_complex_mapped_value('', datacite_resource_type_tag,
-#                                                         ['', datacite_resource_type_general_tag], dataset_dict,
+#                                                         ['', datacite_resource_type_general_tag], dataset,
 #                                                         metadata_map)
 #     if ckan_resource_type:
 #         ckan_resource_type_general = ckan_resource_type[0].get(
 #             self._joinTags([datacite_resource_type_tag, datacite_resource_type_general_tag]))
-#         datacite_resource_type_general = self._valueToDataciteCV(ckan_resource_type_general,
+#         datacite_resource_type_general = self.value_to_datacite_cv(ckan_resource_type_general,
 #                                                                  datacite_resource_type_general_tag,
 #                                                                  default='Dataset')
-#         datacite_dict['resource'][datacite_resource_type_tag] = {
+#         datacite['resource'][datacite_resource_type_tag] = {
 #             '#text': ckan_resource_type[0].get(datacite_resource_type_tag, ''),
 #             '@' + datacite_resource_type_general_tag: datacite_resource_type_general}
 #
 #     # Alternate Identifier (CKAN URL)
-#     ckan_package_url = config.get('ckan.site_url', '') + '/dataset/' + dataset_dict.get('name')
-#     ckan_package_url_id = config.get('ckan.site_url', '') + '/dataset/' + dataset_dict.get('id')
+#     ckan_package_url = config.get('ckan.site_url', '') + '/dataset/' + dataset.get('name')
+#     ckan_package_url_id = config.get('ckan.site_url', '') + '/dataset/' + dataset.get('id')
 #
-#     datacite_dict['resource']['alternateIdentifiers'] = {
+#     datacite['resource']['alternateIdentifiers'] = {
 #         'alternateIdentifier': [{'#text': ckan_package_url, '@alternateIdentifierType': 'URL'},
 #                                 {'#text': ckan_package_url_id, '@alternateIdentifierType': 'URL'}]}
 #     # legacy
-#     if dataset_dict.get('url', ''):
-#         datacite_dict['resource']['alternateIdentifiers']['alternateIdentifier'] += [
-#             {'#text': dataset_dict.get('url', ''), '@alternateIdentifierType': 'URL'}]
+#     if dataset.get('url', ''):
+#         datacite['resource']['alternateIdentifiers']['alternateIdentifier'] += [
+#             {'#text': dataset.get('url', ''), '@alternateIdentifierType': 'URL'}]
 #
 #     # Related identifiers (related_datasets)
 #     # relatedIdentifiers
 #     # relatedIdentifier relatedIdentifierType="URL or DOI" relationType="Cites"
 #
-#     related_datasets = dataset_dict.get('related_datasets', '')
+#     related_datasets = dataset.get('related_datasets', '')
 #     if related_datasets:
 #         datacite_related_urls = collections.OrderedDict()
 #         datacite_related_urls['relatedIdentifier'] = []
@@ -519,13 +520,13 @@ def datacite_convert_dataset(dataset_dict: dict):
 #                         {'#text': related_url, '@relatedIdentifierType': 'URL', '@relationType': 'Cites'}]
 #
 #         if len(datacite_related_urls['relatedIdentifier']) > 0:
-#             datacite_dict['resource']['relatedIdentifiers'] = datacite_related_urls
+#             datacite['resource']['relatedIdentifiers'] = datacite_related_urls
 #
 #     # Sizes (not defined in scheming, taken from default CKAN resource)
 #     datacite_size_group_tag = 'sizes'
 #     datacite_size_tag = 'size'
 #     datacite_sizes = []
-#     for resource in dataset_dict.get('resources', []):
+#     for resource in dataset.get('resources', []):
 #         if resource.get('size', ''):
 #             datacite_sizes += [{'#text': str(resource.get('size', ' ')) + ' bytes'}]
 #         elif resource.get('resource_size', ''):
@@ -538,14 +539,14 @@ def datacite_convert_dataset(dataset_dict: dict):
 #                 log.error('unparseable value at resource_size:' + str(resource_size))
 #
 #     if datacite_sizes:
-#         datacite_dict['resource'][datacite_size_group_tag] = {datacite_size_tag: datacite_sizes}
+#         datacite['resource'][datacite_size_group_tag] = {datacite_size_tag: datacite_sizes}
 #
 #     # Formats (get from resources)
 #     datacite_format_group_tag = 'formats'
 #     datacite_format_tag = 'format'
 #     datacite_formats = []
 #
-#     for resource in dataset_dict.get('resources', []):
+#     for resource in dataset.get('resources', []):
 #         resource_format = self._get_single_mapped_value(
 #             self._joinTags([datacite_format_group_tag, datacite_format_tag]),
 #             resource, metadata_resource_map,
@@ -555,13 +556,13 @@ def datacite_convert_dataset(dataset_dict: dict):
 #             if datacite_format not in datacite_formats:
 #                 datacite_formats += [datacite_format]
 #     if datacite_formats:
-#         datacite_dict['resource'][datacite_format_group_tag] = {datacite_format_tag: datacite_formats}
+#         datacite['resource'][datacite_format_group_tag] = {datacite_format_tag: datacite_formats}
 #
 #     # Version
 #     datacite_version_tag = 'version'
-#     datacite_version = self._get_single_mapped_value(datacite_version_tag, dataset_dict, metadata_map, '')
+#     datacite_version = self._get_single_mapped_value(datacite_version_tag, dataset, metadata_map, '')
 #     if datacite_version:
-#         datacite_dict['resource'][datacite_version_tag] = {'#text': datacite_version}
+#         datacite['resource'][datacite_version_tag] = {'#text': datacite_version}
 #
 #     # Rights
 #     datacite_rights_group_tag = 'rightsList'
@@ -577,7 +578,7 @@ def datacite_convert_dataset(dataset_dict: dict):
 #     datacite_rights_identifier = "rightsIdentifier"  # "CC0 1.0"
 #
 #     datacite_rights = self._get_complex_mapped_value(datacite_rights_group_tag, datacite_rights_tag,
-#                                                      ['', datacite_rights_uri_tag], dataset_dict, metadata_map)
+#                                                      ['', datacite_rights_uri_tag], dataset, metadata_map)
 #
 #     # Get details form License object
 #     if datacite_rights:
@@ -600,7 +601,7 @@ def datacite_convert_dataset(dataset_dict: dict):
 #                 if rights_uri:
 #                     datacite_rights_item['@' + datacite_rights_uri_tag] = rights_uri
 #
-#                 rights_id_spx = self._valueToDataciteCV(rights_id, datacite_rights_identifier, default=None)
+#                 rights_id_spx = self.value_to_datacite_cv(rights_id, datacite_rights_identifier, default=None)
 #                 if rights_id_spx:
 #                     datacite_rights_item['@' + datacite_scheme_uri_tag] = default_rights_scheme_uri
 #                     datacite_rights_item['@' + datacite_rights_identifier_scheme] = default_rights_identifier
@@ -608,7 +609,7 @@ def datacite_convert_dataset(dataset_dict: dict):
 #
 #                 rights_list += [datacite_rights_item]
 #         if rights_list:
-#             datacite_dict['resource'][datacite_rights_group_tag] = {datacite_rights_tag: rights_list}
+#             datacite['resource'][datacite_rights_group_tag] = {datacite_rights_tag: rights_list}
 #
 #     # Description
 #     datacite_descriptions_tag = 'descriptions'
@@ -617,7 +618,7 @@ def datacite_convert_dataset(dataset_dict: dict):
 #     datacite_descriptions = []
 #     ckan_descriptions = self._get_complex_mapped_value(datacite_descriptions_tag, datacite_description_tag,
 #                                                        ['', datacite_xml_lang_tag, datacite_description_type_tag],
-#                                                        dataset_dict, metadata_map)
+#                                                        dataset, metadata_map)
 #     for ckan_description in ckan_descriptions:
 #         description_text = ckan_description.get(datacite_description_tag, '').replace('\r', '').replace('>',
 #                                                                                                         '-').replace(
@@ -630,7 +631,7 @@ def datacite_convert_dataset(dataset_dict: dict):
 #                                     self._joinTags([datacite_description_tag, datacite_xml_lang_tag]), 'en-us')}
 #         datacite_descriptions += [datacite_description]
 #     if datacite_descriptions:
-#         datacite_dict['resource'][datacite_descriptions_tag] = {datacite_description_tag: datacite_descriptions}
+#         datacite['resource'][datacite_descriptions_tag] = {datacite_description_tag: datacite_descriptions}
 #
 #     # GeoLocation
 #     datacite_geolocations_tag = 'geoLocations'
@@ -642,12 +643,12 @@ def datacite_convert_dataset(dataset_dict: dict):
 #     ckan_geolocations = self._get_complex_mapped_value(datacite_geolocations_tag, datacite_geolocation_tag,
 #                                                        [datacite_geolocation_place_tag,
 #                                                         datacite_geolocation_point_tag,
-#                                                         datacite_geolocation_box_tag], dataset_dict, metadata_map)
+#                                                         datacite_geolocation_box_tag], dataset, metadata_map)
 #     log.debug("ckan_geolocations=" + str(ckan_geolocations))
 #     datacite_geolocations = []
 #     try:
 #         # Spatial extension
-#         pkg_spatial = json.loads(dataset_dict['spatial'])
+#         pkg_spatial = json.loads(dataset['spatial'])
 #         log.debug("pkg_spatial=" + str(pkg_spatial))
 #         if pkg_spatial:
 #             coordinates_list = self._flatten_list(pkg_spatial.get('coordinates', '[]'), reverse=True)
@@ -698,7 +699,7 @@ def datacite_convert_dataset(dataset_dict: dict):
 #
 #     if datacite_geolocations:
 #         log.debug("datacite_geolocations=" + str(datacite_geolocations))
-#         datacite_dict['resource']['geoLocations'] = {'geoLocation': datacite_geolocations}
+#         datacite['resource']['geoLocations'] = {'geoLocation': datacite_geolocations}
 #
 #     # Funding Information
 #     datacite_funding_refs_tag = 'fundingReferences'
@@ -708,7 +709,7 @@ def datacite_convert_dataset(dataset_dict: dict):
 #
 #     datacite_funding_refs = []
 #     ckan_funding_refs = self._get_complex_mapped_value(datacite_funding_refs_tag, datacite_funding_ref_tag,
-#                                                        datacite_funding_subfields, dataset_dict, metadata_map)
+#                                                        datacite_funding_subfields, dataset, metadata_map)
 #     for funding_ref in ckan_funding_refs:
 #         datacite_funding_ref = collections.OrderedDict()
 #         funder_name = funding_ref.get(self._joinTags([datacite_funding_ref_tag, 'funderName']), '')
@@ -719,10 +720,10 @@ def datacite_convert_dataset(dataset_dict: dict):
 #                 datacite_funding_ref['awardNumber'] = award_number.strip()
 #             datacite_funding_refs += [datacite_funding_ref]
 #     if datacite_funding_refs:
-#         datacite_dict['resource'][datacite_funding_refs_tag] = {datacite_funding_ref_tag: datacite_funding_refs}
+#         datacite['resource'][datacite_funding_refs_tag] = {datacite_funding_ref_tag: datacite_funding_refs}
 #
 #     # Convert to xml
-#     converted_package = unparse(datacite_dict, pretty=True)
+#     converted_package = unparse(datacite, pretty=True)
 #
 #     return converted_package
 #
@@ -765,7 +766,7 @@ def get_complex_mapped_value(group_tag, element_tag, field_tags, dataset_dict, m
         group_field_tag = join_tags([group_tag, simple_field_tag])
 
         ckan_tag = metadata_map.get(group_field_tag, {FIELD_NAME: ''})[FIELD_NAME]
-        value = dataset_dict.get(ckan_tag, '')
+        value = dataset.get(ckan_tag, '')
         if value:
             simple_fields_object[simple_field_tag] = value
     if simple_fields_object:
@@ -775,9 +776,9 @@ def get_complex_mapped_value(group_tag, element_tag, field_tags, dataset_dict, m
     ckan_tag = metadata_map.get(group_tag, {FIELD_NAME: ''})[FIELD_NAME]
     ckan_subfields = metadata_map.get(group_tag, {'subfields': []})['subfields']
 
-    if dataset_dict.get(ckan_tag, ''):
+    if dataset.get(ckan_tag, ''):
         try:
-            json_field = dataset_dict[ckan_tag]
+            json_field = dataset[ckan_tag]
             if type(json_field) not in [list, dict]:
                 json_field = json.loads(json_field)
             if type(json_field) is not list:
