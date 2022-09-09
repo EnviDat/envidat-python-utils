@@ -268,69 +268,136 @@ def datacite_convert_dataset(dataset: dict):
 
         datacite_creator['affiliation'] = author.get('affiliation', '')
 
-        datacite_dict['resource'][datacite_creators_tag][datacite_creator_tag] += [datacite_creator]
+        datacite['resource'][datacite_creators_tag][datacite_creator_tag] += [datacite_creator]
 
-    # Titles*
+    # Titles
     datacite_titles_tag = 'titles'
     datacite_title_tag = 'title'
-    datacite_xml_lang_tag = 'xml:lang'
-    datacite_dict['resource'][datacite_titles_tag] = {datacite_title_tag: []}
+    datacite['resource'][datacite_titles_tag] = {datacite_title_tag: []}
     datacite_title_type_tag = 'titleType'
-#     ckan_titles = self._get_complex_mapped_value(datacite_titles_tag, datacite_title_tag,
-#                                                  ['', datacite_title_type_tag, datacite_xml_lang_tag], dataset_dict,
-#                                                  metadata_map)
-#     for ckan_title in ckan_titles:
-#         datacite_title = {'#text': ckan_title.get(datacite_title_tag, ''),
-#                           '@' + datacite_xml_lang_tag: ckan_title.get(
-#                               self._joinTags([datacite_title_tag, datacite_xml_lang_tag]), 'en-us')}
-#         if ckan_title.get(self._joinTags([datacite_title_tag, datacite_title_type_tag]), ''):
-#             ckan_title_type = ckan_title.get(self._joinTags([datacite_title_tag, datacite_title_type_tag]), 'other')
-#             datacite_title['@' + datacite_title_type_tag] = self._valueToDataciteCV(ckan_title_type,
-#                                                                                     datacite_title_type_tag)
-#         datacite_dict['resource'][datacite_titles_tag][datacite_title_tag] += [datacite_title]
-    # TODO refactor title logic
-#
-#     # Publication year*
-#     datacite_publication_year_tag = 'publicationYear'
-#     datacite_dict['resource'][datacite_publication_year_tag] = {
-#         '#text': self._get_single_mapped_value(datacite_publication_year_tag, dataset_dict, metadata_map)}
-#
-#     # Publisher
-#     datacite_publisher_tag = 'publisher'
-#     publisher_value = self._get_single_mapped_value(datacite_publisher_tag, dataset_dict, metadata_map)
-#     if (publisher_value):
-#         datacite_dict['resource'][datacite_publisher_tag] = {'@' + datacite_xml_lang_tag: 'en-us',
-#                                                              '#text': publisher_value}
-#
-#     # Subjects
-#     datacite_subjects_tag = 'subjects'
-#     datacite_subject_tag = 'subject'
-#     datacite_subjects = []
-#     # Defined by usual field
-#     ckan_subjects = self._get_complex_mapped_value(datacite_subjects_tag, datacite_subject_tag,
-#                                                    ['', datacite_xml_lang_tag], dataset_dict, metadata_map)
-#     for ckan_subject in ckan_subjects:
-#         datacite_subject = {'#text': ckan_subject.get(datacite_subject_tag, ''),
-#                             '@' + datacite_xml_lang_tag: ckan_subject.get(
-#                                 self._joinTags([datacite_subject_tag, datacite_xml_lang_tag]), 'en-us')}
-#         datacite_subjects += [datacite_subject]
-#     # Defined by autocomplete tags
-#     if metadata_map.get(self._joinTags([datacite_subjects_tag, datacite_subject_tag]), {FIELD_NAME: ''})[
-#         FIELD_NAME].find('tag') >= 0:
-#         for tag in dataset_dict.get('tags', []):
-#             tag_name = tag.get('display_name', tag.get('name', ''))
-#             datacite_subjects += [{'@' + datacite_xml_lang_tag: 'en-us', '#text': tag_name}]
-#     if datacite_subjects:
-#         datacite_dict['resource'][datacite_subjects_tag] = {datacite_subject_tag: datacite_subjects}
-#
-#     # Contributor (contact person)
-#     datacite_contributors_tag = 'contributors'
-#     datacite_contributor_tag = 'contributor'
-#     datacite_contributor_subfields = ['contributorName', 'givenName', 'familyName', 'affiliation',
-#                                       'contributorType', 'nameIdentifier', 'nameIdentifier.nameIdentifierScheme']
-#     datacite_contributors = []
+    #     ckan_titles = self._get_complex_mapped_value(datacite_titles_tag, datacite_title_tag,
+    #                                                  ['', datacite_title_type_tag, datacite_xml_lang_tag], dataset,
+    #                                                  metadata_map)
+    #     for ckan_title in ckan_titles:
+    #         datacite_title = {'#text': ckan_title.get(datacite_title_tag, ''),
+    #                           '@' + datacite_xml_lang_tag: ckan_title.get(
+    #                               self._joinTags([datacite_title_tag, datacite_xml_lang_tag]), 'en-us')}
+    #         if ckan_title.get(self._joinTags([datacite_title_tag, datacite_title_type_tag]), ''):
+    #             ckan_title_type = ckan_title.get(self._joinTags([datacite_title_tag, datacite_title_type_tag]), 'other')
+    #             datacite_title['@' + datacite_title_type_tag] = self.value_to_datacite_cv(ckan_title_type,
+    #                                                                                     datacite_title_type_tag)
+    #         datacite['resource'][datacite_titles_tag][datacite_title_tag] += [datacite_title]
+    title = dataset.get('title', '')
+    if title:
+        datacite['resource'][datacite_titles_tag][datacite_title_tag] = title
+
+    # Get publication dictionary
+    pub = dataset.get('publication', {})
+    try:
+        publication = json.loads(pub)
+    except ValueError:
+        publication = {}
+
+    # Publication year
+    datacite_publication_year_tag = 'publicationYear'
+    #     datacite['resource'][datacite_publication_year_tag] = {
+    #         '#text': self._get_single_mapped_value(datacite_publication_year_tag, dataset, metadata_map)}
+    publication_year = publication.get('publicationYear', '')
+    if publication_year:
+        datacite['resource'][datacite_publication_year_tag] = {
+            '#text': publication_year
+        }
+
+    # Publisher
+    datacite_publisher_tag = 'publisher'
+    datacite_xml_lang_tag = 'xml:lang'
+    #     publisher_value = self._get_single_mapped_value(datacite_publisher_tag, dataset, metadata_map)
+    #     if (publisher_value):
+    #         datacite['resource'][datacite_publisher_tag] = {'@' + datacite_xml_lang_tag: 'en-us',
+    #                                                              '#text': publisher_value}
+    publisher = publication.get('publisher', '')
+    if publisher:
+        datacite['resource'][datacite_publisher_tag] = {
+            f'@{datacite_xml_lang_tag}': 'en-us',
+            '#text': publisher
+        }
+
+    # Subjects
+    datacite_subjects = []
+
+    # Get tags list
+    tags = dataset.get('tags', [])
+
+    # Defined by usual field
+    #     ckan_subjects = self._get_complex_mapped_value(datacite_subjects_tag, datacite_subject_tag,
+    #                                                    ['', datacite_xml_lang_tag], dataset, metadata_map)
+    #     for ckan_subject in ckan_subjects:
+    #         datacite_subject = {'#text': ckan_subject.get(datacite_subject_tag, ''),
+    #                             '@' + datacite_xml_lang_tag: ckan_subject.get(
+    #                                 self._joinTags([datacite_subject_tag, datacite_xml_lang_tag]), 'en-us')}
+    #         datacite_subjects += [datacite_subject]
+
+    #     # Defined by autocomplete tags
+    #     if metadata_map.get(self._joinTags([datacite_subjects_tag, datacite_subject_tag]), {FIELD_NAME: ''})[
+    #         FIELD_NAME].find('tag') >= 0:
+    #         for tag in dataset.get('tags', []):
+    #             tag_name = tag.get('display_name', tag.get('name', ''))
+    #             datacite_subjects += [{'@' + datacite_xml_lang_tag: 'en-us', '#text': tag_name}]
+    for tag in tags:
+        tag_name = tag.get('display_name', tag.get('name', ''))
+        datacite_subjects += [{f'@{datacite_xml_lang_tag}': 'en-us', '#text': tag_name}]
+
+    if datacite_subjects:
+        datacite_subjects_tag = 'subjects'
+        datacite_subject_tag = 'subject'
+        datacite['resource'][datacite_subjects_tag] = {datacite_subject_tag: datacite_subjects}
+
+    # Contributor (contact person)
+    datacite_contributors_tag = 'contributors'
+    datacite_contributor_tag = 'contributor'
+    datacite_contributor_subfields = ['contributorName', 'givenName', 'familyName', 'affiliation',
+                                      'contributorType', 'nameIdentifier', 'nameIdentifier.nameIdentifierScheme']
+    datacite_contributors = []
+
+    maintainer_input = dataset.get('maintainer', {})
+    try:
+        maintainer = json.loads(maintainer_input)
+    except ValueError:
+        maintainer = {}
+
+    datacite_contributor = collections.OrderedDict()
+
+    contributor_family_name = maintainer.get('name', '')
+    contributor_given_name = maintainer.get('given_name', '')
+
+    if contributor_given_name:
+        datacite_contributor['givenName'] = contributor_given_name
+        datacite_contributor['familyName'] = contributor_family_name
+        datacite_contributor['contributorName'] = f'{contributor_given_name} {contributor_family_name}'
+    else:
+        datacite_contributor['contributorName'] = contributor_family_name
+
+    contributor_identifier = maintainer.get('identifier', '')
+    if contributor_identifier:
+        datacite_contributor['nameIdentifier'] = {
+            '#text': maintainer.get(join_tags([datacite_contributor_tag, 'nameIdentifier']), ''),
+            '@nameIdentifierScheme': maintainer.get(
+                join_tags([datacite_contributor_tag, 'nameIdentifier', 'nameIdentifierScheme']),
+                'orcid').upper()}
+
+    # datacite_contributor['affiliation'] = maintainer.get(join_tags([datacite_contributor_tag, 'affiliation']), '')
+    contributor_affiliation = maintainer.get('affiliation', '')
+    if contributor_affiliation:
+        datacite_contributor['affiliation'] = contributor_affiliation
+
+    contributor_type = maintainer.get(join_tags([datacite_contributor_tag, 'contributorType']), 'ContactPerson')
+    datacite_contributor['@contributorType'] = value_to_datacite_cv(contributor_type, 'contributorType')
+
+    if datacite_contributor:
+        datacite['resource'][datacite_contributors_tag] = {datacite_contributor_tag: datacite_contributor}
+
 #     ckan_contributors = self._get_complex_mapped_value(datacite_contributors_tag, datacite_contributor_tag,
-#                                                        datacite_contributor_subfields, dataset_dict, metadata_map)
+#                                                        datacite_contributor_subfields, dataset, metadata_map)
 #     for ckan_contributor in ckan_contributors:
 #         datacite_contributor = collections.OrderedDict()
 #         datacite_contributor['contributorName'] = ckan_contributor.get(
