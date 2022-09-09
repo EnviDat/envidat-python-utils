@@ -235,41 +235,17 @@ def datacite_convert_dataset(dataset: dict):
     datacite_creator_subfields = ['creatorName', 'givenName', 'familyName', 'affiliation', 'nameIdentifier',
                                   'nameIdentifier.nameIdentifierScheme']
 
-    datacite_dict['resource'][datacite_creators_tag] = {datacite_creator_tag: []}
+    datacite['resource'][datacite_creators_tag] = {datacite_creator_tag: []}
 
     # authors = get_complex_mapped_value(datacite_creators_tag, datacite_creator_tag,
-    #                                                datacite_creator_subfields, dataset_dict, metadata_map)
-    authors = dataset_dict.get('author', [])
+    #                                                datacite_creator_subfields, dataset, metadata_map)
+    author_input = dataset.get('author', [])
     try:
-        authors_list = json.loads(authors)
+        authors = json.loads(author_input)
     except ValueError:
-        authors_list = []
+        authors = []
 
-#     for ckan_creator in ckan_creators:
-#         datacite_creator = collections.OrderedDict()
-#
-#         creator_full_name = ckan_creator.get(self._joinTags([datacite_creator_tag, 'creatorName']), '')
-#         if creator_full_name:
-#             datacite_creator['creatorName'] = creator_full_name
-#         else:
-#             creator_family_name = ckan_creator.get(self._joinTags([datacite_creator_tag, 'familyName']), '').strip()
-#             creator_given_name = ckan_creator.get(self._joinTags([datacite_creator_tag, 'givenName']), '').strip()
-#             datacite_creator['creatorName'] = creator_family_name
-#             if creator_given_name:
-#                 datacite_creator['givenName'] = creator_given_name
-#                 datacite_creator['familyName'] = creator_family_name
-#                 datacite_creator['creatorName'] = creator_given_name + ' ' + creator_family_name
-#
-#         if ckan_creator.get(self._joinTags([datacite_creator_tag, 'nameIdentifier']), False):
-#             datacite_creator['nameIdentifier'] = {
-#                 '#text': ckan_creator.get(self._joinTags([datacite_creator_tag, 'nameIdentifier']), ''),
-#                 '@nameIdentifierScheme': ckan_creator.get(
-#                     self._joinTags([datacite_creator_tag, 'nameIdentifier', 'nameIdentifierScheme']),
-#                     'orcid').upper()}
-#         datacite_creator['affiliation'] = ckan_creator.get(self._joinTags([datacite_creator_tag, 'affiliation']),
-#                                                            '')
-#         datacite_dict['resource'][datacite_creators_tag][datacite_creator_tag] += [datacite_creator]
-    for author in authors_list:
+    for author in authors:
 
         datacite_creator = collections.OrderedDict()
 
