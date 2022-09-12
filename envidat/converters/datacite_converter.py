@@ -444,30 +444,44 @@ def datacite_convert_dataset(dataset: dict):
 #     if datacite_contributors:
 #         datacite['resource'][datacite_contributors_tag] = {datacite_contributor_tag: datacite_contributors}
 #
-    # TODO refactor dates
-#     # Dates
-#     datacite_dates_tag = 'dates'
-#     datacite_date_tag = 'date'
-#     datacite_date_type_tag = 'dateType'
-#     datacite_dates = []
-#     ckan_dates = self._get_complex_mapped_value(datacite_dates_tag, datacite_date_tag, ['', datacite_date_type_tag],
-#                                                 dataset, metadata_map)
-#     for ckan_date in ckan_dates:
-#         datacite_date = {'#text': ckan_date.get(datacite_date_tag, ''),
-#                          '@' + datacite_date_type_tag: ckan_date.get(
-#                              self._joinTags([datacite_date_tag, datacite_date_type_tag]), 'Valid').title()}
-#         datacite_dates += [datacite_date]
-#     if datacite_dates:
-#         datacite['resource'][datacite_dates_tag] = {datacite_date_tag: datacite_dates}
-#
-#     # Language
-#     datacite_language_tag = 'language'
+    # Dates
+    datacite_dates_tag = 'dates'
+    datacite_date_tag = 'date'
+    datacite_date_type_tag = 'dateType'
+    datacite_dates = []
+
+    # ckan_dates = self._get_complex_mapped_value(datacite_dates_tag, datacite_date_tag, ['', datacite_date_type_tag],
+    #                                             dataset, metadata_map)
+    date_input = dataset.get('date', [])
+    try:
+        dates = json.loads(date_input)
+    except JSONDecodeError:
+        dates = []
+
+    # for ckan_date in ckan_dates:
+    #     datacite_date = {'#text': ckan_date.get(datacite_date_tag, ''),
+    #                      '@' + datacite_date_type_tag: ckan_date.get(
+    #                          self._joinTags([datacite_date_tag, datacite_date_type_tag]), 'Valid').title()}
+    #     datacite_dates += [datacite_date]
+    for date in dates:
+        datacite_date = {
+            '#text': date.get('date', ''),
+            f'@{datacite_date_type_tag}': (date.get('date_type', 'Valid')).title()
+        }
+        datacite_dates += [datacite_date]
+
+    if datacite_dates:
+        datacite['resource'][datacite_dates_tag] = {datacite_date_tag: datacite_dates}
+
+    # Language
+    datacite_language_tag = 'language'
 #     datacite['resource'][datacite_language_tag] = {
 #         '#text': self._get_single_mapped_value(datacite_language_tag, dataset, metadata_map, 'en')}
-#
-#     # ResourceType
-#     datacite_resource_type_tag = 'resourceType'
-#     datacite_resource_type_general_tag = 'resourceTypeGeneral'
+    datacite['resource'][datacite_language_tag] = {'#text': dataset.get('language', 'en')}
+
+    # ResourceType
+    datacite_resource_type_tag = 'resourceType'
+    datacite_resource_type_general_tag = 'resourceTypeGeneral'
 #     ckan_resource_type = self._get_complex_mapped_value('', datacite_resource_type_tag,
 #                                                         ['', datacite_resource_type_general_tag], dataset,
 #                                                         metadata_map)
@@ -480,14 +494,32 @@ def datacite_convert_dataset(dataset: dict):
 #         datacite['resource'][datacite_resource_type_tag] = {
 #             '#text': ckan_resource_type[0].get(datacite_resource_type_tag, ''),
 #             '@' + datacite_resource_type_general_tag: datacite_resource_type_general}
-#
-#     # Alternate Identifier (CKAN URL)
-#     ckan_package_url = config.get('ckan.site_url', '') + '/dataset/' + dataset.get('name')
+    datacite['resource'][datacite_resource_type_tag] = {
+                '#text': dataset.get('resource_type', ''),
+                f'@{datacite_resource_type_general_tag}': (dataset.get('resource_type_general', 'Dataset')).title()
+    }
+
+    # Alternate Identifier (CKAN URL)
+    base_url = 'https://www.envidat.ch/dataset/'
+    alternate_identifiers = []
+
+    #     ckan_package_url = config.get('ckan.site_url', '') + '/dataset/' + dataset.get('name')
+    package_name = dataset.get('name', '')
+    if package_name:
+        package_url = f'{base_url}{package_name}'
+        alternate_identifiers.append({'#text': package_url, '@alternateIdentifierType': 'URL'})
+
 #     ckan_package_url_id = config.get('ckan.site_url', '') + '/dataset/' + dataset.get('id')
-#
+    package_id = dataset.get('id', '')
+    if package_id:
+        package_id = f'{base_url}{package_id}'
+        alternate_identifiers.append({'#text': package_id, '@alternateIdentifierType': 'URL'})
+
 #     datacite['resource']['alternateIdentifiers'] = {
 #         'alternateIdentifier': [{'#text': ckan_package_url, '@alternateIdentifierType': 'URL'},
 #                                 {'#text': ckan_package_url_id, '@alternateIdentifierType': 'URL'}]}
+    datacite['resource']['alternateIdentifier'] = {'alternateIdentifier': alternate_identifiers}
+
 #     # legacy
 #     if dataset.get('url', ''):
 #         datacite['resource']['alternateIdentifiers']['alternateIdentifier'] += [
