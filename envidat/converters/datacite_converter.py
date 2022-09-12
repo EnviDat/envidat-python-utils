@@ -1,4 +1,5 @@
 # TODO WIP finish refactoring and segregating DataCite package converter from CKAN
+import re
 from json import JSONDecodeError
 
 # import ckanext
@@ -200,7 +201,6 @@ def convert_datacite(package_json: str) -> str:
 
 
 def datacite_convert_dataset(dataset: dict):
-
     # schema_map = self._get_schema_map(self.output_format.get_format_name().split('_')[0])
     # metadata_map = schema_map['metadata']
     # metadata_resource_map = schema_map['metadata_resource']
@@ -398,51 +398,51 @@ def datacite_convert_dataset(dataset: dict):
     if datacite_contributor:
         datacite['resource'][datacite_contributors_tag] = {datacite_contributor_tag: datacite_contributor}
 
-#     ckan_contributors = self._get_complex_mapped_value(datacite_contributors_tag, datacite_contributor_tag,
-#                                                        datacite_contributor_subfields, dataset, metadata_map)
-#     for ckan_contributor in ckan_contributors:
-#         datacite_contributor = collections.OrderedDict()
-#         datacite_contributor['contributorName'] = ckan_contributor.get(
-#             self._joinTags([datacite_contributor_tag, 'contributorName']), '')
-#
-#     datacite_contributor_subfields = ['contributorName', 'givenName', 'familyName', 'affiliation',
-#                                       'contributorType', 'nameIdentifier', 'nameIdentifier.nameIdentifierScheme']
-#     datacite_contributors = []
-#     ckan_contributors = self._get_complex_mapped_value(datacite_contributors_tag, datacite_contributor_tag,
-#                                                        datacite_contributor_subfields, dataset, metadata_map)
-#     for ckan_contributor in ckan_contributors:
-#         datacite_contributor = collections.OrderedDict()
-#
-#         contributor_full_name = ckan_contributor.get(self._joinTags([datacite_contributor_tag, 'contributorName']),
-#                                                      '')
-#         if contributor_full_name:
-#             datacite_contributor['contributorName'] = contributor_full_name
-#         else:
-#             contributor_family_name = ckan_contributor.get(self._joinTags([datacite_contributor_tag, 'familyName']),
-#                                                            '').strip()
-#             contributor_given_name = ckan_contributor.get(self._joinTags([datacite_contributor_tag, 'givenName']),
-#                                                           '').strip()
-#             datacite_contributor['contributorName'] = contributor_family_name
-#             if contributor_given_name:
-#                 datacite_contributor['givenName'] = contributor_given_name
-#                 datacite_contributor['familyName'] = contributor_family_name
-#                 datacite_contributor['contributorName'] = contributor_given_name + ' ' + contributor_family_name
-#
-#         if ckan_contributor.get(datacite_contributor_tag + '.' + 'nameIdentifier', False):
-#             datacite_contributor['nameIdentifier'] = {
-#                 '#text': ckan_contributor.get(self._joinTags([datacite_contributor_tag, 'nameIdentifier']), ''),
-#                 '@nameIdentifierScheme': ckan_contributor.get(
-#                     self._joinTags([datacite_contributor_tag, 'nameIdentifier', 'nameIdentifierScheme']),
-#                     'orcid').upper()}
-#         datacite_contributor['affiliation'] = ckan_contributor.get(
-#             self._joinTags([datacite_contributor_tag, 'affiliation']), '')
-#         ckan_contributor_type = ckan_contributor.get(self._joinTags([datacite_contributor_tag, 'contributorType']),
-#                                                      'ContactPerson')
-#         datacite_contributor['@contributorType'] = self.value_to_datacite_cv(ckan_contributor_type, 'contributorType')
-#         datacite_contributors += [datacite_contributor]
-
-#     if datacite_contributors:
-#         datacite['resource'][datacite_contributors_tag] = {datacite_contributor_tag: datacite_contributors}
+    # ckan_contributors = self._get_complex_mapped_value(datacite_contributors_tag, datacite_contributor_tag,
+    #                                                    datacite_contributor_subfields, dataset, metadata_map)
+    # for ckan_contributor in ckan_contributors:
+    #     datacite_contributor = collections.OrderedDict()
+    #     datacite_contributor['contributorName'] = ckan_contributor.get(
+    #         self._joinTags([datacite_contributor_tag, 'contributorName']), '')
+    #
+    # datacite_contributor_subfields = ['contributorName', 'givenName', 'familyName', 'affiliation',
+    #                                   'contributorType', 'nameIdentifier', 'nameIdentifier.nameIdentifierScheme']
+    # datacite_contributors = []
+    # ckan_contributors = self._get_complex_mapped_value(datacite_contributors_tag, datacite_contributor_tag,
+    #                                                    datacite_contributor_subfields, dataset, metadata_map)
+    # for ckan_contributor in ckan_contributors:
+    #     datacite_contributor = collections.OrderedDict()
+    #
+    #     contributor_full_name = ckan_contributor.get(self._joinTags([datacite_contributor_tag, 'contributorName']),
+    #                                                  '')
+    #     if contributor_full_name:
+    #         datacite_contributor['contributorName'] = contributor_full_name
+    #     else:
+    #         contributor_family_name = ckan_contributor.get(self._joinTags([datacite_contributor_tag, 'familyName']),
+    #                                                        '').strip()
+    #         contributor_given_name = ckan_contributor.get(self._joinTags([datacite_contributor_tag, 'givenName']),
+    #                                                       '').strip()
+    #         datacite_contributor['contributorName'] = contributor_family_name
+    #         if contributor_given_name:
+    #             datacite_contributor['givenName'] = contributor_given_name
+    #             datacite_contributor['familyName'] = contributor_family_name
+    #             datacite_contributor['contributorName'] = contributor_given_name + ' ' + contributor_family_name
+    #
+    #     if ckan_contributor.get(datacite_contributor_tag + '.' + 'nameIdentifier', False):
+    #         datacite_contributor['nameIdentifier'] = {
+    #             '#text': ckan_contributor.get(self._joinTags([datacite_contributor_tag, 'nameIdentifier']), ''),
+    #             '@nameIdentifierScheme': ckan_contributor.get(
+    #                 self._joinTags([datacite_contributor_tag, 'nameIdentifier', 'nameIdentifierScheme']),
+    #                 'orcid').upper()}
+    #     datacite_contributor['affiliation'] = ckan_contributor.get(
+    #         self._joinTags([datacite_contributor_tag, 'affiliation']), '')
+    #     ckan_contributor_type = ckan_contributor.get(self._joinTags([datacite_contributor_tag, 'contributorType']),
+    #                                                  'ContactPerson')
+    #     datacite_contributor['@contributorType'] = self.value_to_datacite_cv(ckan_contributor_type, 'contributorType')
+    #     datacite_contributors += [datacite_contributor]
+    #
+    # if datacite_contributors:
+    #     datacite['resource'][datacite_contributors_tag] = {datacite_contributor_tag: datacite_contributors}
 #
     # Dates
     datacite_dates_tag = 'dates'
@@ -475,28 +475,28 @@ def datacite_convert_dataset(dataset: dict):
 
     # Language
     datacite_language_tag = 'language'
-#     datacite['resource'][datacite_language_tag] = {
-#         '#text': self._get_single_mapped_value(datacite_language_tag, dataset, metadata_map, 'en')}
+    #     datacite['resource'][datacite_language_tag] = {
+    #         '#text': self._get_single_mapped_value(datacite_language_tag, dataset, metadata_map, 'en')}
     datacite['resource'][datacite_language_tag] = {'#text': dataset.get('language', 'en')}
 
     # ResourceType
     datacite_resource_type_tag = 'resourceType'
     datacite_resource_type_general_tag = 'resourceTypeGeneral'
-#     ckan_resource_type = self._get_complex_mapped_value('', datacite_resource_type_tag,
-#                                                         ['', datacite_resource_type_general_tag], dataset,
-#                                                         metadata_map)
-#     if ckan_resource_type:
-#         ckan_resource_type_general = ckan_resource_type[0].get(
-#             self._joinTags([datacite_resource_type_tag, datacite_resource_type_general_tag]))
-#         datacite_resource_type_general = self.value_to_datacite_cv(ckan_resource_type_general,
-#                                                                  datacite_resource_type_general_tag,
-#                                                                  default='Dataset')
-#         datacite['resource'][datacite_resource_type_tag] = {
-#             '#text': ckan_resource_type[0].get(datacite_resource_type_tag, ''),
-#             '@' + datacite_resource_type_general_tag: datacite_resource_type_general}
+    #     ckan_resource_type = self._get_complex_mapped_value('', datacite_resource_type_tag,
+    #                                                         ['', datacite_resource_type_general_tag], dataset,
+    #                                                         metadata_map)
+    #     if ckan_resource_type:
+    #         ckan_resource_type_general = ckan_resource_type[0].get(
+    #             self._joinTags([datacite_resource_type_tag, datacite_resource_type_general_tag]))
+    #         datacite_resource_type_general = self.value_to_datacite_cv(ckan_resource_type_general,
+    #                                                                  datacite_resource_type_general_tag,
+    #                                                                  default='Dataset')
+    #         datacite['resource'][datacite_resource_type_tag] = {
+    #             '#text': ckan_resource_type[0].get(datacite_resource_type_tag, ''),
+    #             '@' + datacite_resource_type_general_tag: datacite_resource_type_general}
     datacite['resource'][datacite_resource_type_tag] = {
-                '#text': dataset.get('resource_type', ''),
-                f'@{datacite_resource_type_general_tag}': (dataset.get('resource_type_general', 'Dataset')).title()
+        '#text': dataset.get('resource_type', ''),
+        f'@{datacite_resource_type_general_tag}': (dataset.get('resource_type_general', 'Dataset')).title()
     }
 
     # Alternate Identifier (CKAN URL)
@@ -509,58 +509,70 @@ def datacite_convert_dataset(dataset: dict):
         package_url = f'{base_url}{package_name}'
         alternate_identifiers.append({'#text': package_url, '@alternateIdentifierType': 'URL'})
 
-#     ckan_package_url_id = config.get('ckan.site_url', '') + '/dataset/' + dataset.get('id')
+    #     ckan_package_url_id = config.get('ckan.site_url', '') + '/dataset/' + dataset.get('id')
     package_id = dataset.get('id', '')
     if package_id:
         package_id = f'{base_url}{package_id}'
         alternate_identifiers.append({'#text': package_id, '@alternateIdentifierType': 'URL'})
 
-#     datacite['resource']['alternateIdentifiers'] = {
-#         'alternateIdentifier': [{'#text': ckan_package_url, '@alternateIdentifierType': 'URL'},
-#                                 {'#text': ckan_package_url_id, '@alternateIdentifierType': 'URL'}]}
+    #     datacite['resource']['alternateIdentifiers'] = {
+    #         'alternateIdentifier': [{'#text': ckan_package_url, '@alternateIdentifierType': 'URL'},
+    #                                 {'#text': ckan_package_url_id, '@alternateIdentifierType': 'URL'}]}
     datacite['resource']['alternateIdentifier'] = {'alternateIdentifier': alternate_identifiers}
 
-#     # legacy
-#     if dataset.get('url', ''):
-#         datacite['resource']['alternateIdentifiers']['alternateIdentifier'] += [
-#             {'#text': dataset.get('url', ''), '@alternateIdentifierType': 'URL'}]
-#
-#     # Related identifiers (related_datasets)
-#     # relatedIdentifiers
-#     # relatedIdentifier relatedIdentifierType="URL or DOI" relationType="Cites"
-#
-#     related_datasets = dataset.get('related_datasets', '')
-#     if related_datasets:
-#         datacite_related_urls = collections.OrderedDict()
-#         datacite_related_urls['relatedIdentifier'] = []
-#
-#         for line in related_datasets.split('\n'):
-#             if line.strip().startswith('*'):
-#
-#                 line_contents = line.replace('*', '').strip().lower().split(' ')[0]
-#                 package_list = []
-#                 related_url = None
-#                 try:
-#                     package_list = toolkit.get_action('package_list')(
-#                         context={'ignore_auth': False},
-#                         data_dict={})
-#                 except:
-#                     log.error('envidat_get_related_datasets: could not retrieve package list from API')
-#
-#                 if line_contents in package_list:
-#                     base_url = config.get('datacite_publication.url_prefix',
-#                                           config.get('ckan.site_url', '') + '/dataset')
-#                     related_url = base_url + '/' + line_contents
-#                 elif line_contents.startswith('https://') or line_contents.startswith('http://'):
-#                     related_url = line_contents
-#
-#                 if related_url:
-#                     datacite_related_urls['relatedIdentifier'] += [
-#                         {'#text': related_url, '@relatedIdentifierType': 'URL', '@relationType': 'Cites'}]
-#
-#         if len(datacite_related_urls['relatedIdentifier']) > 0:
-#             datacite['resource']['relatedIdentifiers'] = datacite_related_urls
-#
+    #     # legacy
+    #     if dataset.get('url', ''):
+    #         datacite['resource']['alternateIdentifiers']['alternateIdentifier'] += [
+    #             {'#text': dataset.get('url', ''), '@alternateIdentifierType': 'URL'}]
+
+    # Related identifiers
+    # for line in related_datasets.split('\n'):
+
+    # if line.strip().startswith('*'):
+    #     line_contents = line.replace('*', '').strip().lower().split(' ')[0]
+    #     package_list = []
+    #     related_url = None
+
+    #                 try:
+    #                     package_list = toolkit.get_action('package_list')(
+    #                         context={'ignore_auth': False},
+    #                         data_dict={})
+    #                 except:
+    #                     log.error('envidat_get_related_datasets: could not retrieve package list from API')
+    #
+    #                 if line_contents in package_list:
+    #                     base_url = config.get('datacite_publication.url_prefix',
+    #                                           config.get('ckan.site_url', '') + '/dataset')
+    #                     related_url = base_url + '/' + line_contents
+    #                 elif line_contents.startswith('https://') or line_contents.startswith('http://'):
+    #                     related_url = line_contents
+    #
+    #                 if related_url:
+    #                     datacite_related_urls['relatedIdentifier'] += [
+    #                         {'#text': related_url, '@relatedIdentifierType': 'URL', '@relationType': 'Cites'}]
+
+    related_datasets = dataset.get('related_datasets', '')
+    if related_datasets:
+
+        datacite_related_urls = collections.OrderedDict()
+        datacite_related_urls['relatedIdentifier'] = []
+
+        regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+        urls = re.findall(regex, related_datasets)
+
+        for url in urls:
+            datacite_related_urls['relatedIdentifier'] += [
+                {
+                    '#text': url,
+                    '@relatedIdentifierType': 'URL',
+                    '@relationType': 'Cities'
+                }
+            ]
+
+        if len(datacite_related_urls['relatedIdentifier']) > 0:
+            datacite['resource']['relatedIdentifiers'] = datacite_related_urls
+
+    # TODO refactor Sizes
 #     # Sizes (not defined in scheming, taken from default CKAN resource)
 #     datacite_size_group_tag = 'sizes'
 #     datacite_size_tag = 'size'
@@ -906,7 +918,6 @@ def map_fields(schema, format_name):
                 else:
                     map_dict[format_subfield] = {FIELD_NAME: field[FIELD_NAME] + '.' + subfield[FIELD_NAME]}
     return map_dict
-
 
 # def get_schema_map(format_name):
 #     schema = helpers.scheming_get_schema('dataset', 'dataset')
