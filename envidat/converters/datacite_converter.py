@@ -1,5 +1,5 @@
 # TODO WIP finish refactoring and segregating DataCite package converter from CKAN
-
+from json import JSONDecodeError
 
 # import ckanext
 #
@@ -200,10 +200,12 @@ def convert_datacite(package_json: str) -> str:
 
 
 def datacite_convert_dataset(dataset: dict):
+
     # schema_map = self._get_schema_map(self.output_format.get_format_name().split('_')[0])
     # metadata_map = schema_map['metadata']
     # metadata_resource_map = schema_map['metadata_resource']
 
+    # Assign datacite to ordered dictionary that will contain dataset content coverted to DataCite format
     datacite = collections.OrderedDict()
 
     # Header
@@ -239,10 +241,10 @@ def datacite_convert_dataset(dataset: dict):
 
     # authors = get_complex_mapped_value(datacite_creators_tag, datacite_creator_tag,
     #                                                datacite_creator_subfields, dataset, metadata_map)
-    author_input = dataset.get('author', [])
+    author_dataset = dataset.get('author', [])
     try:
-        authors = json.loads(author_input)
-    except ValueError:
+        authors = json.loads(author_dataset)
+    except JSONDecodeError:
         authors = []
 
     for author in authors:
@@ -295,7 +297,7 @@ def datacite_convert_dataset(dataset: dict):
     pub = dataset.get('publication', {})
     try:
         publication = json.loads(pub)
-    except ValueError:
+    except JSONDecodeError:
         publication = {}
 
     # Publication year
@@ -359,10 +361,10 @@ def datacite_convert_dataset(dataset: dict):
                                       'contributorType', 'nameIdentifier', 'nameIdentifier.nameIdentifierScheme']
     datacite_contributors = []
 
-    maintainer_input = dataset.get('maintainer', {})
+    maintainer_dataset = dataset.get('maintainer', {})
     try:
-        maintainer = json.loads(maintainer_input)
-    except ValueError:
+        maintainer = json.loads(maintainer_dataset)
+    except JSONDecodeError:
         maintainer = {}
 
     datacite_contributor = collections.OrderedDict()
@@ -874,9 +876,9 @@ def map_fields(schema, format_name):
     return map_dict
 
 
-def get_schema_map(format_name):
-    schema = helpers.scheming_get_schema('dataset', 'dataset')
-    schema_map = {'format_name': format_name,
-                  'metadata': map_fields(schema['dataset_fields'], format_name),
-                  'metadata_resource': map_fields(schema['resource_fields'], format_name)}
-    return schema_map
+# def get_schema_map(format_name):
+#     schema = helpers.scheming_get_schema('dataset', 'dataset')
+#     schema_map = {'format_name': format_name,
+#                   'metadata': map_fields(schema['dataset_fields'], format_name),
+#                   'metadata_resource': map_fields(schema['resource_fields'], format_name)}
+#     return schema_map
