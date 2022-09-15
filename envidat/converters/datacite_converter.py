@@ -177,8 +177,9 @@ def convert_datacite(package_json: str) -> str:
         """
     try:
         package = json.loads(package_json)  # Convert package JSON to dictionary
-        converted_package = datacite_convert_dataset(package)  # Convert package to OrderedDict
-        return converted_package
+        converted_package = datacite_convert_dataset(package)  # Convert package to OrderedDict in DataCite format
+        datacite_xml_package = unparse(converted_package, pretty=True)  # Convert OrderedDict to XML
+        return datacite_xml_package
     except ValueError as e:
         log.error(e)
         log.error("Cannot convert package to DataCite format.")
@@ -207,6 +208,9 @@ def datacite_convert_dataset(dataset: dict):
 
     # Assign datacite to ordered dictionary that will contain dataset content coverted to DataCite format
     datacite = collections.OrderedDict()
+
+    # Assign language tag used several times in function
+    datacite_xml_lang_tag = 'xml:lang'
 
     # Header
     datacite['resource'] = collections.OrderedDict()
@@ -251,13 +255,13 @@ def datacite_convert_dataset(dataset: dict):
 
         datacite_creator = collections.OrderedDict()
 
-        creator_family_name = author.get('name', '')
-        creator_given_name = author.get('given_name', '')
+        creator_family_name = author.get('name', '').strip()
+        creator_given_name = author.get('given_name', '').strip()
 
         if creator_given_name:
+            datacite_creator['creatorName'] = f'{creator_given_name} {creator_family_name}'
             datacite_creator['givenName'] = creator_given_name
             datacite_creator['familyName'] = creator_family_name
-            datacite_creator['creatorName'] = f'{creator_given_name} {creator_family_name}'
         else:
             datacite_creator['creatorName'] = creator_family_name
 
@@ -265,10 +269,29 @@ def datacite_convert_dataset(dataset: dict):
         if creator_identifier:
             datacite_creator['nameIdentifier'] = {
                 '#text': creator_identifier,
-                '@nameIdentifierScheme': 'ORCHID'
+                '@nameIdentifierScheme': 'ORCID'
             }
 
-        datacite_creator['affiliation'] = author.get('affiliation', '')
+        # datacite_creator['affiliation'] = author.get('affiliation', '')
+        affiliations = []
+
+        affiliation = author.get('affiliation', '')
+        if affiliation:
+            # affiliations.append(affiliation)
+            affiliations += [{'#text': affiliation}]
+
+        affiliation_02 = author.get('affiliation_02', '')
+        if affiliation_02:
+            # affiliations.append(affiliation_02)
+            affiliations += [{'#text': affiliation_02}]
+
+        affiliation_03 = author.get('affiliation_03', '')
+        if affiliation_03:
+            # affiliations.append(affiliation_03)
+            affiliations += [{'#text': affiliation_03}]
+
+        if affiliations:
+            datacite_creator['affiliation'] = affiliations
 
         datacite['resource'][datacite_creators_tag][datacite_creator_tag] += [datacite_creator]
 
@@ -291,7 +314,11 @@ def datacite_convert_dataset(dataset: dict):
     #         datacite['resource'][datacite_titles_tag][datacite_title_tag] += [datacite_title]
     title = dataset.get('title', '')
     if title:
-        datacite['resource'][datacite_titles_tag][datacite_title_tag] = title
+        # datacite['resource'][datacite_titles_tag][datacite_title_tag] = title
+        datacite['resource'][datacite_titles_tag][datacite_title_tag] = {
+            f'@{datacite_xml_lang_tag}': 'en-us',
+            '#text': title
+        }
 
     # Get publication dictionary
     pub = dataset.get('publication', {})
@@ -304,7 +331,7 @@ def datacite_convert_dataset(dataset: dict):
     datacite_publication_year_tag = 'publicationYear'
     #     datacite['resource'][datacite_publication_year_tag] = {
     #         '#text': self._get_single_mapped_value(datacite_publication_year_tag, dataset, metadata_map)}
-    publication_year = publication.get('publicationYear', '')
+    publication_year = publication.get('publication_year', '')
     if publication_year:
         datacite['resource'][datacite_publication_year_tag] = {
             '#text': publication_year
@@ -312,7 +339,6 @@ def datacite_convert_dataset(dataset: dict):
 
     # Publisher
     datacite_publisher_tag = 'publisher'
-    datacite_xml_lang_tag = 'xml:lang'
     #     publisher_value = self._get_single_mapped_value(datacite_publisher_tag, dataset, metadata_map)
     #     if (publisher_value):
     #         datacite['resource'][datacite_publisher_tag] = {'@' + datacite_xml_lang_tag: 'en-us',
@@ -373,24 +399,25 @@ def datacite_convert_dataset(dataset: dict):
     contributor_given_name = maintainer.get('given_name', '')
 
     if contributor_given_name:
+        datacite_contributor['contributorName'] = f'{contributor_given_name} {contributor_family_name}'
         datacite_contributor['givenName'] = contributor_given_name
         datacite_contributor['familyName'] = contributor_family_name
-        datacite_contributor['contributorName'] = f'{contributor_given_name} {contributor_family_name}'
     else:
         datacite_contributor['contributorName'] = contributor_family_name
 
     contributor_identifier = maintainer.get('identifier', '')
     if contributor_identifier:
         datacite_contributor['nameIdentifier'] = {
-            '#text': maintainer.get(join_tags([datacite_contributor_tag, 'nameIdentifier']), ''),
+            # '#text': maintainer.get(join_tags([datacite_contributor_tag, 'nameIdentifier']), ''),
+            '#text': contributor_identifier,
             '@nameIdentifierScheme': maintainer.get(
                 join_tags([datacite_contributor_tag, 'nameIdentifier', 'nameIdentifierScheme']),
-                'orcid').upper()}
+                'orcid').upper()
+        }
 
     # datacite_contributor['affiliation'] = maintainer.get(join_tags([datacite_contributor_tag, 'affiliation']), '')
     contributor_affiliation = maintainer.get('affiliation', '')
-    if contributor_affiliation:
-        datacite_contributor['affiliation'] = contributor_affiliation
+    datacite_contributor['affiliation'] = contributor_affiliation
 
     contributor_type = maintainer.get(join_tags([datacite_contributor_tag, 'contributorType']), 'ContactPerson')
     datacite_contributor['@contributorType'] = value_to_datacite_cv(contributor_type, 'contributorType')
@@ -443,7 +470,7 @@ def datacite_convert_dataset(dataset: dict):
     #
     # if datacite_contributors:
     #     datacite['resource'][datacite_contributors_tag] = {datacite_contributor_tag: datacite_contributors}
-#
+    #
     # Dates
     datacite_dates_tag = 'dates'
     datacite_date_tag = 'date'
@@ -518,7 +545,7 @@ def datacite_convert_dataset(dataset: dict):
     #     datacite['resource']['alternateIdentifiers'] = {
     #         'alternateIdentifier': [{'#text': ckan_package_url, '@alternateIdentifierType': 'URL'},
     #                                 {'#text': ckan_package_url_id, '@alternateIdentifierType': 'URL'}]}
-    datacite['resource']['alternateIdentifier'] = {'alternateIdentifier': alternate_identifiers}
+    datacite['resource']['alternateIdentifiers'] = {'alternateIdentifier': alternate_identifiers}
 
     #     # legacy
     #     if dataset.get('url', ''):
@@ -565,242 +592,306 @@ def datacite_convert_dataset(dataset: dict):
                 {
                     '#text': url,
                     '@relatedIdentifierType': 'URL',
-                    '@relationType': 'Cities'
+                    '@relationType': 'Cites'
                 }
             ]
 
         if len(datacite_related_urls['relatedIdentifier']) > 0:
             datacite['resource']['relatedIdentifiers'] = datacite_related_urls
 
-    # TODO refactor Sizes
-#     # Sizes (not defined in scheming, taken from default CKAN resource)
-#     datacite_size_group_tag = 'sizes'
-#     datacite_size_tag = 'size'
-#     datacite_sizes = []
-#     for resource in dataset.get('resources', []):
-#         if resource.get('size', ''):
-#             datacite_sizes += [{'#text': str(resource.get('size', ' ')) + ' bytes'}]
-#         elif resource.get('resource_size', ''):
-#             resource_size = resource.get('resource_size', '')
-#             try:
-#                 resource_size_obj = json.loads(resource_size)
-#                 datacite_sizes += [{'#text': resource_size_obj.get('size_value', '0') + ' ' + resource_size_obj.get(
-#                     'size_unit', 'KB').upper()}]
-#             except:
-#                 log.error('unparseable value at resource_size:' + str(resource_size))
+    # Sizes (not defined in scheming, taken from default CKAN resource)
+    datacite_size_group_tag = 'sizes'
+    datacite_size_tag = 'size'
+    datacite_sizes = []
+
+    for resource in dataset.get('resources', []):
+        if resource.get('size', ''):
+            datacite_sizes += [{'#text': str(resource.get('size', ' ')) + ' bytes'}]
+        elif resource.get('resource_size', ''):
+            resource_size = resource.get('resource_size', '')
+            try:
+                resource_size_obj = json.loads(resource_size)
+                datacite_sizes += [{'#text': resource_size_obj.get('size_value', '0') + ' ' + resource_size_obj.get(
+                    'size_unit', 'KB').upper()}]
+            except JSONDecodeError:
+                log.error('non-parsable value at resource_size:' + str(resource_size))
+
+    if datacite_sizes:
+        datacite['resource'][datacite_size_group_tag] = {datacite_size_tag: datacite_sizes}
+
+    # Formats (get from resources)
+    datacite_format_group_tag = 'formats'
+    datacite_format_tag = 'format'
+    datacite_formats = []
+
+    for resource in dataset.get('resources', []):
+        # resource_format = self._get_single_mapped_value(
+        #     self._joinTags([datacite_format_group_tag, datacite_format_tag]),
+        #     resource, metadata_resource_map,
+        #     default=resource.get('mimetype', resource.get('mimetype_inner', '')))
+        resource_format = resource.get('format', '')
+        if resource_format:
+            datacite_format = {'#text': resource_format}
+            if datacite_format not in datacite_formats:
+                datacite_formats += [datacite_format]
+    if datacite_formats:
+        datacite['resource'][datacite_format_group_tag] = {datacite_format_tag: datacite_formats}
+
+    # Version
+    datacite_version_tag = 'version'
+    # datacite_version = self._get_single_mapped_value(datacite_version_tag, dataset, metadata_map, '')
+    datacite_version = dataset.get('version', '')
+    if datacite_version:
+        datacite['resource'][datacite_version_tag] = {'#text': datacite_version}
+
+    # Rights
+    datacite_rights_group_tag = 'rightsList'
+    datacite_rights_tag = 'rights'
+    datacite_rights_uri_tag = 'rightsURI'
+
+    datacite_scheme_uri_tag = "schemeURI"
+    default_rights_scheme_uri = "https://spdx.org/licenses/"
+
+    datacite_rights_identifier_scheme = "rightsIdentifierScheme"
+    default_rights_identifier = "SPDX"
+
+    datacite_rights_identifier = "rightsIdentifier"  # "CC0 1.0"
+
+    # datacite_rights = self._get_complex_mapped_value(datacite_rights_group_tag, datacite_rights_tag,
+    #                                                  ['', datacite_rights_uri_tag], dataset, metadata_map)
+
+    # Get details form License object
+    # if datacite_rights:
+    #     register = model.Package.get_license_register()
+    #     rights_list = []
+    #     for rights_item in datacite_rights:
+    #         rights_id = rights_item.get(datacite_rights_tag)
+    #         if rights_id:
+    #             rights_title = rights_id
+    #             rights_uri = rights_item.get(self._joinTags([datacite_rights_tag, datacite_rights_uri_tag]), '')
+    #             try:
+    #                 license = register.get(rights_id)
+    #                 log.debug("register = " + repr(license))
+    #                 rights_title = license.title
+    #                 rights_uri = license.url
+    #             except Exception:
+    #                 log.debug('Exception when trying to get license attributes')
+    #                 pass
+    #             datacite_rights_item = {'@' + datacite_xml_lang_tag: 'en-us', '#text': rights_title}
+    #             if rights_uri:
+    #                 datacite_rights_item['@' + datacite_rights_uri_tag] = rights_uri
+    #
+    #             rights_id_spx = self.value_to_datacite_cv(rights_id, datacite_rights_identifier, default=None)
+    #             if rights_id_spx:
+    #                 datacite_rights_item['@' + datacite_scheme_uri_tag] = default_rights_scheme_uri
+    #                 datacite_rights_item['@' + datacite_rights_identifier_scheme] = default_rights_identifier
+    #                 datacite_rights_item['@' + datacite_rights_identifier] = rights_id_spx
+    #
+    #             rights_list += [datacite_rights_item]
+    #     if rights_list:
+    #         datacite['resource'][datacite_rights_group_tag] = {datacite_rights_tag: rights_list}
+    rights = {}
+
+    rights_title = dataset.get('license_title', '')
+    if rights_title:
+        rights = {
+            f'@{datacite_xml_lang_tag}': 'en-us',
+            '#text': rights_title
+        }
+
+    rights_uri = dataset.get('license_url', '')
+    if rights_uri:
+        rights[f'@{datacite_rights_uri_tag}'] = rights_uri
+
+    license_id = dataset.get('license_id', '')
+
+    rights_id_spx = value_to_datacite_cv(license_id, datacite_rights_identifier, default=None)
+    if rights_id_spx:
+        rights[f'@{datacite_scheme_uri_tag}'] = default_rights_scheme_uri
+        rights[f'@{datacite_rights_identifier_scheme}'] = default_rights_identifier
+        rights[f'@{datacite_rights_identifier}'] = rights_id_spx
+
+    if rights:
+        datacite['resource'][datacite_rights_group_tag] = {datacite_rights_tag: [rights]}
+
+    # Description
+    datacite_descriptions_tag = 'descriptions'
+    datacite_description_tag = 'description'
+    datacite_description_type_tag = 'descriptionType'
+    datacite_descriptions = []
+    #     ckan_descriptions = self._get_complex_mapped_value(datacite_descriptions_tag, datacite_description_tag,
+    #                                                        ['', datacite_xml_lang_tag, datacite_description_type_tag],
+    #                                                        dataset, metadata_map)
+    description = dataset.get('notes', '')
+    #     for ckan_description in ckan_descriptions:
+    #         description_text = ckan_description.get(datacite_description_tag, '').replace('\r', '').replace('>',
+    #                                                                                                         '-').replace(
+    #             '<', '-').replace('__', '').replace('#', '').replace('\n\n', '\n').replace('\n\n', '\n')
+    #         datacite_description = {'#text': description_text,
+    #                                 '@' + datacite_description_type_tag: ckan_description.get(
+    #                                     self._joinTags([datacite_description_tag, datacite_description_type_tag]),
+    #                                     'Abstract'),
+    #                                 '@' + datacite_xml_lang_tag: ckan_description.get(
+    #                                     self._joinTags([datacite_description_tag, datacite_xml_lang_tag]), 'en-us')}
+    #         datacite_descriptions += [datacite_description]
+    #     if datacite_descriptions:
+    #         datacite['resource'][datacite_descriptions_tag] = {datacite_description_tag: datacite_descriptions}
+    if description:
+        description_text = description.replace('\r', '').replace('>', '-').replace('<', '-').replace('__', '') \
+            .replace('#', '').replace('\n\n', '\n').replace('\n\n', '\n')
+
+        datacite_description = {
+            '#text': description_text,
+            f'@{datacite_description_type_tag}': 'Abstract',
+            f'@{datacite_xml_lang_tag}': 'en-us'
+        }
+
+        datacite_descriptions += [datacite_description]
+
+    if datacite_descriptions:
+        datacite['resource'][datacite_descriptions_tag] = {datacite_description_tag: datacite_descriptions}
+
+    # GeoLocation
+    datacite_geolocations_tag = 'geoLocations'
+    datacite_geolocation_tag = 'geoLocation'
+    datacite_geolocation_place_tag = 'geoLocationPlace'
+    datacite_geolocation_point_tag = 'geoLocationPoint'
+    datacite_geolocation_box_tag = 'geoLocationBox'
+    #
+    #     ckan_geolocations = self._get_complex_mapped_value(datacite_geolocations_tag, datacite_geolocation_tag,
+    #                                                        [datacite_geolocation_place_tag,
+    #                                                         datacite_geolocation_point_tag,
+    #                                                         datacite_geolocation_box_tag], dataset, metadata_map)
+    #     log.debug("ckan_geolocations=" + str(ckan_geolocations))
+    datacite_geolocations = []
+    try:
+        # Spatial extension
+        pkg_spatial = json.loads(dataset['spatial'])
+        log.debug("pkg_spatial=" + str(pkg_spatial))
+        if pkg_spatial:
+            coordinates_list = flatten_list(pkg_spatial.get('coordinates', '[]'), reverse=True)
+            if pkg_spatial.get('type', '').lower() == 'polygon':
+                datacite_geolocation = collections.OrderedDict()
+                datacite_geolocation['geoLocationPolygon'] = {'polygonPoint': []}
+                for coordinates_pair in pkg_spatial.get('coordinates', '[[]]')[0]:
+                    geolocation_point = collections.OrderedDict()
+                    geolocation_point['pointLongitude'] = coordinates_pair[0]
+                    geolocation_point['pointLatitude'] = coordinates_pair[1]
+                    datacite_geolocation['geoLocationPolygon']['polygonPoint'] += [geolocation_point]
+                datacite_geolocations += [datacite_geolocation]
+            else:
+                if pkg_spatial.get('type', '').lower() == 'multipoint':
+                    for coordinates_pair in pkg_spatial.get('coordinates', '[]'):
+                        log.debug("point=" + str(coordinates_pair))
+                        datacite_geolocation = collections.OrderedDict()
+                        datacite_geolocation['geoLocationPoint'] = collections.OrderedDict()
+                        datacite_geolocation['geoLocationPoint']['pointLongitude'] = coordinates_pair[0]
+                        datacite_geolocation['geoLocationPoint']['pointLatitude'] = coordinates_pair[1]
+                        datacite_geolocations += [datacite_geolocation]
+                else:
+                    datacite_geolocation = collections.OrderedDict()
+                    datacite_geolocation['geoLocationPoint'] = collections.OrderedDict()
+                    datacite_geolocation['geoLocationPoint']['pointLongitude'] = coordinates_list[1]
+                    datacite_geolocation['geoLocationPoint']['pointLatitude'] = coordinates_list[0]
+                    datacite_geolocations += [datacite_geolocation]
+            # if ckan_geolocations:
+            #     datacite_geolocation_place = ckan_geolocations[0].get(
+            #         self._joinTags([datacite_geolocation_tag, datacite_geolocation_place_tag]), '')
+            #     if datacite_geolocation_place:
+            #         datacite_geolocation = collections.OrderedDict()
+            #         datacite_geolocation[datacite_geolocation_place_tag] = datacite_geolocation_place
+            #         datacite_geolocations += [datacite_geolocation]
+    # except:
+    #     # directly defined fields
+    #     for geolocation in ckan_geolocations:
+    #         datacite_geolocation = collections.OrderedDict()
+    #         if geolocation.get(self._joinTags([datacite_geolocation_point_tag])):
+    #             datacite_geolocation[datacite_geolocation_point_tag] = geolocation.get(
+    #                 self._joinTags([datacite_geolocation_point_tag]), '')
+    #         if geolocation.get(self._joinTags([datacite_geolocation_box_tag])):
+    #             datacite_geolocation[datacite_geolocation_box_tag] = geolocation.get(
+    #                 self._joinTags([datacite_geolocation_box_tag]), '')
+    #         datacite_geolocation[datacite_geolocation_place_tag] = geolocation.get(
+    #             self._joinTags([datacite_geolocation_tag, datacite_geolocation_place_tag]), '')
+    #         datacite_geolocations += [datacite_geolocation]
+    except JSONDecodeError:
+        datacite_geolocations = []
+
+    if datacite_geolocations:
+        # log.debug("datacite_geolocations=" + str(datacite_geolocations))
+
+        geolocation_place = dataset.get('spatial_info', '')
+        if geolocation_place:
+            datacite_geolocation_place = {datacite_geolocation_place_tag: geolocation_place}
+            datacite_geolocations += [datacite_geolocation_place]
+
+        datacite['resource']['geoLocations'] = {'geoLocation': datacite_geolocations}
+
+    # geolocation_place = dataset.get('spatial_info', '')
+    # if geolocation_place:
+    #     datacite_geolocation_place = {datacite_geolocation_place_tag: geolocation_place}
+    #     datacite['resource']['geoLocations'] = {'geoLocation': datacite_geolocation_place}
+
+    # Funding Information
+    datacite_funding_refs_tag = 'fundingReferences'
+    datacite_funding_ref_tag = 'fundingReference'
+
+    datacite_funding_subfields = ['funderName', 'awardNumber']
+
+    datacite_funding_refs = []
+    #     ckan_funding_refs = self._get_complex_mapped_value(datacite_funding_refs_tag, datacite_funding_ref_tag,
+    #                                                        datacite_funding_subfields, dataset, metadata_map)
+    funding_dataset = dataset.get('funding', [])
+    try:
+        funding = json.loads(funding_dataset)
+    except JSONDecodeError:
+        funding = []
+
+    #     for funding_ref in ckan_funding_refs:
+    #         datacite_funding_ref = collections.OrderedDict()
+    #         funder_name = funding_ref.get(self._joinTags([datacite_funding_ref_tag, 'funderName']), '')
+    #         if funder_name:
+    #             datacite_funding_ref['funderName'] = funder_name.strip()
+    #             award_number = funding_ref.get(self._joinTags([datacite_funding_ref_tag, 'awardNumber']), '')
+    #             if award_number:
+    #                 datacite_funding_ref['awardNumber'] = award_number.strip()
+    #             datacite_funding_refs += [datacite_funding_ref]
+    for funder in funding:
+
+        datacite_funding_ref = collections.OrderedDict()
+
+        funder_name = funder.get('institution', '')
+        if funder_name:
+            datacite_funding_ref['funderName'] = funder_name.strip()
+            award_number = funder.get('grant_number', '')
+            if award_number:
+                datacite_funding_ref['awardNumber'] = award_number.strip()
+            datacite_funding_refs += [datacite_funding_ref]
+
+    if datacite_funding_refs:
+        datacite['resource'][datacite_funding_refs_tag] = {datacite_funding_ref_tag: datacite_funding_refs}
+    #
+    #     # Convert to xml
+    #     converted_package = unparse(datacite, pretty=True)
+    #
+    #     return converted_package
+
+    return datacite
+
+
 #
-#     if datacite_sizes:
-#         datacite['resource'][datacite_size_group_tag] = {datacite_size_tag: datacite_sizes}
-#
-#     # Formats (get from resources)
-#     datacite_format_group_tag = 'formats'
-#     datacite_format_tag = 'format'
-#     datacite_formats = []
-#
-#     for resource in dataset.get('resources', []):
-#         resource_format = self._get_single_mapped_value(
-#             self._joinTags([datacite_format_group_tag, datacite_format_tag]),
-#             resource, metadata_resource_map,
-#             default=resource.get('mimetype', resource.get('mimetype_inner', '')))
-#         if resource_format:
-#             datacite_format = {'#text': resource_format}
-#             if datacite_format not in datacite_formats:
-#                 datacite_formats += [datacite_format]
-#     if datacite_formats:
-#         datacite['resource'][datacite_format_group_tag] = {datacite_format_tag: datacite_formats}
-#
-#     # Version
-#     datacite_version_tag = 'version'
-#     datacite_version = self._get_single_mapped_value(datacite_version_tag, dataset, metadata_map, '')
-#     if datacite_version:
-#         datacite['resource'][datacite_version_tag] = {'#text': datacite_version}
-#
-#     # Rights
-#     datacite_rights_group_tag = 'rightsList'
-#     datacite_rights_tag = 'rights'
-#     datacite_rights_uri_tag = 'rightsURI'
-#
-#     datacite_scheme_uri_tag = "schemeURI"
-#     default_rights_scheme_uri = "https://spdx.org/licenses/"
-#
-#     datacite_rights_identifier_scheme = "rightsIdentifierScheme"
-#     default_rights_identifier = "SPDX"
-#
-#     datacite_rights_identifier = "rightsIdentifier"  # "CC0 1.0"
-#
-#     datacite_rights = self._get_complex_mapped_value(datacite_rights_group_tag, datacite_rights_tag,
-#                                                      ['', datacite_rights_uri_tag], dataset, metadata_map)
-#
-#     # Get details form License object
-#     if datacite_rights:
-#         register = model.Package.get_license_register()
-#         rights_list = []
-#         for rights_item in datacite_rights:
-#             rights_id = rights_item.get(datacite_rights_tag)
-#             if rights_id:
-#                 rights_title = rights_id
-#                 rights_uri = rights_item.get(self._joinTags([datacite_rights_tag, datacite_rights_uri_tag]), '')
-#                 try:
-#                     license = register.get(rights_id)
-#                     log.debug("register = " + repr(license))
-#                     rights_title = license.title
-#                     rights_uri = license.url
-#                 except Exception:
-#                     log.debug('Exception when trying to get license attributes')
-#                     pass
-#                 datacite_rights_item = {'@' + datacite_xml_lang_tag: 'en-us', '#text': rights_title}
-#                 if rights_uri:
-#                     datacite_rights_item['@' + datacite_rights_uri_tag] = rights_uri
-#
-#                 rights_id_spx = self.value_to_datacite_cv(rights_id, datacite_rights_identifier, default=None)
-#                 if rights_id_spx:
-#                     datacite_rights_item['@' + datacite_scheme_uri_tag] = default_rights_scheme_uri
-#                     datacite_rights_item['@' + datacite_rights_identifier_scheme] = default_rights_identifier
-#                     datacite_rights_item['@' + datacite_rights_identifier] = rights_id_spx
-#
-#                 rights_list += [datacite_rights_item]
-#         if rights_list:
-#             datacite['resource'][datacite_rights_group_tag] = {datacite_rights_tag: rights_list}
-#
-#     # Description
-#     datacite_descriptions_tag = 'descriptions'
-#     datacite_description_tag = 'description'
-#     datacite_description_type_tag = 'descriptionType'
-#     datacite_descriptions = []
-#     ckan_descriptions = self._get_complex_mapped_value(datacite_descriptions_tag, datacite_description_tag,
-#                                                        ['', datacite_xml_lang_tag, datacite_description_type_tag],
-#                                                        dataset, metadata_map)
-#     for ckan_description in ckan_descriptions:
-#         description_text = ckan_description.get(datacite_description_tag, '').replace('\r', '').replace('>',
-#                                                                                                         '-').replace(
-#             '<', '-').replace('__', '').replace('#', '').replace('\n\n', '\n').replace('\n\n', '\n')
-#         datacite_description = {'#text': description_text,
-#                                 '@' + datacite_description_type_tag: ckan_description.get(
-#                                     self._joinTags([datacite_description_tag, datacite_description_type_tag]),
-#                                     'Abstract'),
-#                                 '@' + datacite_xml_lang_tag: ckan_description.get(
-#                                     self._joinTags([datacite_description_tag, datacite_xml_lang_tag]), 'en-us')}
-#         datacite_descriptions += [datacite_description]
-#     if datacite_descriptions:
-#         datacite['resource'][datacite_descriptions_tag] = {datacite_description_tag: datacite_descriptions}
-#
-#     # GeoLocation
-#     datacite_geolocations_tag = 'geoLocations'
-#     datacite_geolocation_tag = 'geoLocation'
-#     datacite_geolocation_place_tag = 'geoLocationPlace'
-#     datacite_geolocation_point_tag = 'geoLocationPoint'
-#     datacite_geolocation_box_tag = 'geoLocationBox'
-#
-#     ckan_geolocations = self._get_complex_mapped_value(datacite_geolocations_tag, datacite_geolocation_tag,
-#                                                        [datacite_geolocation_place_tag,
-#                                                         datacite_geolocation_point_tag,
-#                                                         datacite_geolocation_box_tag], dataset, metadata_map)
-#     log.debug("ckan_geolocations=" + str(ckan_geolocations))
-#     datacite_geolocations = []
-#     try:
-#         # Spatial extension
-#         pkg_spatial = json.loads(dataset['spatial'])
-#         log.debug("pkg_spatial=" + str(pkg_spatial))
-#         if pkg_spatial:
-#             coordinates_list = self._flatten_list(pkg_spatial.get('coordinates', '[]'), reverse=True)
-#             if pkg_spatial.get('type', '').lower() == 'polygon':
-#                 datacite_geolocation = collections.OrderedDict()
-#                 datacite_geolocation['geoLocationPolygon'] = {'polygonPoint': []}
-#                 for coordinates_pair in pkg_spatial.get('coordinates', '[[]]')[0]:
-#                     geolocation_point = collections.OrderedDict()
-#                     geolocation_point['pointLongitude'] = coordinates_pair[0]
-#                     geolocation_point['pointLatitude'] = coordinates_pair[1]
-#                     datacite_geolocation['geoLocationPolygon']['polygonPoint'] += [geolocation_point]
-#                 datacite_geolocations += [datacite_geolocation]
-#             else:
-#                 if pkg_spatial.get('type', '').lower() == 'multipoint':
-#                     for coordinates_pair in pkg_spatial.get('coordinates', '[]'):
-#                         log.debug("point=" + str(coordinates_pair))
-#                         datacite_geolocation = collections.OrderedDict()
-#                         datacite_geolocation['geoLocationPoint'] = collections.OrderedDict()
-#                         datacite_geolocation['geoLocationPoint']['pointLongitude'] = coordinates_pair[0]
-#                         datacite_geolocation['geoLocationPoint']['pointLatitude'] = coordinates_pair[1]
-#                         datacite_geolocations += [datacite_geolocation]
-#                 else:
-#                     datacite_geolocation = collections.OrderedDict()
-#                     datacite_geolocation['geoLocationPoint'] = collections.OrderedDict()
-#                     datacite_geolocation['geoLocationPoint']['pointLongitude'] = coordinates_list[1]
-#                     datacite_geolocation['geoLocationPoint']['pointLatitude'] = coordinates_list[0]
-#                     datacite_geolocations += [datacite_geolocation]
-#             if ckan_geolocations:
-#                 datacite_geolocation_place = ckan_geolocations[0].get(
-#                     self._joinTags([datacite_geolocation_tag, datacite_geolocation_place_tag]), '')
-#                 if datacite_geolocation_place:
-#                     datacite_geolocation = collections.OrderedDict()
-#                     datacite_geolocation[datacite_geolocation_place_tag] = datacite_geolocation_place
-#                     datacite_geolocations += [datacite_geolocation]
-#     except:
-#         # directly defined fields
-#         for geolocation in ckan_geolocations:
-#             datacite_geolocation = collections.OrderedDict()
-#             if geolocation.get(self._joinTags([datacite_geolocation_point_tag])):
-#                 datacite_geolocation[datacite_geolocation_point_tag] = geolocation.get(
-#                     self._joinTags([datacite_geolocation_point_tag]), '')
-#             if geolocation.get(self._joinTags([datacite_geolocation_box_tag])):
-#                 datacite_geolocation[datacite_geolocation_box_tag] = geolocation.get(
-#                     self._joinTags([datacite_geolocation_box_tag]), '')
-#             datacite_geolocation[datacite_geolocation_place_tag] = geolocation.get(
-#                 self._joinTags([datacite_geolocation_tag, datacite_geolocation_place_tag]), '')
-#             datacite_geolocations += [datacite_geolocation]
-#
-#     if datacite_geolocations:
-#         log.debug("datacite_geolocations=" + str(datacite_geolocations))
-#         datacite['resource']['geoLocations'] = {'geoLocation': datacite_geolocations}
-#
-#     # Funding Information
-#     datacite_funding_refs_tag = 'fundingReferences'
-#     datacite_funding_ref_tag = 'fundingReference'
-#
-#     datacite_funding_subfields = ['funderName', 'awardNumber']
-#
-#     datacite_funding_refs = []
-#     ckan_funding_refs = self._get_complex_mapped_value(datacite_funding_refs_tag, datacite_funding_ref_tag,
-#                                                        datacite_funding_subfields, dataset, metadata_map)
-#     for funding_ref in ckan_funding_refs:
-#         datacite_funding_ref = collections.OrderedDict()
-#         funder_name = funding_ref.get(self._joinTags([datacite_funding_ref_tag, 'funderName']), '')
-#         if funder_name:
-#             datacite_funding_ref['funderName'] = funder_name.strip()
-#             award_number = funding_ref.get(self._joinTags([datacite_funding_ref_tag, 'awardNumber']), '')
-#             if award_number:
-#                 datacite_funding_ref['awardNumber'] = award_number.strip()
-#             datacite_funding_refs += [datacite_funding_ref]
-#     if datacite_funding_refs:
-#         datacite['resource'][datacite_funding_refs_tag] = {datacite_funding_ref_tag: datacite_funding_refs}
-#
-#     # Convert to xml
-#     converted_package = unparse(datacite, pretty=True)
-#
-#     return converted_package
-#
-# def _flatten_list(self, input_list, reverse=False):
-#     output_list = []
-#     for item in input_list:
-#         if type(item) is not list:
-#             if reverse:
-#                 output_list = [str(item)] + output_list
-#             else:
-#                 output_list += [str(item)]
-#         else:
-#             output_list += self._flatten_list(item, reverse)
-#     return output_list
-#
-# def flatten_list(self, input_list, reverse=False):
-#     output_list = []
-#     for item in input_list:
-#         if type(item) is not list:
-#             if reverse:
-#                 output_list = [str(item)] + output_list
-#             else:
-#                 output_list += [str(item)]
-#         else:
-#             output_list += self._flatten_list(item, reverse)
-#     return output_list
+def flatten_list(input_list, reverse=False):
+    output_list = []
+    for item in input_list:
+        if type(item) is not list:
+            if reverse:
+                output_list = [str(item)] + output_list
+            else:
+                output_list += [str(item)]
+        else:
+            output_list += flatten_list(item, reverse)
+    return output_list
+
 
 def join_tags(tag_list, sep='.'):
     return sep.join([tag for tag in tag_list if tag])
