@@ -37,7 +37,7 @@ def get_metadata_list(
         package_names = get_url(f"{host}/api/3/action/package_list").json()
     except AttributeError as e:
         log.error(e)
-        log.error(f"Getting package names from API failed. Returned: {package_names}")
+        log.error(f"Getting package names from API failed.")
         raise AttributeError("Failed to extract package names as JSON.")
 
     log.debug("Extracting [result] key from JSON.")
@@ -76,7 +76,6 @@ def get_protocol_and_domain(
     return protocol, domain
 
 
-# TODO determine how to obtain id_kwarg argument from prop in metadata detail page vue component
 def get_package(
         package_name: str,
         host: str = "https://www.envidat.ch",
