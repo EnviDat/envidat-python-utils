@@ -12,7 +12,6 @@ from envidat.converters.iso_converter import convert_iso
 from envidat.converters.ris_converter import convert_ris
 from envidat.converters.xml_converter import convert_xml
 
-
 log = logging.getLogger(__name__)
 
 
@@ -31,10 +30,12 @@ class Record:
     content = None
 
     def __init__(
-        self,
-        input_data: Union[str, dict],
-        extract: Literal["str", "xml", "iso"] = None,
-    ) -> NoReturn:
+            self,
+            input_data: Union[str, dict],
+            extract: Literal["str", "xml", "iso"] = None,
+    ):
+        # Commented out line below because __init__ should return None
+        # ) -> NoReturn:
         """
         Init the Record object.
 
@@ -74,10 +75,13 @@ class Record:
             # # TypeError: __init__() should return None, not 'str'
             # return self.get_content()
 
-    def get_content(self) -> str:
+    # Removed expected return type of str in functions below because sometimes self.content is also a dictionary
+
+    def get_content(self):
         """Get current content of Record."""
         return self.content
 
+    # TODO self.input is not an attribute
     def validate(self) -> bool:
         """Validate JSON record."""
         return validate_json(self.input)
@@ -90,7 +94,7 @@ class Record:
         """Convert content to XML record."""
         return convert_xml(self.content)
 
-    def to_iso(self) -> str:
+    def to_iso(self):
         """Convert content to ISO record."""
         return convert_iso(self.content)
 
@@ -111,6 +115,7 @@ class Record:
         return convert_datacite(self.content)
 
 
+# TODO test function below
 def get_all_metadata_as_record_list(as_xml: bool = False, as_iso: bool = False) -> list:
     """
     Return all EnviDat metadata entries as Record objects.
