@@ -2,6 +2,7 @@ import os
 from tempfile import NamedTemporaryFile
 
 import pytest
+from envidat.converters.ris_converter import ris_convert_dataset
 from moto import mock_s3
 
 from envidat.s3.bucket import Bucket
@@ -57,3 +58,18 @@ def create_tempfile(scope="function"):
         return temp_file
 
     return nested_tempfile
+
+
+@pytest.fixture
+def ris_converter_one_package():
+    package_name = 'seilaplan-tutorial-dhm-kacheln-zusammenfugen'
+    file_format = 'ris'
+    extension = 'ris'
+    return ris_convert_dataset, package_name, file_format, extension
+
+
+@pytest.fixture
+def ris_converter_all_packages():
+    file_format = 'ris'
+    extension = 'ris'
+    return ris_convert_dataset, file_format, extension

@@ -33,5 +33,5 @@ record3 = Record(input_data=test_package_3)
 # result_datacite_2 = record2.to_datacite()
 # print(result_datacite_2)
 #
-result_datacite_3 = record3.to_datacite()
-print(result_datacite_3)
+# result_datacite_3 = record3.to_datacite()
+# print(result_datacite_3)
