@@ -71,17 +71,25 @@ def test_ris_converters_one_package(ris_converter_one_package):
 
     ckan_output, converter_output = get_converters_one_package(*ris_converter_one_package)
 
-    assert (
-        ckan_output == converter_output,
-        f'FAILED TEST comparing one package: RIS CKAN output does not equal ris_converter_dataset() output'
-    )
+    assert ckan_output == converter_output
 
 
 def test_ris_converters_all_packages(ris_converter_all_packages):
 
     ckan_packages, converter_packages = get_converters_all_packages(*ris_converter_all_packages)
 
-    assert (
-        ckan_packages == converter_packages,
-        f'FAILED TEST comparing all packages: RIS CKAN output does not equal ris_converter_dataset() output'
-    )
+    assert ckan_packages == converter_packages
+
+
+def test_bibtex_converters_one_package(bibtex_converter_one_package):
+
+    ckan_output, converter_output = get_converters_one_package(*bibtex_converter_one_package)
+
+    assert ckan_output == converter_output
+
+
+def test_bibtex_converters_all_packages(bibtex_converter_all_packages):
+
+    ckan_packages, converter_packages = get_converters_all_packages(*bibtex_converter_all_packages)
+
+    assert ckan_packages == converter_packages
