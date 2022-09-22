@@ -37,7 +37,7 @@ def get_converters_one_package(
 
     ckan_endpoint = get_ckan_endpoint(package, file_format, extension)
     request = get_url(ckan_endpoint)
-    ckan_output = request.text
+    ckan_output = request.content.decode()
 
     converter_output = convert_dataset(package)
 
@@ -58,7 +58,7 @@ def get_converters_all_packages(
 
         ckan_endpoint = get_ckan_endpoint(package, file_format, extension)
         request = get_url(ckan_endpoint)
-        ckan_output = request.text
+        ckan_output = request.content.decode()
         ckan_packages.append(ckan_output)
 
         converter_output = convert_dataset(package)
