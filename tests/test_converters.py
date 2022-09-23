@@ -4,6 +4,8 @@ import os
 from envidat.api.v1 import get_package, get_metadata_list_with_resources
 from envidat.utils import get_url
 
+from xmltodict import unparse
+
 
 def get_ckan_endpoint(
         package: dict,
@@ -67,6 +69,61 @@ def get_converters_all_packages(
     return ckan_packages, converter_packages
 
 
+def test_bibtex_converters_one_package(bibtex_converter_one_package):
+
+    ckan_output, converter_output = get_converters_one_package(*bibtex_converter_one_package)
+
+    assert ckan_output == converter_output
+
+
+def test_bibtex_converters_all_packages(bibtex_converter_all_packages):
+
+    ckan_packages, converter_packages = get_converters_all_packages(*bibtex_converter_all_packages)
+
+    assert ckan_packages == converter_packages
+
+
+def test_iso_converters_one_package(iso_converter_one_package):
+
+    ckan_output, converter_output = get_converters_one_package(*iso_converter_one_package)
+
+    # Convert OrderedDict to xml format
+    converted_output_xml = unparse(converter_output, pretty=True)
+
+    # print(type(ckan_output))
+    # print(len(ckan_output))
+    # print(ckan_output)
+    # print('\n')
+    #
+    # print(type(converted_output_xml))
+    # print(len(converted_output_xml))
+    # print(converted_output_xml)
+
+    assert ckan_output == converted_output_xml
+
+
+def test_iso_converters_all_packages(iso_converter_all_packages):
+
+    ckan_packages, converter_packages = get_converters_all_packages(*iso_converter_all_packages)
+
+    # Convert OrderedDict to xml format
+    converter_packages_xml = []
+    for package in converter_packages:
+        package_xml = unparse(package, pretty=True)
+        converter_packages_xml.append(package_xml)
+
+    # print(type(ckan_packages))
+    # print(len(ckan_packages))
+    # print(ckan_packages[67])
+    # print('\n')
+    #
+    # print(type(converter_packages_xml))
+    # print(len(converter_packages_xml))
+    # print(converter_packages_xml[67])
+
+    assert ckan_packages == converter_packages_xml
+
+
 def test_ris_converters_one_package(ris_converter_one_package):
 
     ckan_output, converter_output = get_converters_one_package(*ris_converter_one_package)
@@ -80,16 +137,3 @@ def test_ris_converters_all_packages(ris_converter_all_packages):
 
     assert ckan_packages == converter_packages
 
-
-def test_bibtex_converters_one_package(bibtex_converter_one_package):
-
-    ckan_output, converter_output = get_converters_one_package(*bibtex_converter_one_package)
-
-    assert ckan_output == converter_output
-
-
-def test_bibtex_converters_all_packages(bibtex_converter_all_packages):
-
-    ckan_packages, converter_packages = get_converters_all_packages(*bibtex_converter_all_packages)
-
-    assert ckan_packages == converter_packages
