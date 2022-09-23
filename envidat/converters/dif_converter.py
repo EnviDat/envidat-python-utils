@@ -190,8 +190,11 @@ def dif_convert_dataset(dataset_dict: dict):
     if spatial:
         dif_metadata_dict['Spatial_Coverage']['Geometry'] = collections.OrderedDict()
         dif_metadata_dict['Spatial_Coverage']['Geometry']['Coordinate_System'] = 'CARTESIAN'
-        bounding_rectangle = get_bounding_rectangle_dict(spatial)
-        dif_metadata_dict['Spatial_Coverage']['Geometry']['Bounding_Rectangle'] = bounding_rectangle
+
+        coordinates = spatial.get('coordinates', [])
+        if coordinates:
+            bounding_rectangle = get_bounding_rectangle_dict(spatial)
+            dif_metadata_dict['Spatial_Coverage']['Geometry']['Bounding_Rectangle'] = bounding_rectangle
 
         # <xs:element name="Point" type="Point"/>
         if spatial.get('type') == 'Point':
