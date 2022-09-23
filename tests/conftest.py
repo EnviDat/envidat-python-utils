@@ -3,6 +3,7 @@ from tempfile import NamedTemporaryFile
 
 import pytest
 from envidat.converters.bibtex_converter import bibtex_convert_dataset
+from envidat.converters.dif_converter import dif_convert_dataset
 from envidat.converters.iso_converter import iso_convert_dataset
 from envidat.converters.ris_converter import ris_convert_dataset
 from moto import mock_s3
@@ -75,6 +76,22 @@ def bibtex_converter_all_packages():
     file_format = 'bibtex'
     extension = 'bib'
     return bibtex_convert_dataset, file_format, extension
+
+
+@pytest.fixture
+def dif_converter_one_package():
+    # package_name = 'intratrait'
+    package_name = 'resolution-in-sdms-shapes-plant-multifaceted-diversity'
+    file_format = 'gcmd_dif'
+    extension = 'xml'
+    return dif_convert_dataset, package_name, file_format, extension
+
+
+@pytest.fixture
+def dif_converter_all_packages():
+    file_format = 'gcmd_dif'
+    extension = 'xml'
+    return dif_convert_dataset, file_format, extension
 
 
 @pytest.fixture
