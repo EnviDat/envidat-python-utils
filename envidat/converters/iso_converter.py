@@ -276,28 +276,37 @@ def iso_convert_dataset(dataset_dict: dict):
             geographic_element = {
                 'gmd:EX_BoundingPolygon': {'gmd:polygon': {'gml:MultiPoint': multi_point_element}}}
         else:
-            coordinates = spatial.get('coordinates', [])[0]
-            if is_a_box(coordinates):
-                bounding_box = collections.OrderedDict()
-                bounding_box['gmd:westBoundLongitude'] = {
-                    'gco:Decimal': str(min(coordinates[0][0], coordinates[2][0]))}
-                bounding_box['gmd:eastBoundLongitude'] = {
-                    'gco:Decimal': str(max(coordinates[0][0], coordinates[2][0]))}
-                bounding_box['gmd:southBoundLatitude'] = {
-                    'gco:Decimal': str(min(coordinates[0][1], coordinates[2][1]))}
-                bounding_box['gmd:northBoundLatitude'] = {
-                    'gco:Decimal': str(max(coordinates[0][1], coordinates[2][1]))}
-                geographic_element = {'gmd:EX_GeographicBoundingBox': bounding_box}
-            else:
-                gml_id_index += 1
-                polygon_id = 'PL' + "%03d" % (gml_id_index,)
-                pos_list = []
-                for coordinate_pair in coordinates:
-                    coordinates = ' '.join([str(coordinate_pair[0]), str(coordinate_pair[1])])
-                    pos_list += [coordinates]
-                polygon_element = {'@gml:id': polygon_id, 'gml:interior': {'gml:LinearRing': {'gml:pos': pos_list}}}
-                geographic_element = {'gmd:EX_BoundingPolygon': {'gmd:polygon': {'gml:Polygon': polygon_element}}}
-                # spatial.get(type) == 'Polygon':
+            # coordinates = spatial.get('coordinates', [])[0]
+            spatial_coordinates = spatial.get('coordinates', [])
+            if len(spatial_coordinates) > 0:
+                coordinates = spatial_coordinates[0]
+
+                if is_a_box(coordinates):
+                    bounding_box = collections.OrderedDict()
+                    bounding_box['gmd:westBoundLongitude'] = {
+                        'gco:Decimal': str(min(coordinates[0][0], coordinates[2][0]))}
+                    bounding_box['gmd:eastBoundLongitude'] = {
+                        'gco:Decimal': str(max(coordinates[0][0], coordinates[2][0]))}
+                    bounding_box['gmd:southBoundLatitude'] = {
+                        'gco:Decimal': str(min(coordinates[0][1], coordinates[2][1]))}
+                    bounding_box['gmd:northBoundLatitude'] = {
+                        'gco:Decimal': str(max(coordinates[0][1], coordinates[2][1]))}
+                    geographic_element = {'gmd:EX_GeographicBoundingBox': bounding_box}
+                elif coordinates:
+                    gml_id_index += 1
+                    polygon_id = 'PL' + "%03d" % (gml_id_index,)
+                    pos_list = []
+                    for coordinate_pair in coordinates:
+                        coordinates = ' '.join([str(coordinate_pair[0]), str(coordinate_pair[1])])
+                        pos_list += [coordinates]
+                        # print(coordinate_pair)
+                        # print('NEXT')
+                        # if len(coordinate_pair) == 2:
+                        #     coordinates = ' '.join([str(coordinate_pair[0]), str(coordinate_pair[1])])
+                        #     pos_list += [coordinates]
+                    polygon_element = {'@gml:id': polygon_id, 'gml:interior': {'gml:LinearRing': {'gml:pos': pos_list}}}
+                    geographic_element = {'gmd:EX_BoundingPolygon': {'gmd:polygon': {'gml:Polygon': polygon_element}}}
+                    # spatial.get(type) == 'Polygon':
         md_data_id['gmd:extent'] = {'gmd:EX_Extent': {'gmd:geographicElement': geographic_element}}
 
     # assign to parent
@@ -346,7 +355,7 @@ def iso_convert_dataset(dataset_dict: dict):
         # check if restricted
         if not is_url(str(resource_url)):
             log.debug(f'resource is restricted: {resource_name}')
-            resource_url = f'{package_url}/{resource}/{resource_id}'
+            resource_url = f'{package_url}/resource/{resource_id}'
 
         log.debug([resource_url, resource_name])
         online_resource = get_online_resource(resource_url, resource_name)
