@@ -3,6 +3,7 @@ from tempfile import NamedTemporaryFile
 
 import pytest
 from envidat.converters.bibtex_converter import bibtex_convert_dataset
+from envidat.converters.datacite_converter import datacite_convert_dataset
 from envidat.converters.dif_converter import dif_convert_dataset
 from envidat.converters.iso_converter import iso_convert_dataset
 from envidat.converters.ris_converter import ris_convert_dataset
@@ -78,9 +79,24 @@ def bibtex_converter_all_packages():
     return bibtex_convert_dataset, file_format, extension
 
 
+#
+@pytest.fixture
+def datacite_converter_one_package():
+    package_name = 'intratrait'
+    file_format = 'datacite'
+    extension = 'xml'
+    return datacite_convert_dataset, package_name, file_format, extension
+
+
+@pytest.fixture
+def datacite_converter_all_packages():
+    file_format = 'datacite'
+    extension = 'xml'
+    return datacite_convert_dataset, file_format, extension
+
+
 @pytest.fixture
 def dif_converter_one_package():
-    # package_name = 'intratrait'
     package_name = 'resolution-in-sdms-shapes-plant-multifaceted-diversity'
     file_format = 'gcmd_dif'
     extension = 'xml'
@@ -96,8 +112,7 @@ def dif_converter_all_packages():
 
 @pytest.fixture
 def iso_converter_one_package():
-    # package_name = 'intratrait'
-    package_name = 'resolution-in-sdms-shapes-plant-multifaceted-diversity'
+    package_name = 'intratrait'
     file_format = 'iso19139'
     extension = 'xml'
     return iso_convert_dataset, package_name, file_format, extension
@@ -123,5 +138,3 @@ def ris_converter_all_packages():
     file_format = 'ris'
     extension = 'ris'
     return ris_convert_dataset, file_format, extension
-
-
