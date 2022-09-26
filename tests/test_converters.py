@@ -149,13 +149,44 @@ def test_iso_converters_all_packages(iso_converter_all_packages):
 
     ckan_packages, converter_packages = get_converters_all_packages(*iso_converter_all_packages)
 
+    # Find CKAN packages that do not produce a valid ISO format xml file
+    remove_indices = []
+    for index, package in enumerate(ckan_packages):
+        if package.startswith('No converter available for format iso19139'):
+            remove_indices.append(index)
+
+    # print(len(ckan_packages))
+    # print(len(converter_packages))
+
+    # Exclude packages from testing that do not have a valid CKAN produced ISO format xml file
+    for ind in remove_indices:
+        ckan_packages.pop(ind)
+        converter_packages.pop(ind)
+
     # Convert OrderedDict packages to xml format
     converter_packages_xml = []
     for package in converter_packages:
         package_xml = unparse(package, pretty=True)
         converter_packages_xml.append(package_xml)
 
+    # print(len(ckan_packages))
+    # print(type(ckan_packages[358]))
+    # print(len(ckan_packages[358]))
+    # print(ckan_packages[358])
+    # print('\n')
+    #
+    # print(len(converter_packages_xml))
+    # print(type(converter_packages_xml[358]))
+    # print(len(ckan_packages[358]))
+    # print(converter_packages_xml[358])
+
+    # assert ckan_packages[55] == converter_packages_xml[55]
+
     assert ckan_packages == converter_packages_xml
+
+    # for index, package in enumerate(ckan_packages):
+    #     print(index)
+    #     assert ckan_packages[index] == converter_packages_xml[index]
 
 
 def test_ris_converters_one_package(ris_converter_one_package):
