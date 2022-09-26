@@ -230,10 +230,15 @@ def datacite_convert_dataset(dataset: dict):
     # ResourceType
     datacite_resource_type_tag = 'resourceType'
     datacite_resource_type_general_tag = 'resourceTypeGeneral'
+    resource_type_general = dataset.get('resource_type_general', 'Dataset')
+    datacite_resource_type_general = value_to_datacite_cv(resource_type_general,
+                                                          datacite_resource_type_general_tag,
+                                                          default='Dataset')
 
     datacite['resource'][datacite_resource_type_tag] = {
         '#text': dataset.get('resource_type', ''),
-        f'@{datacite_resource_type_general_tag}': (dataset.get('resource_type_general', 'Dataset')).title()
+        # f'@{datacite_resource_type_general_tag}': (dataset.get('resource_type_general', 'Dataset')).title()
+        f'@{datacite_resource_type_general_tag}': datacite_resource_type_general
     }
 
     # Alternate Identifier
