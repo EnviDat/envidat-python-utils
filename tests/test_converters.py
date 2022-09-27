@@ -69,6 +69,52 @@ def get_converters_all_packages(
     return ckan_packages, converter_packages
 
 
+def get_datacite_converters_one_package(
+        convert_dataset,
+        get_name_doi,
+        package_name,
+        file_format,
+        extension
+):
+
+    package = get_package(package_name)
+
+    ckan_endpoint = get_ckan_endpoint(package, file_format, extension)
+    request = get_url(ckan_endpoint)
+    ckan_output = request.content.decode()
+
+    name_doi = get_name_doi()
+    converter_output = convert_dataset(package, name_doi)
+
+    return ckan_output, converter_output
+
+
+def get_datacite_converters_all_packages(
+        convert_dataset,
+        get_name_doi,
+        file_format,
+        extension
+):
+
+    packages = get_metadata_list_with_resources()
+    ckan_packages = []
+
+    name_doi = get_name_doi()
+    converter_packages = []
+
+    for package in packages:
+
+        ckan_endpoint = get_ckan_endpoint(package, file_format, extension)
+        request = get_url(ckan_endpoint)
+        ckan_output = request.content.decode()
+        ckan_packages.append(ckan_output)
+
+        converter_output = convert_dataset(package, name_doi)
+        converter_packages.append(converter_output)
+
+    return ckan_packages, converter_packages
+
+
 def test_bibtex_converters_one_package(bibtex_converter_one_package):
 
     ckan_output, converter_output = get_converters_one_package(*bibtex_converter_one_package)
