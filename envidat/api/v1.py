@@ -177,3 +177,26 @@ def get_metadata_list_with_resources(
         )
 
     return package_names_with_resources
+
+
+def get_metadata_name_doi() -> dict:
+    """Get all current package/metadata names and DOIs and a dictionary in the format {name: doi}.
+
+    Args: none
+
+    Note:
+        Packages that do not have DOIs are assigned a default value of an empty string ''
+
+    Returns:
+        dict: Dictionary of package information with names as keys and associated DOIs as values.
+    """
+
+    metadata = get_metadata_list_with_resources()
+    name_doi = {}
+
+    for package in metadata:
+        package_name = package.get('name')
+        doi = package.get('doi', '')
+        name_doi[package_name] = doi
+
+    return name_doi
