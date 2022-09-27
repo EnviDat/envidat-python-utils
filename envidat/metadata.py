@@ -30,10 +30,10 @@ class Record:
     content = None
 
     def __init__(
-            self,
-            input_data: Union[str, dict],
-            extract: Literal["str", "xml", "iso"] = None,
-    ):
+        self,
+        input_data: Union[str, dict],
+        extract: Literal["str", "xml", "iso"] = None,
+    ) -> NoReturn:
         # Commented out line below because __init__ should return None
         # ) -> NoReturn:
         """
@@ -63,7 +63,8 @@ class Record:
             log.error("Input is not a valid type from (str,dict)")
             raise TypeError("Input must be of type string or dict")
 
-        # TODO refactor so that desired format is returned after calling conversion functions below
+        # TODO refactor so that desired format is returned after
+        # calling conversion functions below
         if extract:
             mapping = {
                 "str": self.to_string,
@@ -75,7 +76,8 @@ class Record:
             # # TypeError: __init__() should return None, not 'str'
             # return self.get_content()
 
-    # Removed expected return type of str in functions below because sometimes self.content is also a dictionary
+    # Removed expected return type of str in functions below
+    # because sometimes self.content is also a dictionary
 
     def get_content(self):
         """Get current content of Record."""
@@ -115,7 +117,6 @@ class Record:
         return convert_datacite(self.content)
 
 
-# TODO test function below
 def get_all_metadata_as_record_list(as_xml: bool = False, as_iso: bool = False) -> list:
     """
     Return all EnviDat metadata entries as Record objects.

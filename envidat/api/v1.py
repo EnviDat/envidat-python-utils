@@ -5,7 +5,6 @@
 
 import logging
 import os
-from typing import Tuple
 
 from envidat.utils import get_url
 
@@ -13,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 def get_metadata_list(
-        host: str = "https://www.envidat.ch", sort_result: bool = None
+    host: str = "https://www.envidat.ch", sort_result: bool = None
 ) -> list:
     """Get package/metadata list from API.
 
@@ -37,7 +36,7 @@ def get_metadata_list(
         package_names = get_url(f"{host}/api/3/action/package_list").json()
     except AttributeError as e:
         log.error(e)
-        log.error(f"Getting package names from API failed.")
+        log.error("Getting package names from API failed.")
         raise AttributeError("Failed to extract package names as JSON.")
 
     log.debug("Extracting [result] key from JSON.")
@@ -53,10 +52,9 @@ def get_metadata_list(
 
 
 def get_protocol_and_domain(
-        protocol: str = "https",
-        domain: str = "www.envidat.ch"
-) -> Tuple[str, str]:
-    """Returns tuple with protocol string and domain string from API host.
+    protocol: str = "https", domain: str = "www.envidat.ch"
+) -> tuple[str, str]:
+    """Extract protocol string and domain string from API host.
 
     Args:
         protocol (str): API host protocol. Attempts to get from environment if omitted.
@@ -69,17 +67,17 @@ def get_protocol_and_domain(
     """
     if "API_HOST" in os.environ:
         host = os.getenv("API_HOST")
-        protocol = host.partition('://')[0]
-        domain = host.partition('://')[2]
+        protocol = host.partition("://")[0]
+        domain = host.partition("://")[2]
         return protocol, domain
 
     return protocol, domain
 
 
 def get_package(
-        package_name: str,
-        host: str = "https://www.envidat.ch",
-        path: str = "/api/action/package_show?id="
+    package_name: str,
+    host: str = "https://www.envidat.ch",
+    path: str = "/api/action/package_show?id=",
 ) -> dict:
     """Get individual package (metadata entry) as dictionary from API.
 
@@ -101,8 +99,8 @@ def get_package(
     log.info(f"Getting package from {host}.")
     try:
         # Extract result dictionary from API call
-        json_data = get_url(f'{host}{path}{package_name}').json()
-        package = json_data['result']
+        json_data = get_url(f"{host}{path}{package_name}").json()
+        package = json_data["result"]
     except AttributeError as e:
         log.error(e)
         log.error("Getting package from API failed.")
@@ -112,8 +110,8 @@ def get_package(
 
 
 def get_metadata_json_with_resources(
-        host: str = "https://www.envidat.ch",
-        path: str = "/api/3/action/current_package_list_with_resources?limit=100000"
+    host: str = "https://www.envidat.ch",
+    path: str = "/api/3/action/current_package_list_with_resources?limit=100000",
 ) -> dict:
     """Get all current package/metadata as dictionary with associated resources from API.
 
@@ -129,7 +127,10 @@ def get_metadata_json_with_resources(
     Returns:
         dict:  Dictionary of packages, with nested resources.
     """
-    if "API_HOST" in os.environ and "API_PATH_CURRENT_PACKAGE_LIST_WITH_RESOURCES" in os.environ:
+    if (
+        "API_HOST" in os.environ
+        and "API_PATH_CURRENT_PACKAGE_LIST_WITH_RESOURCES" in os.environ
+    ):
         log.debug("Getting API host and path from environment variables.")
         host = os.getenv("API_HOST")
         path = os.getenv("API_PATH_CURRENT_PACKAGE_LIST_WITH_RESOURCES")
@@ -145,10 +146,9 @@ def get_metadata_json_with_resources(
     return package_names_with_resources
 
 
-def get_metadata_list_with_resources(
-        sort_result: bool = None
-) -> list:
-    """Get all current package/metadata as list of results with associated resources from API.
+def get_metadata_list_with_resources(sort_result: bool = None) -> list:
+    """
+    Get all current package/metadata as list of results with associated resources.
 
     Args:
         sort_result (bool): Sort result alphabetically by metadata name.
@@ -160,7 +160,6 @@ def get_metadata_list_with_resources(
     Returns:
         list: List of packages, with nested resources.
     """
-
     # Get package/metadata as string in JSON format with associated resources from API
     package_names_with_resources = get_metadata_json_with_resources()
 
@@ -180,23 +179,24 @@ def get_metadata_list_with_resources(
 
 
 def get_metadata_name_doi() -> dict:
-    """Get all current package/metadata names and DOIs and a dictionary in the format {name: doi}.
+    """
+    Get all current package/metadata names and DOIs as a dictionary.
+
+    Note: Packages that do not have DOIs are assigned a default value
+    of an empty string ''.
 
     Args: none
 
-    Note:
-        Packages that do not have DOIs are assigned a default value of an empty string ''
-
     Returns:
-        dict: Dictionary of package information with names as keys and associated DOIs as values.
+        dict: Dictionary of package information with names as keys
+        and associated DOIs as values, in the format {name: doi}.
     """
-
     metadata = get_metadata_list_with_resources()
     name_doi = {}
 
     for package in metadata:
-        package_name = package.get('name')
-        doi = package.get('doi', '')
+        package_name = package.get("name")
+        doi = package.get("doi", "")
         name_doi[package_name] = doi
 
     return name_doi

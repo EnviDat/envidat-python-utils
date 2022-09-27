@@ -1,8 +1,10 @@
-"""Converter: EnviDat API Format to XML Format"""
+"""Standard XML format for NASA and other providers."""
 
 
 import logging
+
 from xmltodict import unparse
+
 from envidat.api.v1 import get_metadata_json_with_resources
 
 log = logging.getLogger(__name__)
@@ -10,13 +12,16 @@ log = logging.getLogger(__name__)
 
 def convert_xml(package: dict) -> str:
     """
-    Converter function for EnviDat record to XML format.
+    Convert EnviDat record to XML format.
 
-    :return: XML file
+    Args:
+        package (dict): Package JSON from API.
+
+    Returns:
+        str: XML formatted string.
 
     """
-
-    root = {'root': package}
+    root = {"root": package}
 
     # Try to convert packages (i.e. records with metadata) to XML format
     try:
@@ -30,21 +35,23 @@ def convert_xml(package: dict) -> str:
 
 def convert_xml_all_resources() -> str:
     """
-    Converter function for EnviDat JSON records to XML format. JSON --> XML.
+    Convert EnviDat JSON records to XML format.
 
-    :return: XML file
+    Returns:
+        str: XML formatted string.
 
     Note: only valid for metadata schema of EnviDat.
     """
-
     metadata_json = get_metadata_json_with_resources()
 
     # TODO verify which root element is required for XML format
-    metadata_json = {'root': metadata_json}
+    metadata_json = {"root": metadata_json}
 
     # Try to convert packages (i.e. records with metadata) to XML format
     try:
-        converted_data_xml = unparse(metadata_json, short_empty_elements=True, pretty=True)
+        converted_data_xml = unparse(
+            metadata_json, short_empty_elements=True, pretty=True
+        )
         return converted_data_xml
 
     except Exception as e:
