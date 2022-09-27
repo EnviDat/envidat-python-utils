@@ -1,6 +1,8 @@
 import re
 from json import JSONDecodeError
 import collections
+
+from envidat.api.v1 import get_metadata_name_doi
 from xmltodict import unparse
 import json
 
@@ -25,7 +27,9 @@ def convert_datacite(package_json: str) -> str:
         """
     try:
         package = json.loads(package_json)  # Convert package JSON to dictionary
-        converted_package = datacite_convert_dataset(package)  # Convert package to OrderedDict in DataCite format
+        name_doi = get_metadata_name_doi()  # Get dictionary of packages names and DOIs
+        # Convert package to OrderedDict in DataCite format
+        converted_package = datacite_convert_dataset(package, name_doi)
         datacite_xml_package = unparse(converted_package, pretty=True)  # Convert OrderedDict to XML
         return datacite_xml_package
     except ValueError as e:
@@ -34,7 +38,7 @@ def convert_datacite(package_json: str) -> str:
         raise ValueError("Failed to convert package to DataCite format.")
 
 
-def datacite_convert_dataset(dataset: dict):
+def datacite_convert_dataset(dataset: dict, name_doi: dict):
     # Assign datacite to ordered dictionary that will contain dataset content converted to DataCite format
     datacite = collections.OrderedDict()
 
@@ -259,23 +263,51 @@ def datacite_convert_dataset(dataset: dict):
 
     # Related identifier
     related_datasets = dataset.get('related_datasets', '')
+    related_datasets_base_url = 'https://www.envidat.ch/#/metadata/'
     if related_datasets:
 
         datacite_related_urls = collections.OrderedDict()
         datacite_related_urls['relatedIdentifier'] = []
 
-        regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
-        urls = re.findall(regex, related_datasets)
+        for line in related_datasets.split('\n'):
 
-        for url in urls:
-            datacite_related_urls['relatedIdentifier'] += [
-                {
-                    '#text': url,
-                    '@relatedIdentifierType': 'URL',
-                    '@relationType': 'Cites'
-                }
-            ]
+            if line.strip().startswith('*'):
+                line_contents = line.replace('*', '').strip().lower().split(' ')[0]
+                related_url = None
 
+                if line_contents in name_doi:
+                    related_url = f'{related_datasets_base_url}{line_contents}'
+
+                elif len(line_contents) > 0 and line_contents in name_doi.values():
+                    related_url = f'{related_datasets_base_url}{line_contents}'
+
+                elif line_contents.startswith('https://') or line_contents.startswith('http://'):
+                    related_url = line_contents
+
+                if related_url:
+                    datacite_related_urls['relatedIdentifier'] += [
+                        {
+                            '#text': related_url,
+                            '@relatedIdentifierType': 'URL',
+                            '@relationType': 'Cites'
+                        }
+                    ]
+
+        # NOTE: Investigate including commented out block below to find all URLs in 'related_datasets' key
+        # regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+        # urls = re.findall(regex, related_datasets)
+        # print(type(urls))
+        # print(len(urls))
+        #
+        # for url in urls:
+        #     datacite_related_urls['relatedIdentifier'] += [
+        #         {
+        #             '#text': url,
+        #             '@relatedIdentifierType': 'URL',
+        #             '@relationType': 'Cites'
+        #         }
+        #     ]
+      
         if len(datacite_related_urls['relatedIdentifier']) > 0:
             datacite['resource']['relatedIdentifiers'] = datacite_related_urls
 
