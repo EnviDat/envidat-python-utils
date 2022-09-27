@@ -2,6 +2,7 @@ import os
 from tempfile import NamedTemporaryFile
 
 import pytest
+from envidat.api.v1 import get_metadata_name_doi
 from envidat.converters.bibtex_converter import bibtex_convert_dataset
 from envidat.converters.datacite_converter import datacite_convert_dataset
 from envidat.converters.dif_converter import dif_convert_dataset
@@ -82,17 +83,17 @@ def bibtex_converter_all_packages():
 #
 @pytest.fixture
 def datacite_converter_one_package():
-    package_name = 'intratrait'
+    package_name = 'ecological-properties-of-urban-ecosystems-biodiversity-dataset-of-zurich'
     file_format = 'datacite'
     extension = 'xml'
-    return datacite_convert_dataset, package_name, file_format, extension
+    return datacite_convert_dataset, get_metadata_name_doi, package_name, file_format, extension
 
 
 @pytest.fixture
 def datacite_converter_all_packages():
     file_format = 'datacite'
     extension = 'xml'
-    return datacite_convert_dataset, file_format, extension
+    return datacite_convert_dataset, get_metadata_name_doi, file_format, extension
 
 
 @pytest.fixture
