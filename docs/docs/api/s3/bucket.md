@@ -2,7 +2,7 @@
 
 ## Bucket
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L21)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L27)
 
 ```python
 Bucket(
@@ -13,13 +13,14 @@ Bucket(
 ---
 
 Class to handle S3 bucket transactions.
+
 Handles boto3 exceptions with custom exception classes.
 
 **Methods:**
 
 ### .create
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L192)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L195)
 
 ```python
 .create()
@@ -28,6 +29,7 @@ Handles boto3 exceptions with custom exception classes.
 ---
 
 Create the S3 bucket on the endpoint.
+
 Method may be called directly to manipulate the boto3 Bucket object.
 
 **Returns**
@@ -36,7 +38,7 @@ Method may be called directly to manipulate the boto3 Bucket object.
 
 ### .get
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L217)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L225)
 
 ```python
 .get(
@@ -47,6 +49,7 @@ Method may be called directly to manipulate the boto3 Bucket object.
 ---
 
 Get an object from the bucket into a memory object.
+
 Defaults to utf-8 decode, unless specified.
 
 **Args**
@@ -63,7 +66,7 @@ Defaults to utf-8 decode, unless specified.
 
 ### .put
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L260)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L268)
 
 ```python
 .put(
@@ -90,12 +93,12 @@ Put an in memory object into the bucket.
 
 - **dict** : Response dictionary from S3.
 
-### .delete
+### .delete_file
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L304)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L311)
 
 ```python
-.delete(
+.delete_file(
    key: str
 )
 ```
@@ -114,7 +117,7 @@ Delete specified object of a given key.
 
 ### .upload_file
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L324)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L330)
 
 ```python
 .upload_file(
@@ -125,6 +128,7 @@ Delete specified object of a given key.
 ---
 
 Upload a local file to the bucket.
+
 Transparently manages multipart uploads.
 
 **Args**
@@ -138,7 +142,7 @@ Transparently manages multipart uploads.
 
 ### .download_file
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L362)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L368)
 
 ```python
 .download_file(
@@ -149,6 +153,7 @@ Transparently manages multipart uploads.
 ---
 
 Download S3 object to a local file.
+
 Transparently manages multipart downloads.
 
 **Args**
@@ -161,9 +166,37 @@ Transparently manages multipart downloads.
 
 - **bool** : True if success, False is failure.
 
+### .transfer
+
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L402)
+
+```python
+.transfer(
+   source_key: str, dest_bucket: str, dest_key: str = None
+)
+```
+
+---
+
+Fast efficient transfer bucket --> bucket using TransferManager.
+
+This function avoids downloading to memory and uses the underlying
+operations that aws-cli uses to transfer.
+
+**Args**
+
+- **source_key** (str) : The key / path to copy from.
+- **dest_bucket** (str) : Name of the destination bucket.
+- **dest_key** (str) : The key / path to copy to.
+  Optional, defaults to None.
+
+**Returns**
+
+- **bool** : True if success, False is failure.
+
 ### .list_all
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L396)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L452)
 
 ```python
 .list_all()
@@ -175,11 +208,11 @@ Get a list of all objects in the bucket.
 
 **Returns**
 
-- **list** : List of s3.ObjectSummary dicts, containing object metadata.
+- **list** : All keys in the bucket.
 
 ### .list_dir
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L423)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L478)
 
 ```python
 .list_dir(
@@ -190,6 +223,7 @@ Get a list of all objects in the bucket.
 ---
 
 Get a list of all objects in a specific directory (s3 path).
+
 Returns up to a max of 1000 values.
 
 **Args**
@@ -210,7 +244,7 @@ Returns up to a max of 1000 values.
 
 ### .download_dir
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L500)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L555)
 
 ```python
 .download_dir(
@@ -230,37 +264,136 @@ Download an entire S3 path, including subpaths, to a local directory.
 
 **Returns**
 
-- **dict** : key:value pair of file_name:download_status.
+- **dict** : key:value pair of s3_key:download_status.
   download_status True if downloaded, False if failed.
 
-### .upload_dir
+### .download_all
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L537)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L591)
 
 ```python
-.upload_dir(
-   s3_path: str, local_dir: Union[str, Path], file_type: str = ''
+.download_all(
+   local_dir: Union[str, Path], file_type: str = ''
 )
 ```
 
 ---
 
-Upload an entire local directory to a bucket path.
+Download an entire S3 bucket, including subpaths, to a local directory.
 
 **Args**
 
-- **s3_path** (str) : The path within the bucket to upload to.
+- **local_dir** (Union[str, Path]) : Directory to download files into.
+- **file_type** (str) : Download files with extension only, e.g. txt.
+
+**Returns**
+
+- **dict** : key:value pair of s3_key:download_status.
+  download_status True if downloaded, False if failed.
+
+### .upload_dir
+
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L611)
+
+```python
+.upload_dir(
+   local_dir: Union[str, Path], s3_path: str = '/', file_type: str = '',
+   contents_only: bool = False
+)
+```
+
+---
+
+Upload the content of a local directory to a bucket path.
+
+**Args**
+
 - **local_dir** (Union[str, Path]) : Directory to upload files from.
-- **file_type** (str) : Upload files with extension only, e.g. txt.
+- **s3_path** (str, optional) : The path within the bucket to upload to.
+  If omitted, the bucket root is used.
+- **file_type** (str, optional) : Upload files with extension only, e.g. txt.
+- **contents_only** (bool) : Used to copy only the directory contents to the
+  specified path, not the directory itself.
 
 **Returns**
 
 - **dict** : key:value pair of file_name:upload_status.
   upload_status True if uploaded, False if failed.
 
+### .delete_dir
+
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L661)
+
+```python
+.delete_dir(
+   s3_path: str, file_type: str = ''
+)
+```
+
+---
+
+Delete an entire S3 path, including subpaths.
+
+USE WITH CAUTION!
+
+**Args**
+
+- **s3_path** (str) : The path within the bucket to delete.
+- **file_type** (str) : Delete files with extension only, e.g. txt.
+
+**Returns**
+
+- **dict** : key:value pair of s3_key:deletion_status.
+  deletion_status True if deleted, False if failed.
+
+### .check_file_exists
+
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L696)
+
+```python
+.check_file_exists(
+   key: str
+)
+```
+
+---
+
+Check an object exists in the bucket.
+
+**Args**
+
+- **key** (str) : The key, i.e. path within the bucket to check for.
+
+**Returns**
+
+- **bool** : True if exists, False if not.
+
+### .rename_file
+
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L726)
+
+```python
+.rename_file(
+   key: str, dest_key: str
+)
+```
+
+---
+
+Rename a file in a bucket, i.e. move then delete source.
+
+**Args**
+
+- **key** (str) : The key, i.e. path within the bucket.
+- **dest_key** (str) : The key destination to move to.
+
+**Returns**
+
+- **bool** : True if success, False if skipped or failure.
+
 ### .clean_multiparts
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L583)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L761)
 
 ```python
 .clean_multiparts()
@@ -272,11 +405,12 @@ Clean up failed multipart uploads in a bucket.
 
 **Returns**
 
-- **bool** : True if parts found and deleted, else False.
+- **dict** : key:value pair of s3_multipart_key:clean_status.
+  clean_status True if removed, False if failed.
 
 ### .configure_static_website
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L634)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L809)
 
 ```python
 .configure_static_website(
@@ -308,7 +442,7 @@ WARNING this will set all data to public read policy.
 
 ### .generate_index_html
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L704)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L878)
 
 ```python
 .generate_index_html(
@@ -333,7 +467,7 @@ Write index file to root of S3 bucket, with embedded S3 download links.
 
 ### .get_cors_config
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L769)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L942)
 
 ```python
 .get_cors_config()
@@ -349,7 +483,7 @@ Get the CORS config for a bucket.
 
 ### .set_cors_config
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L791)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L963)
 
 ```python
 .set_cors_config(
@@ -365,6 +499,7 @@ Set the CORS config for a bucket.
 
 - **origins** (list) : List of allowed origins in CORS headers.
   Defaults to None.
+  Origins must be in format {schema}://{domain}:{port}.
 - **allow_all** (bool) : Allow all origins, set to wildcard \*.
   Defaults to False
 

@@ -16,7 +16,41 @@ pages:
     source: "../envidat/api/v1.py"
     functions:
       - get_metadata_list
+      - get_protocol_and_domain
+      - get_package
+      - get_metadata_json_with_resources
       - get_metadata_list_with_resources
+      - get_metadata_name_doi
+
+  - page: "converters/bibtex_converter.md"
+    source: "../envidat/converters/bibtex_converter.py"
+    functions:
+      - convert_bibtex
+
+  - page: "converters/datacite_converter.md"
+    source: "../envidat/converters/datacite_converter.py"
+    functions:
+      - convert_datacite
+
+  - page: "converters/dif_converter.md"
+    source: "../envidat/converters/dif_converter.py"
+    functions:
+      - convert_dif
+
+  - page: "converters/iso_converter.md"
+    source: "../envidat/converters/iso_converter.py"
+    functions:
+      - convert_iso
+
+  - page: "converters/ris_converter.md"
+    source: "../envidat/converters/ris_converter.py"
+    functions:
+      - convert_ris
+
+  - page: "converters/xml_converter.md"
+    source: "../envidat/converters/xml_converter.py"
+    functions:
+      - convert_xml
 
   - page: "s3/bucket.md"
     source: "../envidat/s3/bucket.py"
