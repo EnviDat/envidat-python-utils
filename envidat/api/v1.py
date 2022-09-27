@@ -182,10 +182,9 @@ def get_metadata_name_doi() -> dict:
     """
     Get all current package/metadata names and DOIs as a dictionary.
 
-    Note: Packages that do not have DOIs are assigned a default value
-    of an empty string ''.
-
-    Args: none
+    Note:
+        Packages that do not have DOIs are assigned a default value
+        of an empty string ''.
 
     Returns:
         dict: Dictionary of package information with names as keys

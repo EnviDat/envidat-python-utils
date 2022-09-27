@@ -40,7 +40,8 @@ def convert_xml_all_resources() -> str:
     Returns:
         str: XML formatted string.
 
-    Note: only valid for metadata schema of EnviDat.
+    Note:
+        Only valid for metadata schema of EnviDat.
     """
     metadata_json = get_metadata_json_with_resources()
 

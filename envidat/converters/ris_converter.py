@@ -11,7 +11,8 @@ log = getLogger(__name__)
 def convert_ris(package_json: str) -> str:
     """Generate output string in RIS format.
 
-    Note: Converter is only valid for the metadata schema for EnviDat.
+    Note:
+        Converter is only valid for the metadata schema for EnviDat.
 
     Args:
         package_json (str): Individual EnviDat metadata entry record in JSON format.

@@ -16,7 +16,8 @@ log = getLogger(__name__)
 def convert_dif(package_json: str) -> str:
     """Generate GCMD DIF 10.2 formatted XML string.
 
-    Note: Converter is only valid for the metadata schema for EnviDat.
+    Note:
+        Converter is only valid for the metadata schema for EnviDat.
 
     Args:
         package_json (str): Individual EnviDat metadata entry record in JSON format.

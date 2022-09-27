@@ -17,14 +17,14 @@ FIELD_NAME = "field_name"
 def convert_datacite(package_json: str) -> str:
     """Generate XML formatted string in DataCite format.
 
-    Note: Converter is only valid for the metadata schema for EnviDat.
+    Note:
+        Converter is only valid for the metadata schema for EnviDat.
 
     Args:
         package_json (str): Individual EnviDat metadata entry record in JSON format.
 
     Returns:
         str: XML formatted string compatible with DataCite DIF 10.2 standard
-
     """
     try:
         package = json.loads(package_json)  # Convert package JSON to dictionary

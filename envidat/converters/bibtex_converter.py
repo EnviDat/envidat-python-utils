@@ -11,7 +11,8 @@ log = getLogger(__name__)
 def convert_bibtex(package_json: str) -> str:
     """Generate output string in BibTex format.
 
-    Note: Converter is only valid for the metadata schema for EnviDat.
+    Note:
+        Converter is only valid for the metadata schema for EnviDat.
 
     Args:
         package_json (str): Individual EnviDat metadata entry record in JSON format.
