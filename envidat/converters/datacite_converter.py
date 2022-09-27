@@ -340,11 +340,19 @@ def datacite_convert_dataset(dataset: dict, name_doi: dict):
     datacite_formats = []
 
     for resource in dataset.get('resources', []):
+
+        default_format = resource.get('mimetype', resource.get('mimetype_inner', ''))
         resource_format = resource.get('format', '')
+
+        if not resource_format:
+            resource_format = default_format
+
         if resource_format:
             datacite_format = {'#text': resource_format}
+
             if datacite_format not in datacite_formats:
                 datacite_formats += [datacite_format]
+
     if datacite_formats:
         datacite['resource'][datacite_format_group_tag] = {datacite_format_tag: datacite_formats}
 
