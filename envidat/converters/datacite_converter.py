@@ -177,8 +177,8 @@ def datacite_convert_dataset(dataset: dict, name_doi: dict):
 
     datacite_contributor = collections.OrderedDict()
 
-    contributor_family_name = maintainer.get('name', '')
-    contributor_given_name = maintainer.get('given_name', '')
+    contributor_family_name = maintainer.get('name', '').strip()
+    contributor_given_name = maintainer.get('given_name', '').strip()
 
     if contributor_given_name:
         datacite_contributor['contributorName'] = f'{contributor_given_name} {contributor_family_name}'
