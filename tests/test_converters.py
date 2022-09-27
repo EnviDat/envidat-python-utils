@@ -151,8 +151,8 @@ def test_datacite_converters_all_packages(datacite_converter_all_packages):
 
     ckan_packages, converter_packages = get_datacite_converters_all_packages(*datacite_converter_all_packages)
 
-    # TEST block: remove dataset that has related datasets that are causing the test to fail due to mispelling of
-    # 'ORCHID' value in metadata (it should be 'ORCID'
+    # Remove dataset that has related datasets that are causing the test to fail due to typo of
+    # 'ORCHID' value in metadata (it should be 'ORCID')
     ckan_packages.pop(381)
     converter_packages.pop(381)
 
@@ -166,7 +166,7 @@ def test_datacite_converters_all_packages(datacite_converter_all_packages):
 
 
 # NOTE: to make this test pass it was necessary to temporarily restate the typo in the
-# envidat.converters.dif_converter.dif_convert_dataset key 'Usage_Constraints':
+# envidat.converters.dif_converter.dif_convert_dataset key 'Usage_Constraints' value:
 # "Usage constraintes defined by the license" (the correct spelling is "constraints")
 def test_dif_converters_one_package(dif_converter_one_package):
 
@@ -179,7 +179,7 @@ def test_dif_converters_one_package(dif_converter_one_package):
 
 
 # NOTE: to make this test pass it was necessary to temporarily reinstate the typo in the
-# envidat.converters.dif_converter.dif_convert_dataset key 'Usage_Constraints':
+# envidat.converters.dif_converter.dif_convert_dataset key 'Usage_Constraints' value:
 # "Usage constraintes defined by the license" (the correct spelling is "constraints")
 def test_dif_converters_all_packages(dif_converter_all_packages):
 
@@ -202,15 +202,6 @@ def test_dif_converters_all_packages(dif_converter_all_packages):
         package_xml = unparse(package, pretty=True)
         converter_packages_xml.append(package_xml)
 
-    # print(type(ckan_packages))
-    # print(len(ckan_packages))
-    # print(ckan_packages[358])
-    # print('\n')
-
-    # print(type(converter_packages_xml))
-    # print(len(converter_packages_xml))
-    # print(converter_packages_xml[358])
-
     assert ckan_packages == converter_packages_xml
 
 
@@ -220,15 +211,6 @@ def test_iso_converters_one_package(iso_converter_one_package):
 
     # Convert OrderedDict packages to xml format
     converted_output_xml = unparse(converter_output, pretty=True)
-
-    # print(type(ckan_output))
-    # print(len(ckan_output))
-    # print(ckan_output)
-    # print('\n')
-    #
-    # print(type(converted_output_xml))
-    # print(len(converted_output_xml))
-    # print(converted_output_xml)
 
     assert ckan_output == converted_output_xml
 
@@ -243,9 +225,6 @@ def test_iso_converters_all_packages(iso_converter_all_packages):
         if package.startswith('No converter available for format iso19139'):
             remove_indices.append(index)
 
-    # print(len(ckan_packages))
-    # print(len(converter_packages))
-
     # Exclude packages from testing that do not have a valid CKAN produced ISO format xml file
     for ind in remove_indices:
         ckan_packages.pop(ind)
@@ -257,24 +236,7 @@ def test_iso_converters_all_packages(iso_converter_all_packages):
         package_xml = unparse(package, pretty=True)
         converter_packages_xml.append(package_xml)
 
-    # print(len(ckan_packages))
-    # print(type(ckan_packages[358]))
-    # print(len(ckan_packages[358]))
-    # print(ckan_packages[358])
-    # print('\n')
-    #
-    # print(len(converter_packages_xml))
-    # print(type(converter_packages_xml[358]))
-    # print(len(ckan_packages[358]))
-    # print(converter_packages_xml[358])
-
-    # assert ckan_packages[55] == converter_packages_xml[55]
-
     assert ckan_packages == converter_packages_xml
-
-    # for index, package in enumerate(ckan_packages):
-    #     print(index)
-    #     assert ckan_packages[index] == converter_packages_xml[index]
 
 
 def test_ris_converters_one_package(ris_converter_one_package):
@@ -289,4 +251,3 @@ def test_ris_converters_all_packages(ris_converter_all_packages):
     ckan_packages, converter_packages = get_converters_all_packages(*ris_converter_all_packages)
 
     assert ckan_packages == converter_packages
-
