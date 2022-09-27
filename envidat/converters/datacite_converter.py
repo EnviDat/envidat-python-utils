@@ -229,7 +229,10 @@ def datacite_convert_dataset(dataset: dict, name_doi: dict):
 
     # Language
     datacite_language_tag = 'language'
-    datacite['resource'][datacite_language_tag] = {'#text': dataset.get('language', 'en')}
+    datacite_language = dataset.get('language', '')
+    if not datacite_language:
+        datacite_language = 'en'
+    datacite['resource'][datacite_language_tag] = {'#text': datacite_language}
 
     # ResourceType
     datacite_resource_type_tag = 'resourceType'
