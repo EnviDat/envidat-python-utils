@@ -4,7 +4,11 @@ import json
 import logging
 from typing import Literal, NoReturn, Union
 
-from envidat.api.v1 import get_metadata_list_with_resources, get_package
+from envidat.api.v1 import (
+    get_metadata_list_with_resources,
+    get_metadata_name_doi,
+    get_package,
+)
 from envidat.converters.bibtex_converter import convert_bibtex
 from envidat.converters.datacite_converter import convert_datacite
 from envidat.converters.dif_converter import convert_dif
@@ -32,10 +36,10 @@ class Record:
     def __init__(
         self,
         input_data: Union[str, dict],
-        extract: Literal["str", "xml", "iso"] = None,
+        convert: Literal[
+            "str", "xml", "iso", "bibtex", "dif", "datacite", "ris"
+        ] = None,
     ) -> NoReturn:
-        # Commented out line below because __init__ should return None
-        # ) -> NoReturn:
         """
         Init the Record object.
 
@@ -44,53 +48,114 @@ class Record:
         Args:
             input_data [str, dict]: Data input, in JSON or dict form.
                 Can also accept a package name to extract a record from the API.
-            extract ["str", "xml", "iso"]: Extract the content immediately,
-                converted to specified type.
+            convert ["str", "xml", "iso", "bibtex", "dif", "datacite", "ris"]: Convert
+                the content immediately to specified type.
         """
         if isinstance(input_data, dict):
+            # Is dict
             log.debug("Dictionary input provided, reading as JSON")
-            self.content = json.dumps(input_data, indent=4)
+            self.content = input_data
 
         elif isinstance(input_data, str):
             if validate_json(input_data):
+                # Is JSON String, parse to JSON object/dict
                 log.debug("Valid input JSON parsed")
-                self.content = input_data
+                self.content = json.loads(input_data)
             else:
+                # Get from API (JSON object/dict)
                 log.debug("Attempting to get package JSON from API")
-                self.content = get_package(input_data)
+                self.content = dict(get_package(input_data))
 
         else:
             log.error("Input is not a valid type from (str,dict)")
             raise TypeError("Input must be of type string or dict")
 
-        # TODO refactor so that desired format is returned after
-        # calling conversion functions below
-        if extract:
+        # Validate metadata record
+        self.validate()
+
+        if convert:
             mapping = {
-                "str": self.to_string,
+                "json": self.to_json,
                 "xml": self.to_xml,
                 "iso": self.to_iso,
+                "bibtex": self.to_bibtex,
+                "dif": self.to_dif,
+                "datacite": self.to_datacite,
+                "ris": self.to_ris,
             }
-            mapping[extract]()
-            # Commented out line below because it causes this error:
-            # # TypeError: __init__() should return None, not 'str'
-            # return self.get_content()
-
-    # Removed expected return type of str in functions below
-    # because sometimes self.content is also a dictionary
+            if convert == "datacite":
+                name_doi_map = get_metadata_name_doi()
+                self.content = mapping[convert](name_doi_map)
+            else:
+                self.content = mapping[convert]()
 
     def get_content(self):
         """Get current content of Record."""
         return self.content
 
-    # TODO self.input is not an attribute
     def validate(self) -> bool:
-        """Validate JSON record."""
-        return validate_json(self.input)
+        """Validate metadata record."""
+        metadata_keys = [
+            "author",
+            "author_email",
+            "creator_user_id",
+            "date",
+            "doi",
+            "funding",
+            "id",
+            "isopen",
+            "language",
+            "license_id",
+            "license_title",
+            "maintainer",
+            "maintainer_email",
+            "metadata_created",
+            "metadata_modified",
+            "name",
+            "notes",
+            "num_resources",
+            "num_tags",
+            "organization",
+            "owner_org",
+            "private",
+            "publication",
+            "publication_state",
+            # "related_datasets", NOT ALWAYS PRESENT
+            "related_publications",
+            "resource_type",
+            "resource_type_general",
+            "spatial",
+            "spatial_info",
+            "state",
+            "subtitle",
+            "title",
+            "type",
+            "url",
+            "version",
+            "resources",
+            "tags",
+            "groups",
+            "relationships_as_subject",
+            "relationships_as_object",
+        ]
 
-    def to_string(self) -> str:
-        """Convert content to string."""
-        return json.dumps(self.content)
+        log.debug("Validating metadata record")
+        if not isinstance(self.content, dict):
+            log.error(f"Content is not a valid dictionary of metadata: {self.content}")
+            raise ValueError("Content is not a valid dictionary of metadata.")
+
+        missing_keys = list(set(metadata_keys) - set(self.content.keys()))
+        if missing_keys:
+            log.error(f"Metadata entry is missing fields: {missing_keys}")
+            raise ValueError(
+                "Content does not have all required fields for a metadata entry."
+            )
+
+        return True
+
+    def to_json(self) -> str:
+        """Convert content to JSON string."""
+        return json.loads(self.content)
 
     def to_xml(self) -> str:
         """Convert content to XML record."""
@@ -112,31 +177,55 @@ class Record:
         """Convert content to GCMD DIF 10.2 format."""
         return convert_dif(self.content)
 
-    def to_datacite(self):
+    def to_datacite(self, name_doi_map):
         """Convert content to DataCite format."""
-        return convert_datacite(self.content)
+        return convert_datacite(self.content, name_doi_map)
 
 
-def get_all_metadata_as_record_list(as_xml: bool = False, as_iso: bool = False) -> list:
+def get_all_metadata_record_list(
+    convert: Literal["str", "xml", "iso", "bibtex", "dif", "datacite", "ris"] = None,
+    content_only: bool = False,
+) -> list:
     """
     Return all EnviDat metadata entries as Record objects.
 
     Defaults to standard Record, content in json format.
 
     Args:
-        as_xml (bool): convert Record content to XML format.
-        as_iso (bool): convert Record content to ISO format.
+        convert ["str", "xml", "iso", "bibtex", "dif", "datacite", "ris"]: Convert
+            the content immediately to specified type.
+        content_only (bool): Extract content from Record objects.
 
     Returns:
         list: Of Record entries for EnviDat metadata.
     """
     metadata = get_metadata_list_with_resources()
     record_list = []
-    for json_entry in metadata:
-        if as_xml:
-            record_list.append(Record(input_data=json_entry).to_xml())
-        elif as_iso:
-            record_list.append(Record(input_data=json_entry).to_iso())
+
+    if convert == "datacite":
+        name_doi_map = get_metadata_name_doi()
+
+    for metadata_entry in metadata:
+        record = Record(metadata_entry)
+
+        if convert:
+            mapping = {
+                "json": record.to_json,
+                "xml": record.to_xml,
+                "iso": record.to_iso,
+                "bibtex": record.to_bibtex,
+                "dif": record.to_dif,
+                "datacite": record.to_datacite,
+                "ris": record.to_ris,
+            }
+            if convert == "datacite":
+                record.content = mapping[convert](name_doi_map)
+            else:
+                record.content = mapping[convert]()
+
+        if content_only:
+            record_list.append(record.content)
         else:
-            record_list.append(Record(input_data=json_entry))
+            record_list.append(record)
+
     return record_list
