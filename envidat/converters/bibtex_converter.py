@@ -8,25 +8,23 @@ from envidat.api.v1 import get_protocol_and_domain
 log = getLogger(__name__)
 
 
-def convert_bibtex(package_json: str) -> str:
+def convert_bibtex(metadata_record: dict) -> str:
     """Generate output string in BibTex format.
 
     Note:
         Converter is only valid for the metadata schema for EnviDat.
 
     Args:
-        package_json (str): Individual EnviDat metadata entry record in JSON format.
+        metadata_record (dict): Individual EnviDat metadata entry record dictionary.
 
     Returns:
         str: string in BibTeX format
 
     """
     try:
-        package_dict = json.loads(package_json)  # Convert package JSON to dictionary
-        converted_package = bibtex_convert_dataset(
-            package_dict
-        )  # Convert package to RIS format
-        return converted_package
+        return bibtex_convert_dataset(
+            metadata_record,
+        )
     except AttributeError as e:
         log.error(e)
         log.error("Cannot convert package to BibTeX format.")

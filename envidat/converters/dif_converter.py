@@ -13,28 +13,24 @@ from envidat.api.v1 import get_protocol_and_domain
 log = getLogger(__name__)
 
 
-def convert_dif(package_json: str) -> str:
+def convert_dif(metadata_record: dict) -> str:
     """Generate GCMD DIF 10.2 formatted XML string.
 
     Note:
         Converter is only valid for the metadata schema for EnviDat.
 
     Args:
-        package_json (str): Individual EnviDat metadata entry record in JSON format.
+        metadata_record (dict): Individual EnviDat metadata entry record dictionary.
 
     Returns:
         str: XML formatted string compatible with GCMD DIF 10.2 standard
 
     """
     try:
-        package_dict = json.loads(package_json)  # Convert package JSON to dictionary
         converted_dict = dif_convert_dataset(
-            package_dict
+            metadata_record
         )  # Convert package to OrderedDict
-        converted_package = unparse(
-            converted_dict, pretty=True
-        )  # Convert OrderedDict to XML
-        return converted_package
+        return unparse(converted_dict, pretty=True)  # Convert OrderedDict to XML
     except ValueError as e:
         log.error(e)
         log.error("Cannot convert package to GCMD DIF 10.2 format.")

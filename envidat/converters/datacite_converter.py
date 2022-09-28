@@ -7,41 +7,34 @@ from logging import getLogger
 
 from xmltodict import unparse
 
-from envidat.api.v1 import get_metadata_name_doi
-
 log = getLogger(__name__)
 
 FIELD_NAME = "field_name"
 
 
-def convert_datacite(package_json: str) -> str:
+def convert_datacite(metadata_record: dict, name_doi_map: dict) -> str:
     """Generate XML formatted string in DataCite format.
 
     Note:
         Converter is only valid for the metadata schema for EnviDat.
 
     Args:
-        package_json (str): Individual EnviDat metadata entry record in JSON format.
+        metadata_record (dict): Individual EnviDat metadata entry record dictionary.
+        name_doi_map (dict): Mapping of dataset name to DOI, as dictionary name:doi.
 
     Returns:
         str: XML formatted string compatible with DataCite DIF 10.2 standard
     """
     try:
-        package = json.loads(package_json)  # Convert package JSON to dictionary
-        name_doi = get_metadata_name_doi()  # Get dictionary of packages names and DOIs
-        # Convert package to OrderedDict in DataCite format
-        converted_package = datacite_convert_dataset(package, name_doi)
-        datacite_xml_package = unparse(
-            converted_package, pretty=True
-        )  # Convert OrderedDict to XML
-        return datacite_xml_package
+        converted_package = datacite_convert_dataset(metadata_record, name_doi_map)
+        return unparse(converted_package, pretty=True)  # Convert OrderedDict to XML
     except ValueError as e:
         log.error(e)
         log.error("Cannot convert package to DataCite format.")
         raise ValueError("Failed to convert package to DataCite format.")
 
 
-def datacite_convert_dataset(dataset: dict, name_doi: dict):
+def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
     """Create the DataCite XML from API dictionary."""
     # Assign datacite to ordered dictionary that will contain
     # dataset content converted to DataCite format
@@ -309,10 +302,10 @@ def datacite_convert_dataset(dataset: dict, name_doi: dict):
                 line_contents = line.replace("*", "").strip().lower().split(" ")[0]
                 related_url = None
 
-                if line_contents in name_doi:
+                if line_contents in name_doi_map:
                     related_url = f"{related_datasets_base_url}{line_contents}"
 
-                elif len(line_contents) > 0 and line_contents in name_doi.values():
+                elif len(line_contents) > 0 and line_contents in name_doi_map.values():
                     related_url = f"{related_datasets_base_url}{line_contents}"
 
                 elif line_contents.startswith("https://") or line_contents.startswith(
@@ -336,8 +329,6 @@ def datacite_convert_dataset(dataset: dict, name_doi: dict):
         #     '[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
         # )
         # urls = re.findall(regex, related_datasets)
-        # print(type(urls))
-        # print(len(urls))
         #
         # for url in urls:
         #     datacite_related_urls['relatedIdentifier'] += [

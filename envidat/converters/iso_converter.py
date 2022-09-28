@@ -15,28 +15,24 @@ from envidat.api.v1 import get_protocol_and_domain
 log = getLogger(__name__)
 
 
-def convert_iso(package_json: str) -> str:
+def convert_iso(metadata_record: dict) -> str:
     """Generate XML formatted string compatible with ISO19139 standard.
 
     Note:
         Converter is only valid for the metadata schema for EnviDat.
 
     Args:
-        package_json (str): Individual EnviDat metadata entry record in JSON format.
+        metadata_record (dict): Individual EnviDat metadata entry record dictionary.
 
     Returns:
         str: XML formatted string compatible with ISO9139 standard.
 
     """
     try:
-        package_dict = json.loads(package_json)  # Convert package JSON to dictionary
         converted_dict = iso_convert_dataset(
-            package_dict
+            metadata_record
         )  # Convert package dictionary to OrderedDict
-        converted_package = unparse(
-            converted_dict, pretty=True
-        )  # Convert OrderedDict to XML
-        return converted_package
+        return unparse(converted_dict, pretty=True)  # Convert OrderedDict to XML
     except ValueError as e:
         log.error(e)
         log.error("Cannot convert package to ISO19139 format.")
@@ -426,8 +422,6 @@ def iso_convert_dataset(dataset_dict: dict):
                             [str(coordinate_pair[0]), str(coordinate_pair[1])]
                         )
                         pos_list += [coordinates]
-                        # print(coordinate_pair)
-                        # print('NEXT')
                         # if len(coordinate_pair) == 2:
                         #     coordinates = ' '.join(
                         #         [str(coordinate_pair[0]), str(coordinate_pair[1]
