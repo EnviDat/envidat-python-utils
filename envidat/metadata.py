@@ -90,11 +90,21 @@ class Record:
                 self.content = mapping[convert]()
 
     def get_content(self):
-        """Get current content of Record."""
+        """
+        Get current content of Record.
+
+        Returns:
+            str: Metadata record, default dict format, else converted (JSON, XML, etc).
+        """
         return self.content
 
     def validate(self) -> bool:
-        """Validate metadata record."""
+        """
+        Validate metadata record.
+
+        Returns:
+            bool: True if valid, raises error if not.
+        """
         metadata_keys = [
             "author",
             "author_email",
@@ -154,31 +164,69 @@ class Record:
         return True
 
     def to_json(self) -> str:
-        """Convert content to JSON string."""
+        """
+        Convert content to JSON string.
+
+        Returns:
+            str: JSON string of metadata record.
+        """
         return json.loads(self.content)
 
     def to_xml(self) -> str:
-        """Convert content to XML record."""
+        """
+        Convert content to XML format.
+
+        Returns:
+            str: XML formatted string of metadata record.
+        """
         return convert_xml(self.content)
 
-    def to_iso(self):
-        """Convert content to ISO record."""
+    def to_iso(self) -> str:
+        """
+        Convert content to ISO format.
+
+        Returns:
+            str: ISO formatted string of metadata record.
+        """
         return convert_iso(self.content)
 
-    def to_ris(self):
-        """Convert content to RIS format."""
+    def to_ris(self) -> str:
+        """
+        Convert content to RIS format.
+
+        Returns:
+            str: RIS formatted string of metadata record.
+        """
         return convert_ris(self.content)
 
-    def to_bibtex(self):
-        """Convert content to BibTeX format."""
+    def to_bibtex(self) -> str:
+        """
+        Convert content to BibTeX format.
+
+        Returns:
+            str: BibTeX formatted string of metadata record.
+        """
         return convert_bibtex(self.content)
 
-    def to_dif(self):
-        """Convert content to GCMD DIF 10.2 format."""
+    def to_dif(self) -> str:
+        """
+        Convert content to GCMD DIF 10.2 format.
+
+        Returns:
+            str: GCMD DIF 10.2 formatted string of metadata record.
+        """
         return convert_dif(self.content)
 
-    def to_datacite(self, name_doi_map):
-        """Convert content to DataCite format."""
+    def to_datacite(self, name_doi_map: dict) -> str:
+        """
+        Convert content to DataCite format.
+
+        Args:
+            name_doi_map (dict): Mapping of dataset name to DOI, format name:doi.
+
+        Returns:
+            str: DataCite formatted string of metadata record.
+        """
         return convert_datacite(self.content, name_doi_map)
 
 
