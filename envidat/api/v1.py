@@ -190,12 +190,5 @@ def get_metadata_name_doi() -> dict:
         dict: Dictionary of package information with names as keys
         and associated DOIs as values, in the format {name: doi}.
     """
-    metadata = get_metadata_list_with_resources()
-    name_doi = {}
-
-    for package in metadata:
-        package_name = package.get("name")
-        doi = package.get("doi", "")
-        name_doi[package_name] = doi
-
-    return name_doi
+    all_packages = get_metadata_list_with_resources()
+    return {package.get("name"): package.get("doi", "") for package in all_packages}
