@@ -54,13 +54,13 @@ def test_record_init_with_validate(example_ckan_json, metadata_keys):
         is_valid = record.validate()
 
 
-def test_record_init_with_extract(example_ckan_json):
-    """Test auto-extract during Record init."""
+def test_record_init_with_convert(example_ckan_json):
+    """Test auto-conversion to another format during Record init."""
     record = Record(example_ckan_json)
-    record_extracted = Record(example_ckan_json, extract="xml")
+    record_converted = Record(example_ckan_json, convert="xml")
 
     xml = record.to_xml()
-    assert record_extracted.content == xml
+    assert record_converted.content == xml
 
 
 def test_get_all_metadata_record_list():
