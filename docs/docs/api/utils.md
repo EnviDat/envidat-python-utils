@@ -23,7 +23,7 @@ Load secret .env variables from repo for debugging.
 
 ### get_logger
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L67)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L66)
 
 ```python
 .get_logger()
@@ -41,7 +41,7 @@ Defaults to DEBUG level, unless specified by LOG_LEVEL env var.
 
 ### get_url
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L86)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L84)
 
 ```python
 .get_url(
@@ -51,7 +51,7 @@ Defaults to DEBUG level, unless specified by LOG_LEVEL env var.
 
 ---
 
-Helper wrapper to get a URL with additional error handling.
+Get a URL with additional error handling.
 
 **Args**
 
@@ -61,7 +61,7 @@ Helper wrapper to get a URL with additional error handling.
 
 ### \_debugger_is_active
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L13)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L14)
 
 ```python
 ._debugger_is_active()

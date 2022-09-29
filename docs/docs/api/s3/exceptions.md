@@ -2,7 +2,7 @@
 
 ## BucketException
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L9)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L10)
 
 ```python
 BucketException(
@@ -18,7 +18,7 @@ Parent class to be inherited for consistency.
 
 ## NoSuchKey
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L19)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L20)
 
 ```python
 NoSuchKey(
@@ -34,7 +34,7 @@ Exception for if bucket key does not exist.
 
 ## NoSuchBucket
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L29)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L30)
 
 ```python
 NoSuchBucket(
@@ -50,7 +50,7 @@ Exception for if bucket does not exist.
 
 ## BucketAlreadyExists
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L38)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L39)
 
 ```python
 BucketAlreadyExists(
@@ -66,7 +66,7 @@ Exception for if bucket already exists.
 
 ## BucketAccessDenied
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L47)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L48)
 
 ```python
 BucketAccessDenied(
@@ -82,7 +82,7 @@ Exception for if bucket access is denied.
 
 ## NoSuchCORSConfiguration
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L56)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L57)
 
 ```python
 NoSuchCORSConfiguration(
@@ -98,7 +98,7 @@ Exception for if the bucket does not have a CORS configuration.
 
 ## UnknownBucketException
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L65)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/exceptions.py/#L66)
 
 ```python
 UnknownBucketException(

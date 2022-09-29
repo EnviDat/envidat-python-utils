@@ -12,11 +12,22 @@ pages:
       - get_url
       - _debugger_is_active
 
-  - page: "metadata/v1.md"
+  - page: "metadata/api-v1.md"
     source: "../envidat/api/v1.py"
     functions:
       - get_metadata_list
+      - get_protocol_and_domain
+      - get_package
+      - get_metadata_json_with_resources
       - get_metadata_list_with_resources
+      - get_metadata_name_doi
+
+  - page: "metadata/record.md"
+    source: "../envidat/metadata.py"
+    classes:
+      - Record
+    functions:
+      - get_all_metadata_record_list
 
   - page: "s3/bucket.md"
     source: "../envidat/s3/bucket.py"
