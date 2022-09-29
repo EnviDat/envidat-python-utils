@@ -1,4 +1,11 @@
+# IDE
+.vscode
+.idea
+
+# Secret
 **/*.secret
+
+# Build
 dist
 .pdm.toml
 __pypackages__/
