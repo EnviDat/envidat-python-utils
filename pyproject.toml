@@ -4,6 +4,7 @@ dynamic = ["version"]
 description = "Utilities in Python for the WSL EnviDat project."
 authors = [
     {name = "Sam Woodcock", email = "samuel.woodcock@wsl.ch"},
+    {name = "Rebecca Kurup Buchholz", email = "rebecca.kurup@wsl.ch"},
 ]
 dependencies = [
     "requests>=2.27.1",
