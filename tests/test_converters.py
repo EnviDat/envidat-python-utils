@@ -389,22 +389,10 @@ def test_iso_converters_one_package(iso_converter_one_package):
 
 
 def test_iso_converters_all_packages(iso_converter_all_packages):
-    """TODO."""
+    """Test ISO converter for all packages."""
     ckan_packages, converter_packages = get_converters_all_packages(
         *iso_converter_all_packages
     )
-
-    # Find CKAN packages that do not produce a valid ISO format xml file
-    remove_indices = []
-    for index, package in enumerate(ckan_packages):
-        if package.startswith("No converter available for format iso19139"):
-            remove_indices.append(index)
-
-    # Exclude packages from testing that do not have a valid CKAN
-    # produced ISO format xml file
-    for ind in remove_indices:
-        ckan_packages.pop(ind)
-        converter_packages.pop(ind)
 
     # Convert OrderedDict packages to xml format
     converter_packages_xml = []
