@@ -15,7 +15,18 @@ def get_ckan_endpoint(
     extension: str,
     host: str = "https://www.envidat.ch",
 ) -> str:
-    """TODO."""
+    """Get CKAN endpoint used to export datasets in various formats.
+
+    Args:
+        package (dict): EnviDat package in dictionary form.
+        file_format (str): Format of file used in CKAN endpoint (example: "datacite")
+        extension (str): Extension used in CKAN endpoint (example: "xml")
+        host (str): Host used in CKAN endpoint (default: "https://www.envidat.ch")
+
+    Returns:
+        str: String of CKAN endpoint used to export datasets in format compatible with
+        arguments passed.
+    """
     if "API_HOST" in os.environ:
         host = os.getenv("API_HOST")
 
@@ -32,8 +43,24 @@ def get_ckan_endpoint(
             )
 
 
-def get_converters_one_package(convert_dataset, package_name, file_format, extension):
-    """TODO."""
+def get_converters_one_package(
+        convert_dataset,
+        package_name,
+        file_format,
+        extension
+) -> tuple[str, str]:
+    """Get CKAN output and corresponding converter output for one package.
+
+    Args:
+        convert_dataset (function): Function used to convert dataset.
+        package_name (str): Name of package.
+        file_format (str): Format of file used in CKAN endpoint (example: "datacite")
+        extension (str): Extension used in CKAN endpoint (example: "xml")
+
+    Returns:
+        tuple (<str: ckan_output>, <str: converter_output>): CKAN output and
+        corresponding converter output for one package.
+    """
     package = get_package(package_name)
 
     ckan_endpoint = get_ckan_endpoint(package, file_format, extension)
@@ -45,8 +72,23 @@ def get_converters_one_package(convert_dataset, package_name, file_format, exten
     return ckan_output, converter_output
 
 
-def get_converters_all_packages(convert_dataset, file_format, extension):
-    """TODO."""
+def get_converters_all_packages(
+        convert_dataset,
+        file_format,
+        extension
+) -> tuple[list, list]:
+    """Get CKAN output and corresponding converter output for all packages.
+
+    Args:
+        convert_dataset (function): Function used to convert dataset.
+        file_format (str): Format of file used in CKAN endpoint (example: "datacite")
+        extension (str): Extension used in CKAN endpoint (example: "xml")
+
+    Returns:
+        tuple (<list: ckan_packages>, <list: converter_packages>):
+        List of all packages converted from CKAN and list of all packages converted
+        using convert_dataset function.
+    """
     packages = get_metadata_list_with_resources()
     ckan_packages = []
     converter_packages = []
@@ -65,9 +107,26 @@ def get_converters_all_packages(convert_dataset, file_format, extension):
 
 
 def get_datacite_converters_one_package(
-    convert_dataset, get_name_doi, package_name, file_format, extension
-):
-    """TODO."""
+    convert_dataset,
+    get_name_doi,
+    package_name,
+    file_format,
+    extension
+) -> tuple[str, str]:
+    """Get DacaCite formatted CKAN output and DataCite converter output for one package.
+
+    Args:
+        convert_dataset (function): Function used to convert dataset.
+        get_name_doi (function): Function used to get dictionary with names as keys
+            and associated DOIs as values for all packages.
+        package_name (str): Name of package.
+        file_format (str): Format of file used in CKAN endpoint (example: "datacite")
+        extension (str): Extension used in CKAN endpoint (example: "xml")
+
+    Returns:
+        tuple (<str: ckan_output>, <str: converter_output>): DataCite formatted
+            CKAN output and corresponding converter output for one package.
+    """
     package = get_package(package_name)
 
     ckan_endpoint = get_ckan_endpoint(package, file_format, extension)
@@ -81,9 +140,26 @@ def get_datacite_converters_one_package(
 
 
 def get_datacite_converters_all_packages(
-    convert_dataset, get_name_doi, file_format, extension
-):
-    """TODO."""
+    convert_dataset,
+    get_name_doi,
+    file_format,
+    extension
+) -> tuple[list, list]:
+    """Get DacaCite formatted CKAN output and DataCite converter output for
+       all packages.
+
+    Args:
+        convert_dataset (function): Function used to convert dataset.
+        get_name_doi (function): Function used to get dictionary with names as keys
+             and associated DOIs as values for all packages.
+        file_format (str): Format of file used in CKAN endpoint (example: "datacite")
+        extension (str): Extension used in CKAN endpoint (example: "xml")
+
+    Returns:
+        tuple (<list: ckan_packages>, <list: converter_packages>):
+            DataCite formatted CKAN output and corresponding converter
+            output for all packages.
+    """
     packages = get_metadata_list_with_resources()
     ckan_packages = []
 
@@ -103,7 +179,7 @@ def get_datacite_converters_all_packages(
     return ckan_packages, converter_packages
 
 
-def convert_datacite_related_identifier(ckan_output):
+def convert_datacite_related_identifier(ckan_output) -> str:
     """
     Correct typo in EnviDat API Datacite output.
 
@@ -111,7 +187,15 @@ def convert_datacite_related_identifier(ckan_output):
     correcting the typo in the CKAN DataCite converter variable
     'related_datasets_base_url': 'https://www.envidat.ch/#/metadata//'
     (the correct url omits the last slash: 'https://www.envidat.ch/#/metadata/').
+
+    Args:
+        ckan_output (str): Output produced from CKAN endpoint.
+
+    Returns:
+        str: Output produced from CKAN endpoint with "relatedIdentifier"
+            key typo corrected.
     """
+
     # Convert xml to dict
     ckan_out = parse(ckan_output)
 
@@ -147,8 +231,16 @@ def convert_datacite_related_identifier(ckan_output):
     return ckan_xml
 
 
-def get_related_identifier(related_url):
-    """Replace double slash with single slash in EnviDat URL."""
+def get_related_identifier(related_url) -> list:
+    """Replace double slash with single slash in EnviDat URL.
+
+    Args:
+        related_url (str): URL of CKAN output key "relatedIdentifier"
+
+    Returns:
+          list: List with a dictionary in format compatible with
+                DataCite "relatedIdentifier" tag.
+    """
     related_url = related_url.replace(
         "https://www.envidat.ch/#/metadata//", "https://www.envidat.ch/#/metadata/"
     )
@@ -195,7 +287,7 @@ def convert_dif_values(ckan_output):
 
 
 def test_bibtex_converters_one_package(bibtex_converter_one_package):
-    """TODO."""
+    """Test Bibtex converter for one package."""
     ckan_output, converter_output = get_converters_one_package(
         *bibtex_converter_one_package
     )
@@ -204,7 +296,7 @@ def test_bibtex_converters_one_package(bibtex_converter_one_package):
 
 
 def test_bibtex_converters_all_packages(bibtex_converter_all_packages):
-    """TODO."""
+    """Test Bibtex converter for all packages."""
     ckan_packages, converter_packages = get_converters_all_packages(
         *bibtex_converter_all_packages
     )
@@ -213,7 +305,7 @@ def test_bibtex_converters_all_packages(bibtex_converter_all_packages):
 
 
 def test_datacite_converter_one_package(datacite_converter_one_package):
-    """TODO."""
+    """Test DataCite converter for one package."""
     ckan_output, converter_output = get_datacite_converters_one_package(
         *datacite_converter_one_package
     )
@@ -228,7 +320,7 @@ def test_datacite_converter_one_package(datacite_converter_one_package):
 
 
 def test_datacite_converters_all_packages(datacite_converter_all_packages):
-    """TODO."""
+    """Test DataCite converter for all packages."""
     ckan_packages, converter_packages = get_datacite_converters_all_packages(
         *datacite_converter_all_packages
     )
@@ -249,7 +341,7 @@ def test_datacite_converters_all_packages(datacite_converter_all_packages):
 
 
 def test_dif_converters_one_package(dif_converter_one_package):
-    """TODO."""
+    """Test DIF converter for one package."""
     ckan_output, converter_output = get_converters_one_package(
         *dif_converter_one_package
     )
@@ -264,7 +356,7 @@ def test_dif_converters_one_package(dif_converter_one_package):
 
 
 def test_dif_converters_all_packages(dif_converter_all_packages):
-    """TODO."""
+    """Test DIF converter for all packages."""
     ckan_packages, converter_packages = get_converters_all_packages(
         *dif_converter_all_packages
     )
@@ -285,7 +377,7 @@ def test_dif_converters_all_packages(dif_converter_all_packages):
 
 
 def test_iso_converters_one_package(iso_converter_one_package):
-    """TODO."""
+    """Test ISO converter for one package."""
     ckan_output, converter_output = get_converters_one_package(
         *iso_converter_one_package
     )
@@ -324,7 +416,7 @@ def test_iso_converters_all_packages(iso_converter_all_packages):
 
 
 def test_ris_converters_one_package(ris_converter_one_package):
-    """TODO."""
+    """Test RIS converter for one package."""
     ckan_output, converter_output = get_converters_one_package(
         *ris_converter_one_package
     )
@@ -333,7 +425,7 @@ def test_ris_converters_one_package(ris_converter_one_package):
 
 
 def test_ris_converters_all_packages(ris_converter_all_packages):
-    """TODO."""
+    """Test RIS converters for all packages."""
     ckan_packages, converter_packages = get_converters_all_packages(
         *ris_converter_all_packages
     )
