@@ -377,7 +377,7 @@ def dif_convert_dataset(dataset_dict: dict):
     dif_metadata_dict["Summary"] = collections.OrderedDict()
     # Abstract
     dif_metadata_dict["Summary"]["Abstract"] = (
-        dataset_dict.get("notes", "").replace("\n", " ").replace("\r", " ")
+        dataset_dict.get("notes", "").replace("\n", " ").replace("\r", " ").strip()
     )
     # "Purpose"
     # purpose = get_ignore_case(extras_dict, 'purpose')
