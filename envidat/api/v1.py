@@ -188,7 +188,7 @@ def get_metadata_name_doi() -> dict:
 
     Returns:
         dict: Dictionary of package information with names as keys
-        and associated DOIs as values, in the format {name: doi}.
+        and associated DOIs as values.
     """
     all_packages = get_metadata_list_with_resources()
     return {package.get("name"): package.get("doi", "") for package in all_packages}
