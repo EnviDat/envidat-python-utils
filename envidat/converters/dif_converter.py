@@ -1,9 +1,9 @@
 """GCMD DIF 10.2 for identifying updates in metadata over time."""
 
-import collections
 import copy
 import json
 import sys
+from collections import OrderedDict
 from logging import getLogger
 
 from xmltodict import unparse
@@ -43,7 +43,7 @@ def dif_convert_dataset(dataset_dict: dict):
     extras_dict = extras_as_dict(dataset_dict.get("extras", {}))
     dif_extras = ["science_keywords", "purpose"]
 
-    dif_metadata_dict = collections.OrderedDict()
+    dif_metadata_dict = OrderedDict()
 
     # Header
     dif_metadata_dict["@xmlns"] = "http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/"
@@ -54,7 +54,7 @@ def dif_convert_dataset(dataset_dict: dict):
     dif_metadata_dict["@xsi:schemaLocation"] = f"{namespace} {schema}"
 
     # Entry_ID
-    dif_metadata_dict["Entry_ID"] = collections.OrderedDict()
+    dif_metadata_dict["Entry_ID"] = OrderedDict()
     dif_metadata_dict["Entry_ID"]["Short_Name"] = dataset_dict.get("name", "")
     dif_metadata_dict["Entry_ID"]["Version"] = dataset_dict.get("version", "1.0")
 
@@ -64,7 +64,7 @@ def dif_convert_dataset(dataset_dict: dict):
     dif_metadata_dict["Entry_Title"] = dataset_dict.get("title", "")
 
     # Dataset_Citation
-    dif_metadata_dict["Dataset_Citation"] = collections.OrderedDict()
+    dif_metadata_dict["Dataset_Citation"] = OrderedDict()
 
     # "Dataset_Creator" organization
     author_names = []
@@ -73,7 +73,7 @@ def dif_convert_dataset(dataset_dict: dict):
             author_name = ""
             if author.get("given_name"):
                 author_name += author["given_name"].strip() + " "
-            author_names += [author_name + author["name"]]
+            author_names += [author_name + author["name"].strip()]
     except ValueError:
         pass
 
@@ -89,7 +89,9 @@ def dif_convert_dataset(dataset_dict: dict):
         if maintainer.get("given_name"):
             maintainer_name += maintainer["given_name"].strip() + " "
         maintainer_name += maintainer["name"]
-        dif_metadata_dict["Dataset_Citation"]["Dataset_Editor"] = maintainer_name
+        dif_metadata_dict["Dataset_Citation"][
+            "Dataset_Editor"
+        ] = maintainer_name.strip()
     except ValueError:
         pass
 
@@ -111,9 +113,9 @@ def dif_convert_dataset(dataset_dict: dict):
     ] = "Birmensdorf, Switzerland"
 
     # "Dataset_Publisher"
-    dif_metadata_dict["Dataset_Citation"]["Dataset_Publisher"] = json.loads(
-        dataset_dict.get("publication", "{}")
-    ).get("publisher", "")
+    dif_metadata_dict["Dataset_Citation"]["Dataset_Publisher"] = (
+        json.loads(dataset_dict.get("publication", "{}")).get("publisher", "").strip()
+    )
 
     # "Version"
     dif_metadata_dict["Dataset_Citation"]["Version"] = dataset_dict.get("version", "")
@@ -128,7 +130,7 @@ def dif_convert_dataset(dataset_dict: dict):
     # "Persistent_Identifier"
     doi = dataset_dict.get("doi", "")
     if doi:
-        identifier = collections.OrderedDict()
+        identifier = OrderedDict()
         identifier["Type"] = "DOI"
         identifier["Identifier"] = "doi:" + doi.strip()
         dif_metadata_dict["Dataset_Citation"]["Persistent_Identifier"] = identifier
@@ -141,9 +143,9 @@ def dif_convert_dataset(dataset_dict: dict):
 
     # "Personnel"
     maintainer = json.loads(dataset_dict.get("maintainer", "{}"))
-    dif_metadata_dict["Personnel"] = collections.OrderedDict()
+    dif_metadata_dict["Personnel"] = OrderedDict()
     dif_metadata_dict["Personnel"]["Role"] = "TECHNICAL CONTACT"
-    dif_metadata_dict["Personnel"]["Contact_Person"] = collections.OrderedDict()
+    dif_metadata_dict["Personnel"]["Contact_Person"] = OrderedDict()
     dif_metadata_dict["Personnel"]["Contact_Person"]["First_Name"] = maintainer.get(
         "given_name", maintainer.get("name", "").strip().split(" ")[0]
     ).strip()
@@ -152,11 +154,11 @@ def dif_convert_dataset(dataset_dict: dict):
     )
     dif_metadata_dict["Personnel"]["Contact_Person"]["Email"] = maintainer.get(
         "email", ""
-    )
+    ).strip()
 
     # Science_Keywords (M)*
     science_keywords = get_science_keywords(dataset_dict, extras_dict)
-    dif_metadata_dict["Science_Keywords"] = collections.OrderedDict()
+    dif_metadata_dict["Science_Keywords"] = OrderedDict()
     dif_metadata_dict["Science_Keywords"]["Category"] = science_keywords[0]
     dif_metadata_dict["Science_Keywords"]["Topic"] = science_keywords[1]
     dif_metadata_dict["Science_Keywords"]["Term"] = science_keywords[2]
@@ -173,13 +175,13 @@ def dif_convert_dataset(dataset_dict: dict):
     dif_metadata_dict["Ancillary_Keyword"] = get_keywords(dataset_dict)
 
     # "Platform"
-    dif_metadata_dict["Platform"] = collections.OrderedDict()
+    dif_metadata_dict["Platform"] = OrderedDict()
     dif_metadata_dict["Platform"]["Type"] = "Not provided"
     dif_metadata_dict["Platform"]["Short_Name"] = "Not provided"
     dif_metadata_dict["Platform"]["Instrument"] = {"Short_Name": "Not provided"}
 
     # Temporal_Coverage
-    dif_metadata_dict["Temporal_Coverage"] = collections.OrderedDict()
+    dif_metadata_dict["Temporal_Coverage"] = OrderedDict()
 
     # default set to publication year
     dif_metadata_dict["Temporal_Coverage"]["Single_DateTime"] = (
@@ -193,7 +195,7 @@ def dif_convert_dataset(dataset_dict: dict):
         dif_metadata_dict["Dataset_Progress"] = "COMPLETE"
 
     # Spatial_Coverage
-    dif_metadata_dict["Spatial_Coverage"] = collections.OrderedDict()
+    dif_metadata_dict["Spatial_Coverage"] = OrderedDict()
     # "Spatial_Coverage_Type"
     # "Granule_Spatial_Representation"
     dif_metadata_dict["Spatial_Coverage"][
@@ -208,7 +210,7 @@ def dif_convert_dataset(dataset_dict: dict):
     except ValueError:
         spatial = {}
     if spatial:
-        dif_metadata_dict["Spatial_Coverage"]["Geometry"] = collections.OrderedDict()
+        dif_metadata_dict["Spatial_Coverage"]["Geometry"] = OrderedDict()
         dif_metadata_dict["Spatial_Coverage"]["Geometry"][
             "Coordinate_System"
         ] = "CARTESIAN"
@@ -225,9 +227,7 @@ def dif_convert_dataset(dataset_dict: dict):
             bound_box_coordinates = get_bounding_rectangle(
                 spatial.get("coordinates", [])
             )
-            dif_metadata_dict["Spatial_Coverage"]["Geometry"][
-                "Point"
-            ] = collections.OrderedDict()
+            dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Point"] = OrderedDict()
             dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Point"][
                 "Point_Longitude"
             ] = bound_box_coordinates[0]
@@ -238,7 +238,7 @@ def dif_convert_dataset(dataset_dict: dict):
         elif spatial.get("type") == "MultiPoint":
             points = []
             for coordinate_pair in spatial.get("coordinates", []):
-                point = collections.OrderedDict()
+                point = OrderedDict()
                 point["Point_Longitude"] = str(coordinate_pair[0])
                 point["Point_Latitude"] = str(coordinate_pair[1])
                 points += [point]
@@ -247,7 +247,7 @@ def dif_convert_dataset(dataset_dict: dict):
             # <xs:element name="Polygon" type="GPolygon"/>
             points = []
             for coordinate_pair in spatial.get("coordinates", [])[0]:
-                point = collections.OrderedDict()
+                point = OrderedDict()
                 point["Point_Longitude"] = str(coordinate_pair[0])
                 point["Point_Latitude"] = str(coordinate_pair[1])
                 points += [point]
@@ -262,9 +262,7 @@ def dif_convert_dataset(dataset_dict: dict):
             else:
                 log.debug(dataset_dict.get("name", "") + " Clockwise OK")
 
-            dif_metadata_dict["Spatial_Coverage"]["Geometry"][
-                "Polygon"
-            ] = collections.OrderedDict()
+            dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Polygon"] = OrderedDict()
             dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Polygon"]["Boundary"] = {
                 "Point": points
             }
@@ -330,13 +328,13 @@ def dif_convert_dataset(dataset_dict: dict):
     )
 
     # Organization
-    dif_metadata_dict["Organization"] = collections.OrderedDict()
+    dif_metadata_dict["Organization"] = OrderedDict()
 
     # "Organization_Type" * DISTRIBUTOR/ARCHIVER/ORIGINATOR/PROCESSOR
     dif_metadata_dict["Organization"]["Organization_Type"] = "DISTRIBUTOR"
 
     # "Organization_Name" "Short_Name" "Long_Name"
-    dif_metadata_dict["Organization"]["Organization_Name"] = collections.OrderedDict()
+    dif_metadata_dict["Organization"]["Organization_Name"] = OrderedDict()
     dif_metadata_dict["Organization"]["Organization_Name"]["Short_Name"] = "WSL"
     dif_metadata_dict["Organization"]["Organization_Name"][
         "Long_Name"
@@ -350,11 +348,9 @@ def dif_convert_dataset(dataset_dict: dict):
     # <xs:element name="Dataset_ID" type="xs:string" minOccurs="0"
     #   maxOccurs="unbounded"/>
     # <xs:element name="Personnel" type="OrgPersonnelType" maxOccurs="unbounded"/>
-    dif_metadata_dict["Organization"]["Personnel"] = collections.OrderedDict()
+    dif_metadata_dict["Organization"]["Personnel"] = OrderedDict()
     dif_metadata_dict["Organization"]["Personnel"]["Role"] = "DATA CENTER CONTACT"
-    dif_metadata_dict["Organization"]["Personnel"][
-        "Contact_Group"
-    ] = collections.OrderedDict()
+    dif_metadata_dict["Organization"]["Personnel"]["Contact_Group"] = OrderedDict()
     dif_metadata_dict["Organization"]["Personnel"]["Contact_Group"]["Name"] = "EnviDat"
     dif_metadata_dict["Organization"]["Personnel"]["Contact_Group"][
         "Email"
@@ -370,11 +366,11 @@ def dif_convert_dataset(dataset_dict: dict):
     # Find paper citation in the description and parse it to this element
 
     thumbnail_url = "https://www.envidat.ch/envidat_thumbnail.png"
-    dif_metadata_dict["Multimedia_Sample"] = collections.OrderedDict()
+    dif_metadata_dict["Multimedia_Sample"] = OrderedDict()
     dif_metadata_dict["Multimedia_Sample"]["URL"] = thumbnail_url
 
     # Summary
-    dif_metadata_dict["Summary"] = collections.OrderedDict()
+    dif_metadata_dict["Summary"] = OrderedDict()
     # Abstract
     dif_metadata_dict["Summary"]["Abstract"] = (
         dataset_dict.get("notes", "").replace("\n", " ").replace("\r", " ").strip()
@@ -385,7 +381,6 @@ def dif_convert_dataset(dataset_dict: dict):
     # dif_metadata_dict['Summary']['Purpose'] = get_or_missing(
     #     extras_dict, 'purpose', ignore_case=True
     # )
-
     # Related_URL
     dif_metadata_dict["Related_URL"] = {"URL": package_url}
 
@@ -406,7 +401,7 @@ def dif_convert_dataset(dataset_dict: dict):
     #   minOccurs="0"/>
 
     # Metadata_Dates (M)
-    dif_metadata_dict["Metadata_Dates"] = collections.OrderedDict()
+    dif_metadata_dict["Metadata_Dates"] = OrderedDict()
 
     metadata_created = dataset_dict.get("metadata_created")
     metadata_modified = dataset_dict.get("metadata_modified")
@@ -434,16 +429,16 @@ def dif_convert_dataset(dataset_dict: dict):
     for key in extras_dict:
         if key.lower() not in dif_extras:
             value = extras_dict[key]
-            metadata = collections.OrderedDict()
-            metadata["Name"] = key
+            metadata = OrderedDict()
+            metadata["Name"] = key.strip()
             metadata["Type"] = "String"
-            metadata["Value"] = value
+            metadata["Value"] = value.strip()
             extended_metadata += [metadata]
     if len(extended_metadata) > 0:
         dif_metadata_dict["Extended_Metadata"] = {"Metadata": extended_metadata}
 
     # Root element
-    gcmd_dif_dict = collections.OrderedDict()
+    gcmd_dif_dict = OrderedDict()
     gcmd_dif_dict["DIF"] = dif_metadata_dict
 
     return gcmd_dif_dict
@@ -698,8 +693,8 @@ def get_bounding_rectangle_dict(spatial_dict: dict) -> dict:
     """Geometry bounding rectangle as value dictionary."""
     bound_box_coordinates = get_bounding_rectangle(spatial_dict.get("coordinates", []))
 
-    bounding_rectangle = collections.OrderedDict()
-    bounding_rectangle["Center_Point"] = collections.OrderedDict()
+    bounding_rectangle = OrderedDict()
+    bounding_rectangle["Center_Point"] = OrderedDict()
     bounding_rectangle["Center_Point"]["Point_Longitude"] = str(
         (bound_box_coordinates[1] + bound_box_coordinates[0]) / 2.0
     )

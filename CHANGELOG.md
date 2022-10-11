@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.1.0 (2022-09-29)
+
+### Feat
+
+- add converters and metadata Record class
+
 ## 1.0.3 (2022-07-12)
 
 ### Fix

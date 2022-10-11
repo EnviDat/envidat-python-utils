@@ -4,6 +4,7 @@ dynamic = ["version"]
 description = "Utilities in Python for the WSL EnviDat project."
 authors = [
     {name = "Sam Woodcock", email = "samuel.woodcock@wsl.ch"},
+    {name = "Rebecca Kurup Buchholz", email = "rebecca.kurup@wsl.ch"},
 ]
 dependencies = [
     "requests>=2.27.1",
@@ -62,7 +63,7 @@ build-backend = "pdm.pep517.api"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.0.3"
+version = "1.1.0"
 version_files = [
     "pyproject.toml:version",
     "envidat/__version__.py"

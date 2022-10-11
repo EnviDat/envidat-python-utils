@@ -55,7 +55,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
     datacite_identifier_tag = "identifier"
     doi = dataset.get("doi", "")
     datacite["resource"][datacite_identifier_tag] = {
-        "#text": doi,
+        "#text": doi.strip(),
         "@identifierType": "DOI",
     }
 
@@ -90,7 +90,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
         creator_identifier = author.get("identifier", "")
         if creator_identifier:
             datacite_creator["nameIdentifier"] = {
-                "#text": creator_identifier,
+                "#text": creator_identifier.strip(),
                 "@nameIdentifierScheme": "ORCID",
             }
 
@@ -98,15 +98,15 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
 
         affiliation = author.get("affiliation", "")
         if affiliation:
-            affiliations += [{"#text": affiliation}]
+            affiliations += [{"#text": affiliation.strip()}]
 
         affiliation_02 = author.get("affiliation_02", "")
         if affiliation_02:
-            affiliations += [{"#text": affiliation_02}]
+            affiliations += [{"#text": affiliation_02.strip()}]
 
         affiliation_03 = author.get("affiliation_03", "")
         if affiliation_03:
-            affiliations += [{"#text": affiliation_03}]
+            affiliations += [{"#text": affiliation_03.strip()}]
 
         if affiliations:
             datacite_creator["affiliation"] = affiliations
@@ -150,7 +150,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
     if publisher:
         datacite["resource"][datacite_publisher_tag] = {
             f"@{datacite_xml_lang_tag}": "en-us",
-            "#text": publisher,
+            "#text": publisher.strip(),
         }
 
     # Subjects
@@ -197,7 +197,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
     contributor_identifier = maintainer.get("identifier", "")
     if contributor_identifier:
         datacite_contributor["nameIdentifier"] = {
-            "#text": contributor_identifier,
+            "#text": contributor_identifier.strip(),
             "@nameIdentifierScheme": maintainer.get(
                 join_tags(
                     [datacite_contributor_tag, "nameIdentifier", "nameIdentifierScheme"]
@@ -207,7 +207,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
         }
 
     contributor_affiliation = maintainer.get("affiliation", "")
-    datacite_contributor["affiliation"] = contributor_affiliation
+    datacite_contributor["affiliation"] = contributor_affiliation.strip()
 
     contributor_type = maintainer.get(
         join_tags([datacite_contributor_tag, "contributorType"]), "ContactPerson"
@@ -356,9 +356,11 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
                 resource_size_obj = json.loads(resource_size)
                 datacite_sizes += [
                     {
-                        "#text": resource_size_obj.get("size_value", "0")
-                        + " "
-                        + resource_size_obj.get("size_unit", "KB").upper()
+                        "#text": (
+                            resource_size_obj.get("size_value", "0")
+                            + " "
+                            + resource_size_obj.get("size_unit", "KB").upper()
+                        ).strip()
                     }
                 ]
             except JSONDecodeError:
@@ -456,7 +458,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
         )
 
         datacite_description = {
-            "#text": description_text,
+            "#text": description_text.strip(),
             f"@{datacite_description_type_tag}": "Abstract",
             f"@{datacite_xml_lang_tag}": "en-us",
         }
@@ -524,7 +526,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
         geolocation_place = dataset.get("spatial_info", "")
         if geolocation_place:
             datacite_geolocation_place = {
-                datacite_geolocation_place_tag: geolocation_place
+                datacite_geolocation_place_tag: geolocation_place.strip()
             }
             datacite_geolocations += [datacite_geolocation_place]
 
