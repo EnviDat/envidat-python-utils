@@ -286,6 +286,41 @@ def convert_dif_values(ckan_output):
     return ckan_xml
 
 
+def get_opendataswiss_converters_all_packages(
+        convert_dataset,
+        file_format,
+        extension,
+        package_name='opendata'
+) -> tuple[str, str]:
+    """Get OpenDataSwiss CKAN and corresponding converter XML formatted strings
+    for all packages.
+
+    Note: As of October 14, 2022, the expected CKAN string should be
+            'https://www.envidat.ch/opendata/export/dcat-ap-ch.xml'
+
+    Args:
+        convert_dataset (function): Function used to convert dataset.
+        file_format (str): Format of file used in CKAN endpoint (example: "dcat-ap-ch")
+        extension (str): Extension used in CKAN endpoint (example: "xml")
+        package_name (str): Name of package, for the opendataswiss endpoint this is
+            called 'opendata' and is the default argument.
+
+    Returns:
+        tuple (<str: ckan_output>, <str: converter_output>): CKAN output and
+        corresponding converter output for one package.
+    """
+    # package = get_package(package_name)
+
+    ckan_endpoint = \
+        f'https://www.envidat.ch/{package_name}/export/{file_format}.{extension}'
+    request = get_url(ckan_endpoint)
+    ckan_output = request.content.decode()
+
+    converter_output = convert_dataset()
+
+    return ckan_output, converter_output
+
+
 def test_bibtex_converters_one_package(bibtex_converter_one_package):
     """Test Bibtex converter for one package."""
     ckan_output, converter_output = get_converters_one_package(
@@ -401,6 +436,15 @@ def test_iso_converters_all_packages(iso_converter_all_packages):
         converter_packages_xml.append(package_xml)
 
     assert ckan_packages == converter_packages_xml
+
+
+def test_opendataswiss_converters_all_packages(opendataswiss_converter_all_packages):
+    """Test OpenDataSwiss converter for all packages."""
+
+    ckan_packages, converter_packages = get_opendataswiss_converters_all_packages(
+        *opendataswiss_converter_all_packages)
+
+    assert ckan_packages == converter_packages
 
 
 def test_ris_converters_one_package(ris_converter_one_package):
