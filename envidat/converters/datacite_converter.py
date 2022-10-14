@@ -479,7 +479,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
         pkg_spatial = json.loads(dataset["spatial"])
         log.debug("pkg_spatial=" + str(pkg_spatial))
         if pkg_spatial:
-            coordinates_list = flatten_list(
+            coordinates = flatten(
                 pkg_spatial.get("coordinates", "[]"), reverse=True
             )
             if pkg_spatial.get("type", "").lower() == "polygon":
@@ -513,10 +513,10 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
                     datacite_geolocation["geoLocationPoint"] = collections.OrderedDict()
                     datacite_geolocation["geoLocationPoint"][
                         "pointLongitude"
-                    ] = coordinates_list[1]
+                    ] = coordinates[1]
                     datacite_geolocation["geoLocationPoint"][
                         "pointLatitude"
-                    ] = coordinates_list[0]
+                    ] = coordinates[0]
                     datacite_geolocations += [datacite_geolocation]
     except JSONDecodeError:
         datacite_geolocations = []
@@ -564,23 +564,23 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
     return datacite
 
 
-def flatten_list(input_list: list, reverse: bool = False) -> list:
+def flatten(inp: list, reverse: bool = False) -> list:
     """Flatten list, i.e. remove a dimension/nesting."""
-    output_list = []
-    for item in input_list:
+    output = []
+    for item in inp:
         if type(item) is not list:
             if reverse:
-                output_list = [str(item)] + output_list
+                output = [str(item)] + output
             else:
-                output_list += [str(item)]
+                output += [str(item)]
         else:
-            output_list += flatten_list(item, reverse)
-    return output_list
+            output += flatten(item, reverse)
+    return output
 
 
-def join_tags(tag_list: list, sep: str = ".") -> str:
+def join_tags(tags: list, sep: str = ".") -> str:
     """Join tags by a provided separator."""
-    return sep.join([tag for tag in tag_list if tag])
+    return sep.join([tag for tag in tags if tag])
 
 
 def value_to_datacite_cv(value: str, datacite_tag: str, default: str = "") -> dict:
@@ -655,36 +655,36 @@ def value_to_datacite_cv(value: str, datacite_tag: str, default: str = "") -> di
 
 def map_fields(schema: dict, format_name: str) -> dict:
     """Map fields into correct formatting."""
-    map_dict = {}
+    fields_map = {}
     for field in schema:
         format_field = ""
         if field.get(format_name, False):
             format_field = field[format_name]
-            map_dict[format_field] = {FIELD_NAME: field[FIELD_NAME], "subfields": {}}
+            fields_map[format_field] = {FIELD_NAME: field[FIELD_NAME], "subfields": {}}
         for subfield in field.get("subfields", []):
             if subfield.get(format_name, False):
                 format_subfield = subfield[format_name]
                 if format_field:
-                    if not map_dict[format_field]["subfields"].get(
+                    if not fields_map[format_field]["subfields"].get(
                         format_subfield, False
                     ):
-                        map_dict[format_field]["subfields"][format_subfield] = {
+                        fields_map[format_field]["subfields"][format_subfield] = {
                             FIELD_NAME: subfield[FIELD_NAME]
                         }
                     else:
-                        value = map_dict[format_field]["subfields"][format_subfield][
+                        value = fields_map[format_field]["subfields"][format_subfield][
                             FIELD_NAME
                         ]
                         if isinstance(value, list):
-                            map_dict[format_field]["subfields"][format_subfield] = {
+                            fields_map[format_field]["subfields"][format_subfield] = {
                                 FIELD_NAME: value + [subfield[FIELD_NAME]]
                             }
                         else:
-                            map_dict[format_field]["subfields"][format_subfield] = {
+                            fields_map[format_field]["subfields"][format_subfield] = {
                                 FIELD_NAME: [value, subfield[FIELD_NAME]]
                             }
                 else:
-                    map_dict[format_subfield] = {
+                    fields_map[format_subfield] = {
                         FIELD_NAME: field[FIELD_NAME] + "." + subfield[FIELD_NAME]
                     }
-    return map_dict
+    return fields_map

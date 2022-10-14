@@ -31,14 +31,14 @@ def convert_bibtex(metadata_record: dict) -> str:
         raise AttributeError("Failed to convert package to BibTeX format.")
 
 
-def bibtex_convert_dataset(dataset_dict: dict) -> str:
+def bibtex_convert_dataset(dataset: dict) -> str:
     """Create the BibTeX string from API dictionary."""
     # name as identifier (plus year later)
-    name = dataset_dict["name"]
+    name = dataset["name"]
     converted_package = "@misc { " + name
 
     # year (add to name) and journal
-    publication = json.loads(dataset_dict.get("publication", "{}"))
+    publication = json.loads(dataset.get("publication", "{}"))
     publication_year = publication["publication_year"]
 
     converted_package += f"-{publication_year}"
@@ -47,11 +47,11 @@ def bibtex_convert_dataset(dataset_dict: dict) -> str:
     converted_package += f',\n\t publisher = "{publisher}"'
 
     # title
-    title = dataset_dict["title"]
+    title = dataset["title"]
     converted_package += ',\n\t title = "' + title + '"'
 
     # author
-    authors = json.loads(dataset_dict.get("author", "[]"))
+    authors = json.loads(dataset.get("author", "[]"))
     author_names = []
     for author in authors:
         author_name = ""
@@ -62,13 +62,13 @@ def bibtex_convert_dataset(dataset_dict: dict) -> str:
     converted_package += f',\n\t author = "{bibtex_author}"'
 
     # DOI
-    doi = dataset_dict.get("doi", "").strip()
+    doi = dataset.get("doi", "").strip()
     if doi:
         converted_package += f',\n\t DOI = "http://dx.doi.org/{doi}"'
 
     # url
     protocol, host = get_protocol_and_domain()
-    package_name = dataset_dict.get("name", "")
+    package_name = dataset.get("name", "")
     url = f"{protocol}://{host}/dataset/{package_name}"
     converted_package += ',\n\t url = "' + url + '"'
 
