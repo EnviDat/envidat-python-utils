@@ -1,38 +1,38 @@
-import logging
-import json
+"""DCAT-AP CH for OpenDataSwiss."""
 
-from typing import Optional
+import json
+import logging
 from collections import OrderedDict
+from typing import Optional
+
 from dateutil.parser import parse
 from xmltodict import unparse
 
 from envidat.api.v1 import get_metadata_list_with_resources
 
-
 log = logging.getLogger(__name__)
 
 
-def convert_opendataswiss() -> str:
-    """Generate XML formatted string in OpenDataSwiss format for ALL packages combined
-    into one XML string.
+def convert_dcat_ap() -> str:
+    """
+    XML formatted string in DCAT-AP CH format for ALL packages.
 
     Note:
         Converter is only valid for the metadata schema for EnviDat.
 
     Returns:
-        str: XML formatted string in OpenDataSwiss format for all packages combined.
+        str: XML formatted string in DCAT-AP format for all packages combined.
         (see https://www.envidat.ch/opendata/export/dcat-ap-ch.xml)
     """
-
     converted_packages = []
     metadata_list = get_metadata_list_with_resources()
 
-    # Try to convert packages to OrderedDictionaries compatible with OpenDataSwiss
+    # Try to convert packages to OrderedDictionaries compatible with DCAT-AP
     # format, then convert dictionaries to XML
     try:
         for package in metadata_list:
             # Convert each package (metadata record) in package_list to XML format
-            package_dict = opendataswiss_convert_dataset(package)
+            package_dict = dcat_ap_convert_dataset(package)
             if package_dict:
                 converted_packages += [package_dict]
             else:
@@ -42,20 +42,20 @@ def convert_opendataswiss() -> str:
         wrapper_dict = get_wrapper_dict(converted_packages)
 
         # Convert wrapper_dict to XML format
-        converted_data_xml = unparse(wrapper_dict, short_empty_elements=True,
-                                     pretty=True)
+        converted_data_xml = unparse(
+            wrapper_dict, short_empty_elements=True, pretty=True
+        )
 
         return converted_data_xml
 
     except ValueError as e:
         log.error(e)
-        log.error("Cannot convert packages to OpenDataSwiss format.")
-        raise ValueError("Failed to convert packages to OpenDataSwiss format.")
+        log.error("Cannot convert packages to DCAT-AP format.")
+        raise ValueError("Failed to convert packages to DCAT-AP format.")
 
 
-def opendataswiss_convert_dataset(package: dict) -> Optional[OrderedDict]:
-    """Return OpenDataSwiss formatted OrderedDict from EnviDat JSON."""
-
+def dcat_ap_convert_dataset(package: dict) -> Optional[OrderedDict]:
+    """Return DCAT-AP formatted OrderedDict from EnviDat JSON."""
     try:
 
         md_metadata_dict = OrderedDict()
@@ -169,14 +169,13 @@ def opendataswiss_convert_dataset(package: dict) -> Optional[OrderedDict]:
         return md_metadata_dict
 
     except Exception as e:
-        log.error(f"ERROR: Cannot convert {package} to OpenDataSwiss format.")
+        log.error(f"ERROR: Cannot convert {package} to DCAT-AP format.")
         log.error(e)
         return None
 
 
 def clean_text(text: str) -> str:
-    """Returns text cleaned of hashes and with modified characters"""
-
+    """Text cleaned of hashes and with modified characters."""
     cleaned_text = (
         text.replace("###", "")
         .replace("##", "")
@@ -191,8 +190,7 @@ def clean_text(text: str) -> str:
 
 
 def get_keywords(package: dict) -> list:
-    """Returns keywords from tags in package (metadata record)."""
-
+    """Keywords from tags in package (metadata record)."""
     keywords = []
     for tag in package.get("tags", []):
         name = tag.get("display_name", "").upper()
@@ -202,7 +200,6 @@ def get_keywords(package: dict) -> list:
 
 def get_distribution_list(package: dict, package_name: str) -> list:
     """Return distribution_list created from package resources list and licence_id."""
-
     distribution_list = []
 
     dataset_license = package.get("license_id", "odc-odbl")
@@ -314,11 +311,7 @@ def get_distribution_list(package: dict, package_name: str) -> list:
 
 
 def get_wrapper_dict(converted_packages: list) -> dict:
-    """
-    Returns wrapper dictionary (with catalog and root tags)
-    for converted packages.
-    """
-
+    """Add required DCAT-AP catalog XML tags."""
     # Assign catalog_dict for header and converted_packages
     catalog_dict = OrderedDict()
 
