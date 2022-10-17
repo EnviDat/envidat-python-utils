@@ -479,9 +479,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
         pkg_spatial = json.loads(dataset["spatial"])
         log.debug("pkg_spatial=" + str(pkg_spatial))
         if pkg_spatial:
-            coordinates = flatten(
-                pkg_spatial.get("coordinates", "[]"), reverse=True
-            )
+            coordinates = flatten(pkg_spatial.get("coordinates", "[]"), reverse=True)
             if pkg_spatial.get("type", "").lower() == "polygon":
                 datacite_geolocation = collections.OrderedDict()
                 datacite_geolocation["geoLocationPolygon"] = {"polygonPoint": []}

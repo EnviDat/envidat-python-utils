@@ -44,10 +44,7 @@ def get_ckan_endpoint(
 
 
 def get_converters_one_package(
-        convert_dataset,
-        package_name,
-        file_format,
-        extension
+    convert_dataset, package_name, file_format, extension
 ) -> tuple[str, str]:
     """Get CKAN output and corresponding converter output for one package.
 
@@ -73,9 +70,7 @@ def get_converters_one_package(
 
 
 def get_converters_all_packages(
-        convert_dataset,
-        file_format,
-        extension
+    convert_dataset, file_format, extension
 ) -> tuple[list, list]:
     """Get CKAN output and corresponding converter output for all packages.
 
@@ -107,11 +102,7 @@ def get_converters_all_packages(
 
 
 def get_datacite_converters_one_package(
-    convert_dataset,
-    get_name_doi,
-    package_name,
-    file_format,
-    extension
+    convert_dataset, get_name_doi, package_name, file_format, extension
 ) -> tuple[str, str]:
     """Get DacaCite formatted CKAN output and DataCite converter output for one package.
 
@@ -140,10 +131,7 @@ def get_datacite_converters_one_package(
 
 
 def get_datacite_converters_all_packages(
-    convert_dataset,
-    get_name_doi,
-    file_format,
-    extension
+    convert_dataset, get_name_doi, file_format, extension
 ) -> tuple[list, list]:
     """Get DacaCite formatted CKAN output and DataCite converter output for
        all packages.
@@ -286,13 +274,10 @@ def convert_dif_values(ckan_output):
     return ckan_xml
 
 
-def get_opendataswiss_converters_all_packages(
-        convert_dataset,
-        file_format,
-        extension,
-        package_name='opendata'
+def get_dcat_ap_converters_all_packages(
+    convert_dataset, file_format, extension, package_name="opendata"
 ) -> tuple[str, str]:
-    """Get OpenDataSwiss CKAN and corresponding converter XML formatted strings
+    """Get DCAT-AP CKAN and corresponding converter XML formatted strings
     for all packages.
 
     Note: As of October 14, 2022, the expected CKAN string should be
@@ -311,8 +296,9 @@ def get_opendataswiss_converters_all_packages(
     """
     # package = get_package(package_name)
 
-    ckan_endpoint = \
-        f'https://www.envidat.ch/{package_name}/export/{file_format}.{extension}'
+    ckan_endpoint = (
+        f"https://www.envidat.ch/{package_name}/export/{file_format}.{extension}"
+    )
     request = get_url(ckan_endpoint)
     ckan_output = request.content.decode()
 
@@ -438,11 +424,12 @@ def test_iso_converters_all_packages(iso_converter_all_packages):
     assert ckan_packages == converter_packages_xml
 
 
-def test_opendataswiss_converters_all_packages(opendataswiss_converter_all_packages):
-    """Test OpenDataSwiss converter for all packages."""
+def test_dcat_ap_converters_all_packages(dcat_ap_converter_all_packages):
+    """Test DCAT-AP converter for all packages."""
 
-    ckan_packages, converter_packages = get_opendataswiss_converters_all_packages(
-        *opendataswiss_converter_all_packages)
+    ckan_packages, converter_packages = get_dcat_ap_converters_all_packages(
+        *dcat_ap_converter_all_packages
+    )
 
     assert ckan_packages == converter_packages
 

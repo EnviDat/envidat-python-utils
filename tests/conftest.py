@@ -10,9 +10,9 @@ from moto import mock_s3
 from envidat.api.v1 import get_metadata_name_doi
 from envidat.converters.bibtex_converter import bibtex_convert_dataset
 from envidat.converters.datacite_converter import datacite_convert_dataset
+from envidat.converters.dcat_ap_converter import convert_dcat_ap
 from envidat.converters.dif_converter import dif_convert_dataset
 from envidat.converters.iso_converter import iso_convert_dataset
-from envidat.converters.opendataswiss_converter import convert_opendataswiss
 from envidat.converters.ris_converter import ris_convert_dataset
 from envidat.s3.bucket import Bucket
 
@@ -152,11 +152,12 @@ def iso_converter_all_packages():
 
 
 @pytest.fixture
-def opendataswiss_converter_all_packages():
-    """All packages in OpenDataSwiss format"""
+def dcat_ap_converter_all_packages():
+    """All packages in DCAT-AP format"""
     file_format = "dcat-ap-ch"
     extension = "xml"
-    return convert_opendataswiss, file_format, extension
+    return convert_dcat_ap, file_format, extension
+
 
 @pytest.fixture
 def ris_converter_one_package():
