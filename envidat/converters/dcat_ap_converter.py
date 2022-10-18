@@ -349,13 +349,16 @@ def wrap_packages_dcat_ap_xml(dcat_xml_packages: list) -> str:
 
     if isinstance(dcat_xml_packages, dict):
         packages_dict_list = dcat_xml_packages
-    elif isinstance(dcat_xml_packages[0], dict):
-        packages_dict_list = dcat_xml_packages
-    elif isinstance(dcat_xml_packages[0], str):
-        packages_dict_list = [parse(package) for package in dcat_xml_packages]
+    elif isinstance(dcat_xml_packages, str):
+        packages_dict_list = parse(dcat_xml_packages)
+    elif isinstance(dcat_xml_packages, list):
+        if isinstance(dcat_xml_packages[0], dict):
+            packages_dict_list = dcat_xml_packages
+        elif isinstance(dcat_xml_packages[0], str):
+            packages_dict_list = [parse(package) for package in dcat_xml_packages]
     else:
-        log.error("Packages in iccorrect format. Must be string XML or dict.")
-        raise ValueError("Packages in iccorrect format. Must be string XML or dict.")
+        log.error("Packages in incorrect format. Must be string XML or dict.")
+        raise ValueError("Packages in incorrect format. Must be string XML or dict.")
     catalog_dict["dcat:Catalog"] = {"dcat:dataset": packages_dict_list}
 
     # Assign dcat_catalog_dict dictionary for root element in XML file
