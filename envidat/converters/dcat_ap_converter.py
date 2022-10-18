@@ -3,175 +3,186 @@
 import json
 import logging
 from collections import OrderedDict
-from typing import Optional
+from typing import Union
 
-from dateutil.parser import parse
-from xmltodict import unparse
-
-from envidat.api.v1 import get_metadata_list_with_resources
+from dateutil.parser import parse as parse_date
+from xmltodict import parse, unparse
 
 log = logging.getLogger(__name__)
 
 
-def convert_dcat_ap() -> str:
+def convert_dcat_ap(metadata_records: Union[dict, list[dict]]) -> str:
     """
-    XML formatted string in DCAT-AP CH format for ALL packages.
+    Generate output string in DCAT-AP format.
+
+    Accepts a single metadata entry, or list of entries.
 
     Note:
         Converter is only valid for the metadata schema for EnviDat.
 
+    Args:
+        metadata_records (dict, list[dict]):
+            Either:
+                - Individual EnviDat metadata entry dictionary.
+                - List of EnviDat metadata record dictionaries.
+
     Returns:
-        str: XML formatted string in DCAT-AP format for all packages combined.
-        (see https://www.envidat.ch/opendata/export/dcat-ap-ch.xml)
+        str: string in DCAT-AP CH XML format.
     """
-    converted_packages = []
-    metadata_list = get_metadata_list_with_resources()
-
-    # Try to convert packages to OrderedDictionaries compatible with DCAT-AP
-    # format, then convert dictionaries to XML
-    try:
-        for package in metadata_list:
-            # Convert each package (metadata record) in package_list to XML format
-            package_dict = dcat_ap_convert_dataset(package)
-            if package_dict:
-                converted_packages += [package_dict]
-            else:
-                log.error(f"ERROR: Failed to convert {package}")
-
-        # Wrap converted_packages into wrapper dictionary with catalog and root tags
-        wrapper_dict = get_wrapper_dict(converted_packages)
-
-        # Convert wrapper_dict to XML format
-        converted_data_xml = unparse(
-            wrapper_dict, short_empty_elements=True, pretty=True
-        )
-
-        return converted_data_xml
-
-    except ValueError as e:
-        log.error(e)
-        log.error("Cannot convert packages to DCAT-AP format.")
-        raise ValueError("Failed to convert packages to DCAT-AP format.")
-
-
-def dcat_ap_convert_dataset(package: dict) -> Optional[OrderedDict]:
-    """Return DCAT-AP formatted OrderedDict from EnviDat JSON."""
     try:
 
-        md_metadata_dict = OrderedDict()
+        if isinstance(metadata_records, list):
+            converted_records = []
+            for record in metadata_records:
+                converted_records.append(
+                    dcat_ap_convert_dataset(
+                        record,
+                    )
+                )
+            return wrap_packages_dcat_ap_xml(converted_records)
 
-        # Dataset URL
-        package_name = package["name"]
-        package_url = f"https://www.envidat.ch/#/metadata/{package_name}"
-        md_metadata_dict["dcat:Dataset"] = {"@rdf:about": package_url}
-
-        # identifier
-        package_id = package["id"]
-        md_metadata_dict["dcat:Dataset"]["dct:identifier"] = f"{package_id}@envidat"
-
-        # title
-        title = package["title"]
-        md_metadata_dict["dcat:Dataset"]["dct:title"] = {
-            "@xml:lang": "en",
-            "#text": title,
-        }
-
-        # description
-        description = clean_text(package.get("notes", ""))
-        md_metadata_dict["dcat:Dataset"]["dct:description"] = {
-            "@xml:lang": "en",
-            "#text": description,
-        }
-
-        # issued
-        creation_date = package.get("metadata_created")
-        if creation_date:
-            md_metadata_dict["dcat:Dataset"]["dct:issued"] = {
-                "@rdf:datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
-                "#text": parse(creation_date).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            }
-
-        # modified
-        modification_date = package.get("metadata_modified", creation_date)
-        if modification_date:
-            md_metadata_dict["dcat:Dataset"]["dct:modified"] = {
-                "@rdf:datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
-                "#text": parse(modification_date).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            }
-
-        # publication (MANDATORY)
-        md_metadata_dict["dcat:Dataset"]["dct:publisher"] = {
-            "foaf:Organization": {
-                "@rdf:about": "https://envidat.ch/#/about",
-                "foaf:name": "EnviDat",
-            }
-        }
-
-        # landing page
-        md_metadata_dict["dcat:Dataset"]["dcat:landingPage"] = {
-            "@rdf:resource": package_url
-        }
-
-        # contact point (MANDATORY)
-        maintainer = json.loads(package.get("maintainer", "{}"))
-        maintainer_name = ""
-
-        if maintainer.get("given_name"):
-            maintainer_name += maintainer["given_name"].strip() + " "
-
-        maintainer_name += maintainer["name"]
-        maintainer_email = "mailto:" + maintainer["email"]
-        individual_contact_point = {
-            "vcard:Individual": {
-                "vcard:fn": maintainer_name,
-                "vcard:hasEmail": {"@rdf:resource": maintainer_email},
-            }
-        }
-
-        if maintainer_email == "mailto:envidat@wsl.ch":
-            md_metadata_dict["dcat:Dataset"]["dcat:contactPoint"] = [
-                individual_contact_point
-            ]
-        else:
-            organization_contact_point = {
-                "vcard:Organization": {
-                    "vcard:fn": "EnviDat Support",
-                    "vcard:hasEmail": {"@rdf:resource": "mailto:envidat@wsl.ch"},
-                }
-            }
-            md_metadata_dict["dcat:Dataset"]["dcat:contactPoint"] = [
-                individual_contact_point,
-                organization_contact_point,
-            ]
-
-        # theme (MANDATORY)
-        md_metadata_dict["dcat:Dataset"]["dcat:theme"] = {
-            "@rdf:resource": "http://opendata.swiss/themes/education"
-        }
-
-        # language
-        md_metadata_dict["dcat:Dataset"]["dct:language"] = {"#text": "en"}
-
-        # keyword
-        keywords_list = []
-        keywords = get_keywords(package)
-        for keyword in keywords:
-            keywords_list += [{"@xml:lang": "en", "#text": keyword}]
-        md_metadata_dict["dcat:Dataset"]["dcat:keyword"] = keywords_list
-
-        # Distribution - iterate through package resources and obtain
-        # package license (MANDATORY)
-        # Call get_distribution_list(package) to get distibution list
-        md_metadata_dict["dcat:Dataset"]["dcat:distribution"] = get_distribution_list(
-            package, package_name
+        return wrap_packages_dcat_ap_xml(
+            dcat_ap_convert_dataset(
+                metadata_records,
+                as_xml=True,
+            )
         )
-
-        return md_metadata_dict
-
-    except Exception as e:
-        log.error(f"ERROR: Cannot convert {package} to DCAT-AP format.")
+    except AttributeError as e:
         log.error(e)
-        return None
+        log.error("Cannot convert package to DCAT-AP format.")
+        raise AttributeError("Failed to convert package to DCAT-AP format.")
+
+
+def dcat_ap_convert_dataset(
+    metadata_record: dict, as_xml: bool = False
+) -> Union[str, dict]:
+    """Generate output string in DCAT-AP format.
+
+    Note:
+        Converter is only valid for the metadata schema for EnviDat.
+
+    Args:
+        metadata_record (dict): Individual EnviDat metadata entry record dictionary.
+        as_xml (bool): If set, unparse dictionary to XML string.
+
+    Returns:
+        (str, dict):
+            Either:
+                - XML string in DCAT-AP format, if as_xml=True.
+                - Dictionary in DCAT-AP format, for further processing.
+
+    """
+    md_metadata_dict = OrderedDict()
+
+    # Dataset URL
+    package_name = metadata_record["name"]
+    package_url = f"https://www.envidat.ch/#/metadata/{package_name}"
+    md_metadata_dict["dcat:Dataset"] = {"@rdf:about": package_url}
+
+    # identifier
+    package_id = metadata_record["id"]
+    md_metadata_dict["dcat:Dataset"]["dct:identifier"] = f"{package_id}@envidat"
+
+    # title
+    title = metadata_record["title"]
+    md_metadata_dict["dcat:Dataset"]["dct:title"] = {
+        "@xml:lang": "en",
+        "#text": title,
+    }
+
+    # description
+    description = clean_text(metadata_record.get("notes", ""))
+    md_metadata_dict["dcat:Dataset"]["dct:description"] = {
+        "@xml:lang": "en",
+        "#text": description,
+    }
+
+    # issued
+    creation_date = metadata_record.get("metadata_created")
+    if creation_date:
+        md_metadata_dict["dcat:Dataset"]["dct:issued"] = {
+            "@rdf:datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+            "#text": parse_date(creation_date).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+
+    # modified
+    modification_date = metadata_record.get("metadata_modified", creation_date)
+    if modification_date:
+        md_metadata_dict["dcat:Dataset"]["dct:modified"] = {
+            "@rdf:datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+            "#text": parse_date(modification_date).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+
+    # publication (MANDATORY)
+    md_metadata_dict["dcat:Dataset"]["dct:publisher"] = {
+        "foaf:Organization": {
+            "@rdf:about": "https://envidat.ch/#/about",
+            "foaf:name": "EnviDat",
+        }
+    }
+
+    # landing page
+    md_metadata_dict["dcat:Dataset"]["dcat:landingPage"] = {
+        "@rdf:resource": package_url
+    }
+
+    # contact point (MANDATORY)
+    maintainer = json.loads(metadata_record.get("maintainer", "{}"))
+    maintainer_name = ""
+
+    if maintainer.get("given_name"):
+        maintainer_name += maintainer["given_name"].strip() + " "
+
+    maintainer_name += maintainer["name"]
+    maintainer_email = "mailto:" + maintainer["email"]
+    individual_contact_point = {
+        "vcard:Individual": {
+            "vcard:fn": maintainer_name,
+            "vcard:hasEmail": {"@rdf:resource": maintainer_email},
+        }
+    }
+
+    if maintainer_email == "mailto:envidat@wsl.ch":
+        md_metadata_dict["dcat:Dataset"]["dcat:contactPoint"] = [
+            individual_contact_point
+        ]
+    else:
+        organization_contact_point = {
+            "vcard:Organization": {
+                "vcard:fn": "EnviDat Support",
+                "vcard:hasEmail": {"@rdf:resource": "mailto:envidat@wsl.ch"},
+            }
+        }
+        md_metadata_dict["dcat:Dataset"]["dcat:contactPoint"] = [
+            individual_contact_point,
+            organization_contact_point,
+        ]
+
+    # theme (MANDATORY)
+    md_metadata_dict["dcat:Dataset"]["dcat:theme"] = {
+        "@rdf:resource": "http://opendata.swiss/themes/education"
+    }
+
+    # language
+    md_metadata_dict["dcat:Dataset"]["dct:language"] = {"#text": "en"}
+
+    # keyword
+    keywords_list = []
+    keywords = get_keywords(metadata_record)
+    for keyword in keywords:
+        keywords_list += [{"@xml:lang": "en", "#text": keyword}]
+    md_metadata_dict["dcat:Dataset"]["dcat:keyword"] = keywords_list
+
+    # Distribution - iterate through package resources and obtain
+    # package license (MANDATORY)
+    # Call get_distribution_list(metadata_record) to get distibution list
+    md_metadata_dict["dcat:Dataset"]["dcat:distribution"] = get_distribution_list(
+        metadata_record, package_name
+    )
+
+    if as_xml:
+        return unparse(md_metadata_dict, short_empty_elements=True, pretty=True)
+    return md_metadata_dict
 
 
 def clean_text(text: str) -> str:
@@ -189,20 +200,20 @@ def clean_text(text: str) -> str:
     return cleaned_text
 
 
-def get_keywords(package: dict) -> list:
+def get_keywords(metadata_record: dict) -> list:
     """Keywords from tags in package (metadata record)."""
     keywords = []
-    for tag in package.get("tags", []):
+    for tag in metadata_record.get("tags", []):
         name = tag.get("display_name", "").upper()
         keywords += [name]
     return keywords
 
 
-def get_distribution_list(package: dict, package_name: str) -> list:
+def get_distribution_list(metadata_record: dict, package_name: str) -> list:
     """Return distribution_list created from package resources list and licence_id."""
     distribution_list = []
 
-    dataset_license = package.get("license_id", "odc-odbl")
+    dataset_license = metadata_record.get("license_id", "odc-odbl")
 
     license_mapping = {
         "wsl-data": (
@@ -219,7 +230,7 @@ def get_distribution_list(package: dict, package_name: str) -> list:
         "NonCommercialWithPermission-CommercialWithPermission-ReferenceRequired",
     )
 
-    for resource in package.get("resources", []):
+    for resource in metadata_record.get("resources", []):
 
         resource_id = resource.get("id")
         resource_name = resource.get("name", resource_id)
@@ -230,10 +241,12 @@ def get_distribution_list(package: dict, package_name: str) -> list:
         )
         resource_url = resource.get("url")
 
-        resource_creation = parse(resource["created"]).strftime("%Y-%m-%dT%H:%M:%SZ")
+        resource_creation = parse_date(resource["created"]).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
         resource_modification = resource_creation
         if resource.get("last_modified", resource.get("metadata_modified", "")):
-            resource_modification = parse(
+            resource_modification = parse_date(
                 resource.get("last_modified", resource.get("metadata_modified", ""))
             ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -278,7 +291,7 @@ def get_distribution_list(package: dict, package_name: str) -> list:
         distribution = {
             "dcat:Distribution": {
                 "@rdf:about": resource_page_url,
-                "dct:identifier": package["name"] + "." + resource_id,
+                "dct:identifier": metadata_record["name"] + "." + resource_id,
                 "dct:title": {"@xml:lang": "en", "#text": resource_name},
                 "dct:description": {"@xml:lang": "en", "#text": resource_notes},
                 "dct:issued": {
@@ -310,9 +323,16 @@ def get_distribution_list(package: dict, package_name: str) -> list:
     return distribution_list
 
 
-def get_wrapper_dict(converted_packages: list) -> dict:
-    """Add required DCAT-AP catalog XML tags."""
-    # Assign catalog_dict for header and converted_packages
+def wrap_packages_dcat_ap_xml(dcat_xml_packages: list) -> str:
+    """
+    Add required DCAT-AP catalog XML tags for full DCAT-AP XML.
+
+    Args:
+        dcat_xml_packages (list[str,dict]): All DCAT-AP formatted packages to include.
+            In string XML or dictionary format.
+
+    Note: this is a required final step for producing a DCAT-AP CH format XML.
+    """
     catalog_dict = OrderedDict()
 
     # header
@@ -327,10 +347,19 @@ def get_wrapper_dict(converted_packages: list) -> dict:
     catalog_dict["@xmlns:odrs"] = "http://schema.theodi.org/odrs#"
     catalog_dict["@xmlns:schema"] = "http://schema.org/"
 
-    catalog_dict["dcat:Catalog"] = {"dcat:dataset": converted_packages}
+    if isinstance(dcat_xml_packages, dict):
+        packages_dict_list = dcat_xml_packages
+    elif isinstance(dcat_xml_packages[0], dict):
+        packages_dict_list = dcat_xml_packages
+    elif isinstance(dcat_xml_packages[0], str):
+        packages_dict_list = [parse(package) for package in dcat_xml_packages]
+    else:
+        log.error("Packages in iccorrect format. Must be string XML or dict.")
+        raise ValueError("Packages in iccorrect format. Must be string XML or dict.")
+    catalog_dict["dcat:Catalog"] = {"dcat:dataset": packages_dict_list}
 
     # Assign dcat_catalog_dict dictionary for root element in XML file
     dcat_catalog_dict = OrderedDict()
     dcat_catalog_dict["rdf:RDF"] = catalog_dict
 
-    return dcat_catalog_dict
+    return unparse(dcat_catalog_dict, short_empty_elements=True, pretty=True)

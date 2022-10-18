@@ -11,6 +11,7 @@ from envidat.api.v1 import (
 )
 from envidat.converters.bibtex_converter import convert_bibtex
 from envidat.converters.datacite_converter import convert_datacite
+from envidat.converters.dcat_ap_converter import convert_dcat_ap
 from envidat.converters.dif_converter import convert_dif
 from envidat.converters.iso_converter import convert_iso
 from envidat.converters.ris_converter import convert_ris
@@ -37,7 +38,7 @@ class Record:
         self,
         input_data: Union[str, dict],
         convert: Literal[
-            "str", "xml", "iso", "bibtex", "dif", "datacite", "ris"
+            "str", "xml", "iso", "bibtex", "dif", "datacite", "ris", "dcat-ap"
         ] = None,
     ) -> NoReturn:
         """
@@ -48,8 +49,10 @@ class Record:
         Args:
             input_data [str, dict]: Data input, in JSON or dict form.
                 Can also accept a package name to extract a record from the API.
-            convert ["str", "xml", "iso", "bibtex", "dif", "datacite", "ris"]: Convert
-                the content immediately to specified type.
+            convert (str):
+                Options: Convert the content immediately to specified type.
+                    "str", "xml", "iso", "bibtex", "dif", "datacite", "ris", "dcat-ap"
+
         """
         if isinstance(input_data, dict):
             # Is dict
@@ -82,6 +85,7 @@ class Record:
                 "dif": self.to_dif,
                 "datacite": self.to_datacite,
                 "ris": self.to_ris,
+                "dcat-ap": self.to_dcat_ap,
             }
             if convert == "datacite":
                 name_doi_map = get_metadata_name_doi()
@@ -229,29 +233,49 @@ class Record:
         """
         return convert_datacite(self.content, name_doi_map)
 
+    def to_dcat_ap(self) -> str:
+        """
+        Convert content to DCAT-AP CH format.
+
+        Returns:
+            str: DCAT-AP CH formatted string of metadata record.
+        """
+        return convert_dcat_ap(self.content)
+
 
 def get_all_metadata_record_list(
-    convert: Literal["str", "xml", "iso", "bibtex", "dif", "datacite", "ris"] = None,
+    convert: Literal[
+        "str", "xml", "iso", "bibtex", "dif", "datacite", "ris", "dcat-ap"
+    ] = None,
     content_only: bool = False,
-) -> list:
+) -> Union[list, str]:
     """
     Return all EnviDat metadata entries as Record objects.
 
     Defaults to standard Record, content in json format.
 
     Args:
-        convert ["str", "xml", "iso", "bibtex", "dif", "datacite", "ris"]: Convert
-            the content immediately to specified type.
+        convert (str): Convert the content immediately to specified type.
+            Options: "str", "xml", "iso", "bibtex", "dif", "datacite", "ris", "dcat-ap"
         content_only (bool): Extract content from Record objects.
 
     Returns:
-        list: Of Record entries for EnviDat metadata.
+        (list, string): Of Record entries for EnviDat metadata.
+            Note: returns a string in the case of a single metadata entry
+            and content_only is set to True.
     """
     metadata = get_metadata_list_with_resources()
-    record_list = []
 
+    # DCAT-AP special case, return as single XML
+    if convert == "dcat-ap":
+        loaded_metadata = [Record(entry).content for entry in metadata]
+        return convert_dcat_ap(loaded_metadata)
+
+    # Only get metadata:doi mapping once
     if convert == "datacite":
         name_doi_map = get_metadata_name_doi()
+
+    record_list = []
 
     for metadata_entry in metadata:
         record = Record(metadata_entry)
@@ -265,7 +289,9 @@ def get_all_metadata_record_list(
                 "dif": record.to_dif,
                 "datacite": record.to_datacite,
                 "ris": record.to_ris,
+                # dcat-ap handled separately above
             }
+
             if convert == "datacite":
                 record.content = mapping[convert](name_doi_map)
             else:
