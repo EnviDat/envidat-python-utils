@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 1.2.0 (2022-10-18)
+
+### Fix
+
+- type checking for dcat-ap final wrap
+
+### Feat
+
+- add dcat-ap (opendataswiss) to metadata Record class
+- added opendataswiss converter and tests
+- working metadata Record class, linking to converters
+- add envidat metadata Record class for conversion to various open formats
+
+### Refactor
+
+- black and isort, update refs to dcat-ap
+- rename opendataswiss converter --> dcat-ap
+- update variable names, add strip() calls to Bibtex and Datacite coverters
+- add additional author to repo
+- strip "Abstract" string in DIF converter
+- strip "Abstract" string in DIF converter
+- converters replace json input with dict, datacite get doi mapping once only
+- simplify metadata name:doi mapping getter
+- run pre-commit format and linting on all converter code
+- remove temp test file for converters
+- add extract arg to metadata Record, set input to positional
+
 ## 1.1.0 (2022-09-29)
 
 ### Feat
