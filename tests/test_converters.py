@@ -1,15 +1,16 @@
 """Tests for package converters."""
 
 import os
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 
 from xmltodict import parse, unparse
 
 from envidat.api.v1 import get_metadata_list_with_resources, get_package
+from envidat.converters.dcat_ap_converter import wrap_packages_dcat_ap_xml
 from envidat.utils import get_url
 
 
-def get_ckan_endpoint(
+def get_ckan_exporter_endpoint(
     package: dict,
     file_format: str,
     extension: str,
@@ -60,7 +61,7 @@ def get_converters_one_package(
     """
     package = get_package(package_name)
 
-    ckan_endpoint = get_ckan_endpoint(package, file_format, extension)
+    ckan_endpoint = get_ckan_exporter_endpoint(package, file_format, extension)
     request = get_url(ckan_endpoint)
     ckan_output = request.content.decode()
 
@@ -90,7 +91,7 @@ def get_converters_all_packages(
 
     for package in packages:
 
-        ckan_endpoint = get_ckan_endpoint(package, file_format, extension)
+        ckan_endpoint = get_ckan_exporter_endpoint(package, file_format, extension)
         request = get_url(ckan_endpoint)
         ckan_output = request.content.decode()
         ckan_packages.append(ckan_output)
@@ -120,7 +121,7 @@ def get_datacite_converters_one_package(
     """
     package = get_package(package_name)
 
-    ckan_endpoint = get_ckan_endpoint(package, file_format, extension)
+    ckan_endpoint = get_ckan_exporter_endpoint(package, file_format, extension)
     request = get_url(ckan_endpoint)
     ckan_output = request.content.decode()
 
@@ -133,8 +134,8 @@ def get_datacite_converters_one_package(
 def get_datacite_converters_all_packages(
     convert_dataset, get_name_doi, file_format, extension
 ) -> tuple[list, list]:
-    """Get DacaCite formatted CKAN output and DataCite converter output for
-       all packages.
+    """
+    Get DacaCite formatted CKAN output and DataCite converter output for all packages.
 
     Args:
         convert_dataset (function): Function used to convert dataset.
@@ -156,7 +157,7 @@ def get_datacite_converters_all_packages(
 
     for package in packages:
 
-        ckan_endpoint = get_ckan_endpoint(package, file_format, extension)
+        ckan_endpoint = get_ckan_exporter_endpoint(package, file_format, extension)
         request = get_url(ckan_endpoint)
         ckan_output = request.content.decode()
         ckan_packages.append(ckan_output)
@@ -183,7 +184,6 @@ def convert_datacite_related_identifier(ckan_output) -> str:
         str: Output produced from CKAN endpoint with "relatedIdentifier"
             key typo corrected.
     """
-
     # Convert xml to dict
     ckan_out = parse(ckan_output)
 
@@ -275,36 +275,41 @@ def convert_dif_values(ckan_output):
 
 
 def get_dcat_ap_converters_all_packages(
-    convert_dataset, file_format, extension, package_name="opendata"
+    convert_dataset,
+    file_format,
+    extension,
 ) -> tuple[str, str]:
-    """Get DCAT-AP CKAN and corresponding converter XML formatted strings
-    for all packages.
+    """
+    DCAT-AP CKAN and corresponding converter XML formatted strings for all packages.
 
     Note: As of October 14, 2022, the expected CKAN string should be
             'https://www.envidat.ch/opendata/export/dcat-ap-ch.xml'
 
     Args:
         convert_dataset (function): Function used to convert dataset.
-        file_format (str): Format of file used in CKAN endpoint (example: "dcat-ap-ch")
+        file_format (str): Format of file used in CKAN endpoint (example: "dcat-ap")
         extension (str): Extension used in CKAN endpoint (example: "xml")
-        package_name (str): Name of package, for the opendataswiss endpoint this is
-            called 'opendata' and is the default argument.
 
     Returns:
         tuple (<str: ckan_output>, <str: converter_output>): CKAN output and
         corresponding converter output for one package.
     """
-    # package = get_package(package_name)
-
-    ckan_endpoint = (
-        f"https://www.envidat.ch/{package_name}/export/{file_format}.{extension}"
-    )
+    # FROM CKAN
+    ckan_endpoint = f"https://www.envidat.ch/opendata/export/{file_format}.{extension}"
     request = get_url(ckan_endpoint)
-    ckan_output = request.content.decode()
+    ckan_dcat_str = request.content.decode()
 
-    converter_output = convert_dataset()
+    # FROM CONVERTERS
+    packages = get_metadata_list_with_resources()
+    converted_packages = []
 
-    return ckan_output, converter_output
+    for package in packages:
+        converter_output = convert_dataset(package)
+        converted_packages.append(converter_output)
+
+    converterd_dcat_xml = wrap_packages_dcat_ap_xml(converted_packages)
+
+    return ckan_dcat_str, converterd_dcat_xml
 
 
 def test_bibtex_converters_one_package(bibtex_converter_one_package):
@@ -426,12 +431,45 @@ def test_iso_converters_all_packages(iso_converter_all_packages):
 
 def test_dcat_ap_converters_all_packages(dcat_ap_converter_all_packages):
     """Test DCAT-AP converter for all packages."""
-
-    ckan_packages, converter_packages = get_dcat_ap_converters_all_packages(
+    ckan_xml, converter_xml = get_dcat_ap_converters_all_packages(
         *dcat_ap_converter_all_packages
     )
 
-    assert ckan_packages == converter_packages
+    ckan_dict_list = parse(ckan_xml)["rdf:RDF"]["dcat:Catalog"]["dcat:dataset"]
+    converter_dict_list = parse(converter_xml)["rdf:RDF"]["dcat:Catalog"][
+        "dcat:dataset"
+    ]
+    # Sort datasets
+    ckan_dict_list = sorted(
+        ckan_dict_list,
+        key=lambda x: x["dcat:Dataset"]["dct:identifier"],
+    )
+    converter_dict_list = sorted(
+        converter_dict_list,
+        key=lambda x: x["dcat:Dataset"]["dct:identifier"],
+    )
+    # Sort keys in datasets
+    ckan_dict_list = [
+        OrderedDict(sorted(package.items())) for package in ckan_dict_list
+    ]
+    converter_dict_list = [
+        OrderedDict(sorted(package.items())) for package in ckan_dict_list
+    ]
+
+    # Check has same number of datasets
+    assert len(ckan_dict_list) == len(converter_dict_list)
+
+    # Check a dataset contains same keys
+    assert Counter(list(ckan_dict_list[0].keys())) == Counter(
+        converter_dict_list[0].keys()
+    )
+
+    # Add root wrapper
+    ckan_xml = wrap_packages_dcat_ap_xml(ckan_dict_list)
+    converter_xml = wrap_packages_dcat_ap_xml(converter_dict_list)
+
+    # Compare XMLs
+    assert ckan_xml == converter_xml
 
 
 def test_ris_converters_one_package(ris_converter_one_package):
