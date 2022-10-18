@@ -3,6 +3,7 @@
 from collections import Counter
 
 import pytest
+from xmltodict import parse
 
 from envidat.metadata import Record, get_all_metadata_record_list
 
@@ -91,3 +92,32 @@ def test_get_all_metadata_datacite():
     metadata_records = get_all_metadata_record_list(convert="datacite")
 
     assert len(metadata_records) > 500
+
+
+def test_get_single_dcat_ap_xml(example_ckan_json):
+    """Test conversion of single Record to DCAT-AP format."""
+    record = Record(example_ckan_json)
+    record_converted = Record(example_ckan_json, convert="dcat-ap")
+
+    xml = record.to_dcat_ap()
+    assert record_converted.content == xml
+
+
+def test_get_all_metadata_dcat_ap():
+    """Test conversion of all to DCAT-AP format, specific case."""
+    metadata_records = get_all_metadata_record_list(convert="dcat-ap")
+
+    assert len(metadata_records) > 500
+
+
+def test_get_all_metadata_dcat_ap_formatted_xml():
+    """Test conversion of all to single DCAT-AP XML, specific case."""
+    dcat_ap_xml = get_all_metadata_record_list(convert="dcat-ap", content_only=True)
+
+    assert isinstance(dcat_ap_xml, str)
+
+    dcat_dict = parse(dcat_ap_xml)
+    assert list(dcat_dict.keys())[0] == "rdf:RDF"
+
+    dataset_list = dcat_dict["rdf:RDF"]["dcat:Catalog"]["dcat:dataset"]
+    assert len(dataset_list) > 500
