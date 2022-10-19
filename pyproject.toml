@@ -25,7 +25,7 @@ classifiers = [
 
 [project.urls]
 homepage = "https://www.envidat.ch"
-documentation = "https://gitlabext.wsl.ch/EnviDat/envidat-python-utils.git"
+documentation = "https://envidat.gitlab-pages.wsl.ch/envidat-python-utils"
 repository = "https://gitlabext.wsl.ch/EnviDat/envidat-python-utils.git"
 
 [project.optional-dependencies]
