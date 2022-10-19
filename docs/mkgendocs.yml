@@ -33,6 +33,7 @@ pages:
     source: "../envidat/s3/bucket.py"
     classes:
       - Bucket
+      - MetaBucket
 
   - page: "s3/exceptions.md"
     source: "../envidat/s3/exceptions.py"
