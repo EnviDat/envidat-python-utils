@@ -136,6 +136,22 @@ class Bucket:
             config=Config(signature_version="s3v4"),
         )
 
+    @staticmethod
+    def list_buckets() -> list[str]:
+        """Get a list of all buckets from endpoint."""
+        log.debug("Accessing boto3 resource.")
+        resource = boto3.resource(
+            "s3",
+            aws_access_key_id=Bucket._AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=Bucket._AWS_SECRET_ACCESS_KEY,
+            endpoint_url=Bucket._AWS_ENDPOINT,
+            region_name=Bucket._AWS_REGION,
+            config=Config(signature_version="s3v4"),
+        )
+        buckets = [bucket.name for bucket in resource.buckets.all()]
+        log.info(f"All buckets at {Bucket._AWS_ENDPOINT}: {buckets}")
+        return buckets
+
     def _handle_boto3_client_error(self, e: ClientError, key: str = None) -> NoReturn:
         """Handle boto3 ClientError.
 

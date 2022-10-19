@@ -1,18 +1,19 @@
 import pytest
 from moto import mock_s3
 
+from envidat.s3.bucket import Bucket
 from envidat.s3.exceptions import NoSuchCORSConfiguration
 
 
 @mock_s3
 def test_get_s3_resource(bucket):
-    resource = bucket.get_boto3_resource()
+    resource = Bucket.get_boto3_resource()
     assert resource, "No boto3 resource was returned"
 
 
 @mock_s3
 def test_get_s3_client(bucket):
-    client = bucket.get_boto3_client()
+    client = Bucket.get_boto3_client()
     assert client, "No boto3 client was returned"
 
 
@@ -73,7 +74,7 @@ def test_set_bucket_cors_allow_all(bucket):
 def test_clean_multiparts(bucket, create_tempfile):
     bucket.create()
 
-    client = bucket.get_boto3_client()
+    client = Bucket.get_boto3_client()
     assert client
 
     key = "/test.txt"
@@ -125,3 +126,12 @@ def test_get_bucket_size(bucket, create_tempfile):
 
     bucket_size = bucket.size()
     assert bucket_size == 114
+
+
+@mock_s3
+def test_list_buckets(bucket, bucket2):
+    bucket.create()
+    bucket2.create()
+
+    all_buckets = Bucket.list_buckets()
+    assert all_buckets == ["testing", "testing2"]
