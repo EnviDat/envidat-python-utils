@@ -48,9 +48,9 @@ class MetaBucket:
                 Defaults to empty string "".
 
         Note:
-            This method should not be required, it is called during __init__.
-            It can be used to reconfigure the endpoint and credentials.
-            Usage: Bucket.config(**args)
+            This method should not be required, as __init__ handles config parameters.
+            It can be used to reconfigure the endpoint and credentials, prior to init.
+            Usage: Bucket.config(**args), then new_bucket = Bucket(<bucket_name>)
         """
         cls._AWS_ACCESS_KEY_ID = access_key
         cls._AWS_SECRET_ACCESS_KEY = secret_key
@@ -110,16 +110,16 @@ class Bucket:
     Handles boto3 exceptions with custom exception classes.
     """
 
+    _AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY")
+    _AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_KEY")
+    _AWS_ENDPOINT = os.getenv("AWS_ENDPOINT")
+    _AWS_REGION = os.getenv("AWS_REGION", default="")
+
     # Set class & staticmethods from MetaBucket
     config = classmethod(MetaBucket.config)
     get_boto3_resource = staticmethod(MetaBucket.get_boto3_resource)
     get_boto3_client = staticmethod(MetaBucket.get_boto3_client)
     list_buckets = classmethod(MetaBucket.list_buckets)
-
-    _AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY")
-    _AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_KEY")
-    _AWS_ENDPOINT = os.getenv("AWS_ENDPOINT")
-    _AWS_REGION = os.getenv("AWS_REGION", default="")
 
     def __init__(
         self,
@@ -866,6 +866,12 @@ class Bucket:
 
             log.debug(f"Iterating bucket {self.bucket_name} per 1000 entries")
             for page_num, page in enumerate(pages):
+
+                # No files found, skip
+                if page["KeyCount"] < 1:
+                    log.debug("No files found in bucket.")
+                    continue
+
                 log.debug(f"Page number: {page_num}")
                 for obj in page["Contents"]:
                     bucket_size += obj["Size"]

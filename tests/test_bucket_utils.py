@@ -129,6 +129,14 @@ def test_get_bucket_size(bucket, create_tempfile):
 
 
 @mock_s3
+def test_get_bucket_size_empty(bucket):
+    bucket.create()
+
+    bucket_size = bucket.size()
+    assert bucket_size == 0
+
+
+@mock_s3
 def test_list_buckets(bucket, bucket2):
     bucket.create()
     bucket2.create()
