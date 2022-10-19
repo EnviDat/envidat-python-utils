@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.2.2 (2022-10-19)
+
+### Fix
+
+- add staticmethod to Bucket to list all s3 buckets from endpoint
+
 ## 1.2.1 (2022-10-19)
 
 ### Fix
