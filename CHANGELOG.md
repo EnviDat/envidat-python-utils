@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.2.1 (2022-10-19)
+
+### Fix
+
+- add func to determine size of Bucket (efficient pagination)
+
 ## 1.2.0 (2022-10-18)
 
 ### Fix
