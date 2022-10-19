@@ -806,6 +806,38 @@ class Bucket:
         except ClientError as e:
             self._handle_boto3_client_error(e)
 
+    def size(self) -> int:
+        """
+        Return the total size of a bucket, in bytes.
+
+        Uses a paginator to get around 1000 file limit for listing.
+
+        Returns:
+            int: Total size of all objects in bucket, in bytes.
+        """
+        client = Bucket.get_boto3_client()
+
+        try:
+            paginator = client.get_paginator("list_objects_v2")
+            pages = paginator.paginate(Bucket=self.bucket_name)
+
+            bucket_size = 0
+
+            log.debug(f"Iterating bucket {self.bucket_name} per 1000 entries")
+            for page_num, page in enumerate(pages):
+                log.debug(f"Page number: {page_num}")
+                for obj in page["Contents"]:
+                    bucket_size += obj["Size"]
+
+            log.debug(
+                f"Bucket {self.bucket_name} size: "
+                f"{bucket_size / 1024 /1024 / 1024} GB"
+            )
+            return bucket_size
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e)
+
     def configure_static_website(
         self,
         index_file: str = "index.html",

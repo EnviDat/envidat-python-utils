@@ -108,3 +108,20 @@ def test_clean_multiparts(bucket, create_tempfile):
         Bucket=bucket.bucket_name,
     )
     assert "Uploads" not in response, "The multipart clean failed."
+
+
+@mock_s3
+def test_get_bucket_size(bucket, create_tempfile):
+    bucket.create()
+
+    with create_tempfile("txt") as temp1:
+        with open(temp1.name, "w") as w:
+            for n in range(0, 57):
+                w.write(str(1))
+                w.write(",")
+
+        status = bucket.upload_file(temp1.name, temp1.name)
+        assert status is True
+
+    bucket_size = bucket.size()
+    assert bucket_size == 114
