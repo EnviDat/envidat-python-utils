@@ -817,6 +817,10 @@ class Bucket:
             log.debug(f"Getting multipart uploads for bucket {self.bucket_name}")
             response = client.list_multipart_uploads(Bucket=self.bucket_name)
 
+            if "Uploads" not in response:
+                log.info("No multipart uploads present. Skipping...")
+                return status_dict
+
             files = response["Uploads"]
             log.info(
                 f"Returned {len(files)} objects from "
@@ -847,11 +851,15 @@ class Bucket:
         except ClientError as e:
             self._handle_boto3_client_error(e)
 
-    def size(self) -> int:
+    def size(self, items_per_page: int = 1000) -> int:
         """
         Return the total size of a bucket, in bytes.
 
         Uses a paginator to get around 1000 file limit for listing.
+
+        Args:
+            items_per_page (int): Number of items to return per page.
+                Default=1000. Increase to decrease the number of transactions.
 
         Returns:
             int: Total size of all objects in bucket, in bytes.
@@ -860,7 +868,9 @@ class Bucket:
 
         try:
             paginator = client.get_paginator("list_objects_v2")
-            pages = paginator.paginate(Bucket=self.bucket_name)
+            pages = paginator.paginate(
+                Bucket=self.bucket_name, PaginationConfig={"PageSize": items_per_page}
+            )
 
             bucket_size = 0
 

@@ -112,6 +112,14 @@ def test_clean_multiparts(bucket, create_tempfile):
 
 
 @mock_s3
+def test_clean_multiparts_empty_bucket(bucket):
+    bucket.create()
+
+    status_dict = bucket.clean_multiparts()
+    assert status_dict == {}
+
+
+@mock_s3
 def test_get_bucket_size(bucket, create_tempfile):
     bucket.create()
 
@@ -134,6 +142,23 @@ def test_get_bucket_size_empty(bucket):
 
     bucket_size = bucket.size()
     assert bucket_size == 0
+
+
+@mock_s3
+def test_get_bucket_many_page(bucket, create_tempfile):
+    bucket.create()
+
+    with create_tempfile("txt") as temp1:
+        with open(temp1.name, "w") as w:
+            for n in range(0, 20):
+                w.write(str(1))
+                w.write(",")
+
+        status = bucket.upload_file(temp1.name, temp1.name)
+        assert status is True
+
+    bucket_size = bucket.size(items_per_page=5)
+    assert bucket_size == 40
 
 
 @mock_s3
