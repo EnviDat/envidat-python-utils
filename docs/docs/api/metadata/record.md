@@ -2,12 +2,12 @@
 
 ## Record
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L31)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L32)
 
 ```python
 Record(
    input_data: Union[str, dict], convert: Literal['str', 'xml', 'iso', 'bibtex',
-   'dif', 'datacite', 'ris'] = None
+   'dif', 'datacite', 'ris', 'dcat-ap'] = None
 )
 ```
 
@@ -19,7 +19,7 @@ Class manipulate an EnviDat record in various ways.
 
 ### .get_content
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L92)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L96)
 
 ```python
 .get_content()
@@ -35,7 +35,7 @@ Get current content of Record.
 
 ### .validate
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L101)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L105)
 
 ```python
 .validate()
@@ -51,7 +51,7 @@ Validate metadata record.
 
 ### .to_json
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L166)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L170)
 
 ```python
 .to_json()
@@ -67,7 +67,7 @@ Convert content to JSON string.
 
 ### .to_xml
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L175)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L179)
 
 ```python
 .to_xml()
@@ -83,7 +83,7 @@ Convert content to XML format.
 
 ### .to_iso
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L184)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L188)
 
 ```python
 .to_iso()
@@ -99,7 +99,7 @@ Convert content to ISO format.
 
 ### .to_ris
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L193)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L197)
 
 ```python
 .to_ris()
@@ -115,7 +115,7 @@ Convert content to RIS format.
 
 ### .to_bibtex
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L202)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L206)
 
 ```python
 .to_bibtex()
@@ -131,7 +131,7 @@ Convert content to BibTeX format.
 
 ### .to_dif
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L211)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L215)
 
 ```python
 .to_dif()
@@ -147,7 +147,7 @@ Convert content to GCMD DIF 10.2 format.
 
 ### .to_datacite
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L220)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L224)
 
 ```python
 .to_datacite(
@@ -167,16 +167,32 @@ Convert content to DataCite format.
 
 - **str** : DataCite formatted string of metadata record.
 
+### .to_dcat_ap
+
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L236)
+
+```python
+.to_dcat_ap()
+```
+
+---
+
+Convert content to DCAT-AP CH format.
+
+**Returns**
+
+- **str** : DCAT-AP CH formatted string of metadata record.
+
 ---
 
 ### get_all_metadata_record_list
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L233)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L246)
 
 ```python
 .get_all_metadata_record_list(
-   convert: Literal['str', 'xml', 'iso', 'bibtex', 'dif', 'datacite',
-   'ris'] = None, content_only: bool = False
+   convert: Literal['str', 'xml', 'iso', 'bibtex', 'dif', 'datacite', 'ris',
+   'dcat-ap'] = None, content_only: bool = False
 )
 ```
 
@@ -188,10 +204,14 @@ Defaults to standard Record, content in json format.
 
 **Args**
 
-- Convert
-  the content immediately to specified type.
+- **convert** (str) : Convert the content immediately to specified type.
+  Options: "str", "xml", "iso", "bibtex", "dif", "datacite", "ris", "dcat-ap"
 - **content_only** (bool) : Extract content from Record objects.
 
 **Returns**
 
-- **list** : Of Record entries for EnviDat metadata.
+- Of Record entries for EnviDat metadata.
+
+**Note**
+
+and content_only is set to True.

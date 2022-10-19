@@ -408,9 +408,27 @@ Clean up failed multipart uploads in a bucket.
 - **dict** : key:value pair of s3_multipart_key:clean_status.
   clean_status True if removed, False if failed.
 
-### .configure_static_website
+### .size
 
 [source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L809)
+
+```python
+.size()
+```
+
+---
+
+Return the total size of a bucket, in bytes.
+
+Uses a paginator to get around 1000 file limit for listing.
+
+**Returns**
+
+- **int** : Total size of all objects in bucket, in bytes.
+
+### .configure_static_website
+
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L841)
 
 ```python
 .configure_static_website(
@@ -442,7 +460,7 @@ WARNING this will set all data to public read policy.
 
 ### .generate_index_html
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L878)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L910)
 
 ```python
 .generate_index_html(
@@ -467,7 +485,7 @@ Write index file to root of S3 bucket, with embedded S3 download links.
 
 ### .get_cors_config
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L942)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L974)
 
 ```python
 .get_cors_config()
@@ -483,7 +501,7 @@ Get the CORS config for a bucket.
 
 ### .set_cors_config
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L963)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L995)
 
 ```python
 .set_cors_config(

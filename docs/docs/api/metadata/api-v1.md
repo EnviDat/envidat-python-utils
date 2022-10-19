@@ -166,4 +166,4 @@ of an empty string ''.
 **Returns**
 
 - **dict** : Dictionary of package information with names as keys
-- **name** : doi}.
+  and associated DOIs as values.
