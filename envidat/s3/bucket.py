@@ -33,6 +33,64 @@ class MetaBucket:
         called via the Bucket class.
     """
 
+    def config(
+        cls, access_key: str, secret_key: str, endpoint: str = None, region: str = ""
+    ) -> NoReturn:
+        """
+        Config the bucket connection parameters before init.
+
+        Args:
+            access_key (str): AWS_ACCESS_KEY_ID.
+            secret_key (str): AWS_SECRET_ACCESS_KEY.
+            endpoint (str): Endpoint for the S3, if not AWS.
+                Defaults to None.
+            region (str): AWS_REGION.
+                Defaults to empty string "".
+
+        Note:
+            This method should not be required, it is called during __init__.
+            It can be used to reconfigure the endpoint and credentials.
+            Usage: Bucket.config(**args)
+        """
+        cls._AWS_ACCESS_KEY_ID = access_key
+        cls._AWS_SECRET_ACCESS_KEY = secret_key
+        cls._AWS_ENDPOINT = endpoint
+        cls._AWS_REGION = region
+
+    def get_boto3_resource() -> NoReturn:
+        """
+        Get boto3 resource object directly, for further use.
+
+        Note:
+            Usage: Bucket.get_boto3_resource()
+        """
+        log.debug("Accessing boto3 resource.")
+        return boto3.resource(
+            "s3",
+            aws_access_key_id=Bucket._AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=Bucket._AWS_SECRET_ACCESS_KEY,
+            endpoint_url=Bucket._AWS_ENDPOINT,
+            region_name=Bucket._AWS_REGION,
+            config=Config(signature_version="s3v4"),
+        )
+
+    def get_boto3_client() -> NoReturn:
+        """
+        Get boto3 client object directly, for further use.
+
+        Note:
+            Usage: Bucket.get_boto3_client()
+        """
+        log.debug("Accessing boto3 client.")
+        return boto3.client(
+            "s3",
+            aws_access_key_id=Bucket._AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=Bucket._AWS_SECRET_ACCESS_KEY,
+            endpoint_url=Bucket._AWS_ENDPOINT,
+            region_name=Bucket._AWS_REGION,
+            config=Config(signature_version="s3v4"),
+        )
+
     def list_buckets(cls) -> list[str]:
         """
         Get a list of all buckets from endpoint.
@@ -52,6 +110,10 @@ class Bucket:
     Handles boto3 exceptions with custom exception classes.
     """
 
+    # Set class & staticmethods from MetaBucket
+    config = classmethod(MetaBucket.config)
+    get_boto3_resource = staticmethod(MetaBucket.get_boto3_resource)
+    get_boto3_client = staticmethod(MetaBucket.get_boto3_client)
     list_buckets = classmethod(MetaBucket.list_buckets)
 
     _AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY")
@@ -114,51 +176,6 @@ class Bucket:
 
         if is_new:
             self.create()
-
-    @classmethod
-    def config(
-        cls, access_key: str, secret_key: str, endpoint: str = None, region: str = ""
-    ) -> NoReturn:
-        """Config the bucket connection parameters before init.
-
-        Args:
-            access_key (str): AWS_ACCESS_KEY_ID.
-            secret_key (str): AWS_SECRET_ACCESS_KEY.
-            endpoint (str): Endpoint for the S3, if not AWS.
-                Defaults to None.
-            region (str): AWS_REGION.
-                Defaults to empty string "".
-        """
-        cls._AWS_ACCESS_KEY_ID = access_key
-        cls._AWS_SECRET_ACCESS_KEY = secret_key
-        cls._AWS_ENDPOINT = endpoint
-        cls._AWS_REGION = region
-
-    @staticmethod
-    def get_boto3_resource() -> NoReturn:
-        """Configure boto3 resource object."""
-        log.debug("Accessing boto3 resource.")
-        return boto3.resource(
-            "s3",
-            aws_access_key_id=Bucket._AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=Bucket._AWS_SECRET_ACCESS_KEY,
-            endpoint_url=Bucket._AWS_ENDPOINT,
-            region_name=Bucket._AWS_REGION,
-            config=Config(signature_version="s3v4"),
-        )
-
-    @staticmethod
-    def get_boto3_client() -> NoReturn:
-        """Cofigure boto3 client object."""
-        log.debug("Accessing boto3 client.")
-        return boto3.client(
-            "s3",
-            aws_access_key_id=Bucket._AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=Bucket._AWS_SECRET_ACCESS_KEY,
-            endpoint_url=Bucket._AWS_ENDPOINT,
-            region_name=Bucket._AWS_REGION,
-            config=Config(signature_version="s3v4"),
-        )
 
     def _handle_boto3_client_error(self, e: ClientError, key: str = None) -> NoReturn:
         """Handle boto3 ClientError.
