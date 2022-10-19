@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.2.3 (2022-10-19)
+
+### Fix
+
+- catch empty bucket case when using size()
+
+### Refactor
+
+- move all class and staticmethods from Bucket into MetaBucket
+- move list_buckets method into MetaBucket class for auto mkgendocs
+
 ## 1.2.2 (2022-10-19)
 
 ### Fix
