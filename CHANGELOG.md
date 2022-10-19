@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.2.4 (2022-10-19)
+
+### Fix
+
+- multipart error if empty bucket, add items_per_page to Bucket.size
+
 ## 1.2.3 (2022-10-19)
 
 ### Fix
