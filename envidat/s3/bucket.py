@@ -24,11 +24,35 @@ if "DEBUG_BOTO" not in os.environ:
     logging.getLogger("s3transfer").setLevel(logging.CRITICAL)
 
 
+class MetaBucket:
+    """
+    Parent class of Bucket, to include classmethods in docs.
+
+    Note:
+        This class should not be used & instead methods should b
+        called via the Bucket class.
+    """
+
+    def list_buckets(cls) -> list[str]:
+        """
+        Get a list of all buckets from endpoint.
+
+        Note:
+            Usage: Bucket.list_buckets()
+        """
+        resource = cls.get_boto3_resource()
+        buckets = [bucket.name for bucket in resource.buckets.all()]
+        log.info(f"All buckets at {Bucket._AWS_ENDPOINT}: {buckets}")
+        return buckets
+
+
 class Bucket:
     """Class to handle S3 bucket transactions.
 
     Handles boto3 exceptions with custom exception classes.
     """
+
+    list_buckets = classmethod(MetaBucket.list_buckets)
 
     _AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY")
     _AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_KEY")
@@ -135,22 +159,6 @@ class Bucket:
             region_name=Bucket._AWS_REGION,
             config=Config(signature_version="s3v4"),
         )
-
-    @staticmethod
-    def list_buckets() -> list[str]:
-        """Get a list of all buckets from endpoint."""
-        log.debug("Accessing boto3 resource.")
-        resource = boto3.resource(
-            "s3",
-            aws_access_key_id=Bucket._AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=Bucket._AWS_SECRET_ACCESS_KEY,
-            endpoint_url=Bucket._AWS_ENDPOINT,
-            region_name=Bucket._AWS_REGION,
-            config=Config(signature_version="s3v4"),
-        )
-        buckets = [bucket.name for bucket in resource.buckets.all()]
-        log.info(f"All buckets at {Bucket._AWS_ENDPOINT}: {buckets}")
-        return buckets
 
     def _handle_boto3_client_error(self, e: ClientError, key: str = None) -> NoReturn:
         """Handle boto3 ClientError.
