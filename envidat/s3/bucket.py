@@ -201,6 +201,8 @@ class Bucket:
             raise exceptions.BucketAlreadyExists(self.bucket_name)
         elif error_code == "NoSuchCORSConfiguration":
             raise exceptions.NoSuchCORSConfiguration(self.bucket_name)
+        elif error_code == "CORSAccessDenied":
+            raise exceptions.CORSAccessDenied(self.bucket_name)
         else:
             raise exceptions.UnknownBucketException(self.bucket_name, e)
 
@@ -1045,6 +1047,9 @@ class Bucket:
             return cors_rules
 
         except ClientError as e:
+            if e.response.get("Error").get("Code") == "AccessDenied":
+                # Update error code to CORS related
+                e.response["Error"]["Code"] = "CORSAccessDenied"
             self._handle_boto3_client_error(e)
 
         return None
@@ -1093,6 +1098,9 @@ class Bucket:
             return True
 
         except ClientError as e:
+            if e.response.Error.Code == "AccessDenied":
+                # Update error code to CORS related
+                e.response.Error.Code = "CORSAccessDenied"
             self._handle_boto3_client_error(e)
 
         return False
