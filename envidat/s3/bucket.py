@@ -922,22 +922,12 @@ class Bucket:
         client = Bucket.get_boto3_client()
 
         try:
-            log.debug("Setting public read access policy for static website.")
-            public_policy = {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Sid": "PublicRead",
-                        "Effect": "Allow",
-                        "Principal": "*",
-                        "Action": "s3:GetObject",
-                        "Resource": f"arn:aws:s3:::{self.bucket_name}/*",
-                    }
-                ],
-            }
-            bucket_policy = json.dumps(public_policy)
-            client.put_bucket_policy(Bucket=self.bucket_name, Policy=bucket_policy)
-            log.info("Public read access policy set for static website.")
+            # Required for static website
+            self.set_public_read()
+            log.warning(
+                "Configuring a static website requires a public-read policy "
+                "on all objects. This has been configured for you"
+            )
 
             log.debug("Setting S3 static website configuration...")
             client.put_bucket_website(
@@ -965,6 +955,94 @@ class Bucket:
             self._handle_boto3_client_error(e)
 
         return False
+
+    def set_public_read(self) -> bool:
+        """Set public-read policy on all objects.
+
+        Returns:
+            bool: True if success, False is failure.
+        """
+        client = Bucket.get_boto3_client()
+
+        try:
+            log.debug("Setting public-read access policy for bucket.")
+            public_policy = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "PublicRead",
+                        "Effect": "Allow",
+                        "Principal": "*",
+                        "Action": "s3:GetObject",
+                        "Resource": f"arn:aws:s3:::{self.bucket_name}/*",
+                    }
+                ],
+            }
+            bucket_policy = json.dumps(public_policy)
+            client.put_bucket_policy(Bucket=self.bucket_name, Policy=bucket_policy)
+            log.info(f"Public read access policy set for bucket {self.bucket_name}.")
+
+            return True
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e)
+
+        return False
+
+    def grant_user_full_access(self, canonical_user_id: str) -> dict:
+        """Set FULL_ACCESS ACL on bucket for user.
+
+        Args:
+            canonical_user_id (str): Canonical ID of user.
+                From AWS or Cloudian dashboard.
+
+        Returns:
+            dict: New ACL configuration.
+
+        Note:
+            Must have FULL_ACCESS rights to grant this permission.
+            I.e. must be bucket owner.
+        """
+        client = Bucket.get_boto3_client()
+
+        try:
+            log.debug(f"Getting current ACL policy for bucket {self.bucket_name}.")
+            existing_acl = client.get_bucket_acl(Bucket=self.bucket_name)
+            log.debug(f"Existing ACL: {existing_acl}")
+
+            owner = existing_acl["Owner"]
+            grants = existing_acl["Grants"]
+
+            grants.append(
+                {
+                    "Grantee": {
+                        "Type": "CanonicalUser",
+                        "ID": canonical_user_id,
+                    },
+                    "Permission": "FULL_CONTROL",
+                }
+            )
+            acl_policy = {
+                "Owner": owner,
+                "Grants": grants,
+            }
+            log.debug(f"New ACL: {acl_policy}")
+
+            log.debug(f"Setting FULL_ACCESS permission to user {canonical_user_id}.")
+            client.put_bucket_acl(
+                Bucket=self.bucket_name, AccessControlPolicy=acl_policy
+            )
+            log.info(
+                f"FULL_ACCESS permission granted to user {canonical_user_id} "
+                f"on bucket {self.bucket_name}."
+            )
+
+            return acl_policy
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e)
+
+        return {}
 
     def generate_index_html(
         self, title: str, file_list: Union[list, str], index_file: str = "index.html"

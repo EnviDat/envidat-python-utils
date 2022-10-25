@@ -55,7 +55,10 @@ class BucketAccessDenied(BucketException):
     def __init__(self, bucket_name):
         """Set params and init."""
         self.bucket = bucket_name
-        self.message = f"Unable to access bucket {self.bucket}. Does it exist?"
+        self.message = (
+            f"Unable to access bucket {self.bucket}. "
+            "Do you have permission & does it exist?"
+        )
         super().__init__(self.message, self.bucket)
 
 
