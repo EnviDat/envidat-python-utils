@@ -56,6 +56,20 @@ def test_grant_full_access(bucket):
 
 
 @mock_s3
+def test_remove_full_access(bucket):
+    bucket.create()
+
+    acl = bucket.grant_user_full_access("ffffffff")
+    assert acl["Grants"][1]["Grantee"]["ID"] == "ffffffff"
+
+    acl = bucket.remove_user_full_access("user_that_does_not_exist")
+    assert acl["Grants"][1]["Grantee"]["ID"] == "ffffffff"
+
+    acl = bucket.remove_user_full_access("ffffffff")
+    assert len(acl["Grants"]) == 1
+
+
+@mock_s3
 def test_configure_static_website(bucket):
     bucket.create()
 
