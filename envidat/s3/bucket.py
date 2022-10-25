@@ -1046,6 +1046,57 @@ class Bucket:
 
         return {}
 
+    def remove_user_full_access(self, canonical_user_id: str) -> dict:
+        """Remove FULL_ACCESS ACL on bucket for user.
+
+        Args:
+            canonical_user_id (str): Canonical ID of user.
+                From AWS or Cloudian dashboard.
+
+        Returns:
+            dict: New ACL configuration.
+
+        Note:
+            Must have FULL_ACCESS rights to grant this permission.
+            I.e. must be bucket owner.
+        """
+        client = Bucket.get_boto3_client()
+
+        try:
+            log.debug(f"Getting current ACL policy for bucket {self.bucket_name}.")
+            existing_acl = client.get_bucket_acl(Bucket=self.bucket_name)
+            log.debug(f"Existing ACL: {existing_acl}")
+
+            owner = existing_acl["Owner"]
+            grants = existing_acl["Grants"]
+
+            for index, grant in enumerate(grants):
+                if grant["Grantee"]["ID"] == canonical_user_id:
+                    grants.pop(index)
+
+            acl_policy = {
+                "Owner": owner,
+                "Grants": grants,
+            }
+            print(acl_policy)
+            log.debug(f"New ACL: {acl_policy}")
+
+            log.debug(f"Setting FULL_ACCESS permission to user {canonical_user_id}.")
+            client.put_bucket_acl(
+                Bucket=self.bucket_name, AccessControlPolicy=acl_policy
+            )
+            log.info(
+                f"FULL_ACCESS permission granted to user {canonical_user_id} "
+                f"on bucket {self.bucket_name}."
+            )
+
+            return acl_policy
+
+        except ClientError as e:
+            self._handle_boto3_client_error(e)
+
+        return {}
+
     def generate_index_html(
         self, title: str, file_list: Union[list, str], index_file: str = "index.html"
     ) -> BytesIO:
