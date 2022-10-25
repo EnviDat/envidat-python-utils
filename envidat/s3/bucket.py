@@ -260,6 +260,8 @@ class Bucket:
             if self.is_public:
                 log.info("Setting CORS config for bucket to allow all origins.")
                 self.set_cors_config(allow_all=True)
+                log.info("Setting public-read for all objects in bucket.")
+                self.set_public_read()
 
             return bucket
         except ClientError as e:
