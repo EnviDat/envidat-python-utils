@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from moto import mock_s3
 
@@ -26,6 +28,31 @@ def test_bucket_create_public(bucket):
 
     response = new_bucket.meta.client.head_bucket(Bucket="testing")
     assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+
+@mock_s3
+def test_set_public_read(bucket):
+    bucket.create()
+
+    success = bucket.set_public_read()
+    assert success is True
+
+    client = bucket.get_boto3_client()
+    response = client.get_bucket_policy(
+        Bucket=bucket.bucket_name,
+    )
+    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+    policy = json.loads(response["Policy"])
+    assert policy["Statement"][0]["Sid"] == "PublicRead"
+
+
+@mock_s3
+def test_grant_full_access(bucket):
+    bucket.create()
+
+    acl = bucket.grant_user_full_access("ffffffff")
+    assert acl["Grants"][1]["Grantee"]["ID"] == "ffffffff"
 
 
 @mock_s3
