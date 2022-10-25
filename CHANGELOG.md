@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 1.3.0 (2022-10-25)
+
+### Feat
+
+- add method to remove FULL_ACCESS rights for user
+- add method to bucket to grant user full access
+
+### Refactor
+
+- add set_public_read to init if is_public specified
+
+### Fix
+
+- add exception for CORS accessed denied (wrong user)
+
 ## 1.2.4 (2022-10-19)
 
 ### Fix
