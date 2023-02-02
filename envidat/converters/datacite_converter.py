@@ -309,24 +309,8 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
 
         for word in related_publications.split(" "):
 
-            # Apply search criteria to find DOIs
-            if "doi" in word:
-                doi_start_index = word.find("10.")
-                doi = word[doi_start_index:]
-
-                if "/" in doi:
-
-                    # Check for duplicate "doi" values add "doi" to dictionary
-                    # if it does not already exist
-                    if doi not in dois:
-                        dois.append(doi)
-                        datacite_related_urls["relatedIdentifier"] += [
-                            {
-                                "#text": doi,
-                                "@relatedIdentifierType": "DOI",
-                                "@relationType": "isSupplementTo",
-                            }
-                        ]
+            # Apply search criteria to find DOIs,
+            doi = get_doi(word)
 
             # Apply search criteria to find DOIs from DORA API
             # DORA API documentation:
@@ -336,9 +320,27 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
                 dora_index = word.find(dora_str)
                 dora_pid = word[(dora_index + len(dora_str)) :]
 
-                # TODO start development from here
+                # TODO test get_dora_doi() function
                 # Call DORA API and get DOI if it listed in citation
                 doi_dora = get_dora_doi(dora_pid)
+                if doi_dora:
+                    doi = doi_dora
+
+            # Add doi list to datacite_related_urls if it exists, contains a "/",
+            # and is not a duplicate
+            if doi and "/" in doi:
+
+                # Check for duplicate "doi" values add "doi" to dictionary
+                # if it does not already exist
+                if doi not in dois:
+                    dois.append(doi)
+                    datacite_related_urls["relatedIdentifier"] += [
+                        {
+                            "#text": doi,
+                            "@relatedIdentifierType": "DOI",
+                            "@relationType": "isSupplementTo",
+                        }
+                    ]
 
     # TODO improve this block, possibly use similar algorithm to
     #  related_publications block above
@@ -740,13 +742,40 @@ def map_fields(schema: dict, format_name: str) -> dict:
     return fields_map
 
 
-def get_dora_doi(
-    dora_pid: str, host: str = "https://envidat.ch/", path: str = "/dora"
-) -> str:
+def get_doi(word: str):
+    """Get DOI string from input word string
+     If DOI not found then returns None
+
+    For example: an input of "https://doi.org/10.1525/cse.2022.1561651" would return
+        "10.1525/cse.2022.1561651" as output
+
+    Args:
+        word (str): Input string to test if it contains a DOI
+
+    Returns:
+        str: String of DOI
+        None: If DOI could not be found
+    """
+
+    doi = None
+
+    # Apply search criteria to find DOIs
+    if "doi" in word:
+        doi_start_index = word.find("10.")
+        doi = word[doi_start_index:]
+
+    # Return DOI if it exists, else return None
+    return doi
+
+
+# TODO test this function
+def get_dora_doi(dora_pid: str, host: str = "https://envidat.ch/", path: str = "/dora"):
     """Get DOI string from WSL DORA API using DORA PID
 
     DORA API documentation:
     https://www.wiki.lib4ri.ch/display/HEL/Technical+details+of+DORA
+
+    ASSUMPTION: Only one DOI exists in each DORA API record "citation" key
 
     Args:
         dora_pid (str): DORA PID (permanent identification)
@@ -757,19 +786,33 @@ def get_dora_doi(
 
     Returns:
         str: String of DOI
+        None: If DOI could not be found
     """
     if "API_HOST" in os.environ and "API_ENVIDAT_DORA" in os.environ:
         log.debug("Getting API host and path from environment variables.")
         host = os.getenv("API_HOST")
         path = os.getenv("API_ENVIDAT_DORA")
 
+    # Replace '%3A' ASCI II code with semicolon ':'
+    dora_pid = re.sub("%3A", ":", dora_pid)
+
+    # Assemble url used to call DORA API
     dora_url = f"{host}{path}/{dora_pid}"
+
     try:
         data = get_url(dora_url).json()
-        # print(data)
+        citation = data[dora_pid]["citation"]["ACS"]
 
-        # TODO extract DOI, possibly use logic used above
+        for word in citation.split(" "):
+            doi = get_doi(word)
+
+            # Return DOI if it exists
+            if doi:
+                return doi
+
+        # If DOI not found then return None
+        return None
 
     except AttributeError as e:
-        print(f"ERROR: Failed to retrieve'{dora_url}'")
+        print(f"ERROR: Failed to retrieve'{dora_url}' and extract DOI")
         print(e)
