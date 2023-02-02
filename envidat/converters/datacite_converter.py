@@ -2,10 +2,14 @@
 
 import collections
 import json
+import os
+import re
 from json import JSONDecodeError
 from logging import getLogger
 
 from xmltodict import unparse
+
+from envidat.utils import get_url
 
 log = getLogger(__name__)
 
@@ -59,7 +63,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
         "@identifierType": "DOI",
     }
 
-    # Creators
+    # creators
     datacite_creators_tag = "creators"
     datacite_creator_tag = "creator"
 
@@ -289,12 +293,59 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
     }
 
     # Related identifier
+    datacite_related_urls = collections.OrderedDict()
+    datacite_related_urls["relatedIdentifier"] = []
+
+    # Related identifiers() from "related_publications" key
+    related_publications = dataset.get("related_publications", "")
+    if related_publications:
+        # Remove special characters and
+        # remove Markdown link syntax using brackets and parentheses
+        related_publications = re.sub(r"\r|\n|\[|\]|\(|\)", " ", related_publications)
+
+        # Assign empty array to hold "doi" values that will be used to check for
+        # duplicates
+        dois = []
+
+        for word in related_publications.split(" "):
+
+            # Apply search criteria to find DOIs
+            if "doi" in word:
+                doi_start_index = word.find("10.")
+                doi = word[doi_start_index:]
+
+                if "/" in doi:
+
+                    # Check for duplicate "doi" values add "doi" to dictionary
+                    # if it does not already exist
+                    if doi not in dois:
+                        dois.append(doi)
+                        datacite_related_urls["relatedIdentifier"] += [
+                            {
+                                "#text": doi,
+                                "@relatedIdentifierType": "DOI",
+                                "@relationType": "isSupplementTo",
+                            }
+                        ]
+
+            # Apply search criteria to find DOIs from DORA API
+            # DORA API documentation:
+            # https://www.wiki.lib4ri.ch/display/HEL/Technical+details+of+DORA
+            dora_str = "dora.lib4ri.ch/wsl/islandora/object/"
+            if dora_str in word:
+                dora_index = word.find(dora_str)
+                dora_pid = word[(dora_index + len(dora_str)) :]
+
+                # TODO start development from here
+                # Call DORA API and get DOI if it listed in citation
+                doi_dora = get_dora_doi(dora_pid)
+
+    # TODO improve this block, possibly use similar algorithm to
+    #  related_publications block above
+    # Related identifier(s) from "related_datasets" key
     related_datasets = dataset.get("related_datasets", "")
     related_datasets_base_url = "https://www.envidat.ch/#/metadata/"
     if related_datasets:
-
-        datacite_related_urls = collections.OrderedDict()
-        datacite_related_urls["relatedIdentifier"] = []
 
         for line in related_datasets.split("\n"):
 
@@ -339,8 +390,9 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
         #         }
         #     ]
 
-        if len(datacite_related_urls["relatedIdentifier"]) > 0:
-            datacite["resource"]["relatedIdentifiers"] = datacite_related_urls
+    # Add "relatedIdentifiers" dictionary to "resource" dictionary
+    if len(datacite_related_urls["relatedIdentifier"]) > 0:
+        datacite["resource"]["relatedIdentifiers"] = datacite_related_urls
 
     # Sizes (from resources)
     datacite_size_group_tag = "sizes"
@@ -686,3 +738,38 @@ def map_fields(schema: dict, format_name: str) -> dict:
                         FIELD_NAME: field[FIELD_NAME] + "." + subfield[FIELD_NAME]
                     }
     return fields_map
+
+
+def get_dora_doi(
+    dora_pid: str, host: str = "https://envidat.ch/", path: str = "/dora"
+) -> str:
+    """Get DOI string from WSL DORA API using DORA PID
+
+    DORA API documentation:
+    https://www.wiki.lib4ri.ch/display/HEL/Technical+details+of+DORA
+
+    Args:
+        dora_pid (str): DORA PID (permanent identification)
+        host (str): API host url. Attempts to get from environment if omitted.
+            Defaults to "https://www.envidat.ch"
+        path (str): API host path. Attempts to get from environment if omitted.
+            Defaults to "/dora"
+
+    Returns:
+        str: String of DOI
+    """
+    if "API_HOST" in os.environ and "API_ENVIDAT_DORA" in os.environ:
+        log.debug("Getting API host and path from environment variables.")
+        host = os.getenv("API_HOST")
+        path = os.getenv("API_ENVIDAT_DORA")
+
+    dora_url = f"{host}{path}/{dora_pid}"
+    try:
+        data = get_url(dora_url).json()
+        # print(data)
+
+        # TODO extract DOI, possibly use logic used above
+
+    except AttributeError as e:
+        print(f"ERROR: Failed to retrieve'{dora_url}'")
+        print(e)

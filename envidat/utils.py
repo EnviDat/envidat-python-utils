@@ -104,6 +104,6 @@ def get_url(url: str) -> requests.Response:
         log.error(f"Response: {e.response}")
     except Exception as e:
         log.error(e)
-        log.error(f"Unhandled exception occured on get: {r.request.url}")
+        log.error(f"Unhandled exception occurred on get: {r.request.url}")
 
     return None

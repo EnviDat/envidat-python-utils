@@ -84,9 +84,9 @@ def get_package(
     Args:
         package_name (str): API package 'name' or 'id' value.
         host (str): API host url. Attempts to get from environment if omitted.
-            Defaults to https://www.envidat.ch
+            Defaults to "https://www.envidat.ch"
         path (str): API host path. Attempts to get from environment if omitted.
-            Defaults to api/action/package_show?id=
+            Defaults to "api/action/package_show?id="
 
     Returns:
         dict: Dictionary of package (metadata entry).
