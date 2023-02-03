@@ -7,12 +7,10 @@ import re
 from json import JSONDecodeError
 from logging import getLogger
 
+import validators
 from xmltodict import unparse
 
 from envidat.utils import get_url
-
-# import validators
-
 
 log = getLogger(__name__)
 
@@ -299,34 +297,25 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
     datacite_related_urls = collections.OrderedDict()
     datacite_related_urls["relatedIdentifier"] = []
 
-    # Related identifiers() from "related_publications" key
+    # Combine "related_publications" and "related_datasets" values
     related_publications = dataset.get("related_publications", "")
-
-    # TODO test refactored logic regarding "related_datasets"
-    # Related identifier(s) from "related_datasets" key
     related_datasets = dataset.get("related_datasets", "")
-
-    # Combine "related_publications" and "related_datasets"
     related_identifiers = f"${related_publications} {related_datasets}"
 
-    # if related_publications:
+    # Validate related_identifiers
     if len(related_identifiers) > 0:
         # Remove special characters "\r", "\n" and
         # remove Markdown link syntax using brackets and parentheses
         # and replace with one space " "
-        # related_publications = re.sub(r"\r|\n|\[|\]|\(|\)", " ", related_publications)
         related_identifiers = re.sub(r"\r|\n|\[|\]|\(|\)", " ", related_identifiers)
 
         # Assign empty array to hold "related_ids" values that will be used to check for
         # duplicates
-        # dois = []
         related_ids = []
 
         for word in related_identifiers.split(" "):
 
-            print(word)
-
-            # Apply search criteria to find DOIs,
+            # Apply search function to find DOIs
             doi = get_doi(word)
 
             # Apply search criteria to find DOIs from DORA API
@@ -342,85 +331,34 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
                 if doi_dora:
                     doi = doi_dora
 
-            # If doi exists, contains a "/", and is not a duplicate,
-            # add doi list to datacite_related_urls if it exists,
-            if doi and "/" in doi:
+            if doi and "/" in doi and doi not in related_ids:
+                related_ids.append(doi)
+                datacite_related_urls["relatedIdentifier"] += [
+                    {
+                        "#text": doi,
+                        "@relatedIdentifierType": "DOI",
+                        "@relationType": "isSupplementTo",
+                    }
+                ]
+                continue
 
-                # Check for duplicate "related_ids" values add "doi" to dictionary
-                # if it does not already exist
-                if doi not in related_ids:
-                    related_ids.append(doi)
-                    datacite_related_urls["relatedIdentifier"] += [
-                        {
-                            "#text": doi,
-                            "@relatedIdentifierType": "DOI",
-                            "@relationType": "isSupplementTo",
-                        }
-                    ]
-
-            # TODO start refactoring here
-            # TODO implement duplicates check using related_ids
             # TODO review if it valid to assume DOIs found in "related_datasets"
             #  should be assigned:  relationType="isSupplementTo"
-            # Apply search criteria to find other URLs (that are not DOIs)
-            # url = validators.url(word)
-            # print(url)
-            # url = is_url(word)
-            # # print(word)
-            # if url:
-            #     print(url)
-            #     print(word)
+            # TODO review how to assign DORA links without DOIS,
+            #  example package "survey-energy-transition-municipal-level-switzerland"
+            # Apply URL validator to find other URLs (that are not DOIs)
+            is_url = validators.url(word)
 
-    # TODO test refactoring "related_datasets" block above
-    # Related identifier(s) from "related_datasets" key
-    # related_datasets = dataset.get("related_datasets", "")
-    # related_datasets_base_url = "https://www.envidat.ch/#/metadata/"
-    # if related_datasets:
-    #
-    #     for line in related_datasets.split("\n"):
-    #
-    #         if line.strip().startswith("*"):
-    #             line_contents = line.replace("*", "").strip().lower().split(" ")[0]
-    #             related_url = None
-    #
-    #             if line_contents in name_doi_map:
-    #                 related_url = f"{related_datasets_base_url}{line_contents}"
-    #
-    #             elif len(line_contents) > 0 and line_contents in name_doi_map.values():
-    #                 related_url = f"{related_datasets_base_url}{line_contents}"
-    #
-    #             elif line_contents.startswith("https://") or line_contents.startswith(
-    #                     "http://"
-    #             ):
-    #                 related_url = line_contents
-    #
-    #             if related_url:
-    #                 datacite_related_urls["relatedIdentifier"] += [
-    #                     {
-    #                         "#text": related_url,
-    #                         "@relatedIdentifierType": "URL",
-    #                         "@relationType": "Cites",
-    #                     }
-    #                 ]
+            if all([is_url, word not in related_ids, "doi" not in word]):
+                related_ids.append(word)
+                datacite_related_urls["relatedIdentifier"] += [
+                    {
+                        "#text": word,
+                        "@relatedIdentifierType": "URL",
+                        "@relationType": "Cites",
+                    }
+                ]
 
-    # NOTE: Investigate including commented out block below to find
-    # all URLs in 'related_datasets' key:
-    # regex = (
-    #     'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|'
-    #     '[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
-    # )
-    # urls = re.findall(regex, related_datasets)
-    #
-    # for url in urls:
-    #     datacite_related_urls['relatedIdentifier'] += [
-    #         {
-    #             '#text': url,
-    #             '@relatedIdentifierType': 'URL',
-    #             '@relationType': 'Cites'
-    #         }
-    #     ]
-
-    # Add "relatedIdentifiers" dictionary to "resource" dictionary
     if len(datacite_related_urls["relatedIdentifier"]) > 0:
         datacite["resource"]["relatedIdentifiers"] = datacite_related_urls
 
@@ -768,40 +706,6 @@ def map_fields(schema: dict, format_name: str) -> dict:
                         FIELD_NAME: field[FIELD_NAME] + "." + subfield[FIELD_NAME]
                     }
     return fields_map
-
-
-#
-# def is_url(string: str) -> bool:
-#     """Validate input string is a URL. If valid return True, else return False.
-#
-#     Args:
-#         string (str): Input string to test if is in valid URL format
-#
-#     Returns:
-#         True: input string is in valid URL format
-#         False: input string is not in valid URL format
-#     """
-#     # url_regex = "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][" \
-#     #             "0-9a-fA-F]))+ "
-#     url_regex = "^[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$"
-#
-#     # if re.search(url_regex, string):
-#     #     print('URL!')
-#     #     return True
-#     # print('NOO')
-#     # return False
-#
-#     test = re.match(url_regex, string)
-#     print(string)
-#     if test:
-#         # print('\n\n\nWOWOWOWOWOW')
-#         print(test)
-#
-#     # if re.match(url_regex, string):
-#     #     print('URL!')
-#     #     return True
-#     # # print('NOO')
-#     # return False
 
 
 def get_doi(word: str):
