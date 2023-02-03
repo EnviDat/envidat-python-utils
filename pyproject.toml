@@ -11,6 +11,7 @@ dependencies = [
     "boto3>=1.22.12",
     "xmltodict>=0.13.0",
     "lxml>=4.9.1",
+    "validators>=0.20.0",
 ]
 requires-python = ">=3.9"
 readme = "README.md"
