@@ -177,36 +177,39 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
             datacite_contributor_tag: datacite_contributor
         }
 
-    # TODO start refactoring here
-    # # Dates
-    # datacite_dates_tag = "dates"
-    # datacite_date_tag = "date"
-    # datacite_date_type_tag = "dateType"
-    # datacite_dates = []
-    #
-    # date_input = dataset.get("date", [])
-    # try:
-    #     dates = json.loads(date_input)
-    # except JSONDecodeError:
-    #     dates = []
-    #
-    # for date in dates:
-    #     datacite_date = {
-    #         "#text": date.get("date", ""),
-    #         f"@{datacite_date_type_tag}": (date.get("date_type", "Valid")).title(),
-    #     }
-    #     datacite_dates += [datacite_date]
-    #
-    # if datacite_dates:
-    #     datacite["resource"][datacite_dates_tag] = {datacite_date_tag: datacite_dates}
-    #
-    # # Language
-    # datacite_language_tag = "language"
-    # datacite_language = dataset.get("language", "")
-    # if not datacite_language:
-    #     datacite_language = "en"
-    # datacite["resource"][datacite_language_tag] = {"#text": datacite_language}
-    #
+    # Dates
+    datacite_dates_tag = "dates"
+    datacite_date_tag = "date"
+    datacite_date_type_tag = "dateType"
+    datacite_dates = []
+
+    date_input = dataset.get(config[datacite_dates_tag], [])
+    try:
+        dates = json.loads(date_input)
+    except JSONDecodeError:
+        dates = []
+
+    for date in dates:
+        datacite_date = {
+            "#text": date.get(config[datacite_date_tag], ""),
+            f"@{datacite_date_type_tag}": (
+                date.get(config[datacite_date_type_tag], "Valid")
+            ).title(),
+        }
+        datacite_dates += [datacite_date]
+
+    if datacite_dates:
+        datacite["resource"][datacite_dates_tag] = {datacite_date_tag: datacite_dates}
+
+    # TODO check if all datasets should be assigned a default language of "en"
+    # Language
+    datacite_language_tag = "language"
+    datacite_language = dataset.get(config[datacite_language_tag], "")
+    if not datacite_language:
+        datacite_language = "en"
+    datacite["resource"][datacite_language_tag] = {"#text": datacite_language}
+
+    # TODO start refactoring from here!!!
     # # ResourceType
     # datacite_resource_type_tag = "resourceType"
     # datacite_resource_type_general_tag = "resourceTypeGeneral"
@@ -245,6 +248,7 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
     #     "alternateIdentifier": alternate_identifiers
     # }
     #
+    # TODO extract related identifier block to separate function
     # # Related identifier
     # datacite_related_urls = collections.OrderedDict()
     # datacite_related_urls["relatedIdentifier"] = []
@@ -325,6 +329,7 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
     # if len(datacite_related_urls["relatedIdentifier"]) > 0:
     #     datacite["resource"]["relatedIdentifiers"] = datacite_related_urls
     #
+    # TODO extract sizes block to seprate block
     # # Sizes (from resources)
     # datacite_size_group_tag = "sizes"
     # datacite_size_tag = "size"
@@ -354,6 +359,7 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
     #         datacite_size_tag: datacite_sizes
     #     }
     #
+    # TODO extract formats block to separate functionality
     # # Formats (from resources)
     # datacite_format_group_tag = "formats"
     # datacite_format_tag = "format"
@@ -384,6 +390,7 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
     # if datacite_version:
     #     datacite["resource"][datacite_version_tag] = {"#text": datacite_version}
     #
+    # TODO extract rights block to separate function
     # # Rights
     # datacite_rights_group_tag = "rightsList"
     # datacite_rights_tag = "rights"
@@ -422,6 +429,7 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
     #         datacite_rights_tag: [rights]
     #     }
     #
+    # TODO extract description block to separate function
     # # Description
     # datacite_descriptions_tag = "descriptions"
     # datacite_description_tag = "description"
@@ -453,6 +461,7 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
     #         datacite_description_tag: datacite_descriptions
     #     }
     #
+    # TODO separate geolocation block to separate function
     # # GeoLocation
     # datacite_geolocation_place_tag = "geoLocationPlace"
     #
@@ -513,6 +522,7 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
     #
     #     datacite["resource"]["geoLocations"] = {"geoLocation": datacite_geolocations}
     #
+    # TODO separate funding block to separate function
     # # Funding Information
     # datacite_funding_refs_tag = "fundingReferences"
     # datacite_funding_ref_tag = "fundingReference"

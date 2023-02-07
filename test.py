@@ -18,15 +18,16 @@
 # record.to_datacite()
 import json
 
+from xmltodict import parse
+
+from envidat.api.v1 import get_package
+from envidat.metadata import Record
+
 # from tests.conftest import datacite_converter_one_package
 # from tests.test_converters import get_datacite_converters_one_package
 # get_datacite_converters_one_package()
 # datacite_convert_dataset()
 
-
-from envidat.api.v1 import get_package
-from envidat.metadata import Record
-from xmltodict import parse
 
 # package_name = "metadata-quality-and-logistics-the-fair-data-publication-workflow-at-eawag-and"
 # host = "https://envidat04.wsl.ch/"
@@ -44,12 +45,16 @@ from xmltodict import parse
 # Use this package for testing extracting DOIs from related_datasets
 # package_name = "ozone-measurement-and-analysis-in-the-intercantonal-forest-observation-progra"
 
-# package_name = "chelsa-climatologies"
-package_name = "accessibility-of-the-swiss-forest-for-economic-wood-extraction"
-# package_name = "survey-energy-transition-municipal-level-switzerland"
-
 # TODO check this package to validate DORA links WITHOUT DOIS
 # package_name = "survey-energy-transition-municipal-level-switzerland"
+
+# package_name = "chelsa-climatologies"
+# package_name = "satellite-avalanche-mapping-validation"
+# package_name = "survey-energy-transition-municipal-level-switzerland"
+# package_name = "arthropod-biomass-abundance-species-richness-trends-limpach"
+
+# TEST package used for dev
+package_name = "accessibility-of-the-swiss-forest-for-economic-wood-extraction"
 
 package = get_package(package_name)
 

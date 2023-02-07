@@ -19,6 +19,10 @@
       "familyName": "name",
       "nameIdentifier": "identifier",
       "affiliation": "affiliation"
-    }
+    },
+    "dates": "date",
+    "date": "date",
+    "dateType": "date_type",
+    "language": "language"
   }
 }
