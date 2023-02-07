@@ -14,23 +14,8 @@ from envidat.utils import get_url
 
 log = getLogger(__name__)
 
-# Constant dictionary maps Datacite XML schema tags (keys) to
-# EnviDat schema fields (values)
-ENVIDAT = {
-    "identifier": "doi",
-    "creators": "author",
-    "creator": {
-        "givenName": "given_name",
-        "familyName": "name",
-        "nameIdentifier": "identifier",
-        "affiliation": "affiliation",
-    },
-    "title": "title",
-    "publicationYear": "publication_year",
-    "publisher": "publisher",
-}
 
-
+# TODO investigate if name_doi_map needed
 def convert_datacite(metadata_record: dict, name_doi_map: dict) -> str:
     """Generate XML formatted string in DataCite format.
 
@@ -46,8 +31,8 @@ def convert_datacite(metadata_record: dict, name_doi_map: dict) -> str:
     """
     try:
         # TODO finish refactoring Datacite converter
-        # converted_package
-        # = datacite_convert_dataset_test(metadata_record, name_doi_map)
+        # config: dict = get_config_datacite_converter()
+        # converted_package = datacite_convert_dataset_test(metadata_record, config)
 
         converted_package = datacite_convert_dataset(metadata_record, name_doi_map)
         return unparse(converted_package, pretty=True)  # Convert OrderedDict to XML
@@ -57,17 +42,32 @@ def convert_datacite(metadata_record: dict, name_doi_map: dict) -> str:
         raise ValueError("Failed to convert package to DataCite format.")
 
 
+# TODO possibly implement JSON schema to make sure all required keys included in config,
+#  see https://pypi.org/project/jsonschema/ and
+#  https://towardsdatascience.com/how-to-use-json-schema-to-validate-json-documents-ae9d8d1db344
+def get_config_datacite_converter() -> dict:
+    """Return datacite converter JSON config as Python dictionary.
+    Dictionary maps Datacite XML schema tags (keys)
+    to EnviDat schema fields (values).
+    """
+    with open("envidat/converters/config_converters.json") as config_json:
+        config: dict = json.load(config_json)
+        datacite_config: dict = config["datacite_converter"]
+    return datacite_config
+
+
+# TODO connect DataCite converter to DOI CKAN extension
 # TODO test refactoring datacite_covert_datasets() using dictionary of Datacite schema
 #  keys and corresponding EnviDat schema fields as values
+# TODO remove longer blocks to separate helper functions
 # TODO keep in mind that a reverse converter will
 #  also need to be written (Datacite to EnviDat)
 # TODO investigate if any additional fields from EnviDat schema can be matched
 #  to Datacite schema, for example custom fields
 # TODO investigate if name_doi_map needed
-def datacite_convert_dataset_test(dataset: dict, name_doi_map: dict):
-    """Create the DataCite XML from API dictionary.
-    TODO: write docstring
-    """
+# TODO write docstring
+def datacite_convert_dataset_test(dataset: dict, config: dict):
+    """Convert EnviDat metadata package from CKAN to DataCite XML."""
 
     # Assign datacite to ordered dictionary that will contain
     # dataset content converted to DataCite format
@@ -86,7 +86,7 @@ def datacite_convert_dataset_test(dataset: dict, name_doi_map: dict):
 
     # Identifier
     datacite_identifier_tag = "identifier"
-    doi = dataset.get(ENVIDAT[datacite_identifier_tag], "")
+    doi = dataset.get(config[datacite_identifier_tag], "")
     datacite["resource"][datacite_identifier_tag] = {
         "#text": doi.strip(),
         "@identifierType": "DOI",
@@ -96,14 +96,14 @@ def datacite_convert_dataset_test(dataset: dict, name_doi_map: dict):
     datacite_creators_tag = "creators"
     datacite_creator_tag = "creator"
     datacite["resource"][datacite_creators_tag] = {datacite_creator_tag: []}
-    author_dataset = dataset.get(ENVIDAT[datacite_creators_tag], [])
+    author_dataset = dataset.get(config[datacite_creators_tag], [])
     try:
         authors = json.loads(author_dataset)
     except JSONDecodeError:
         authors = []
 
     for author in authors:
-        datacite_creator = get_datacite_creator(author)
+        datacite_creator = get_datacite_creator(author, config)
         datacite["resource"][datacite_creators_tag][datacite_creator_tag] += [
             datacite_creator
         ]
@@ -112,7 +112,7 @@ def datacite_convert_dataset_test(dataset: dict, name_doi_map: dict):
     datacite_titles_tag = "titles"
     datacite_title_tag = "title"
     datacite["resource"][datacite_titles_tag] = {datacite_title_tag: []}
-    title = dataset.get(ENVIDAT[datacite_title_tag], "")
+    title = dataset.get(config[datacite_title_tag], "")
     if title:
         datacite["resource"][datacite_titles_tag][datacite_title_tag] = {
             f"@{datacite_xml_lang_tag}": "en-us",
@@ -128,7 +128,7 @@ def datacite_convert_dataset_test(dataset: dict, name_doi_map: dict):
 
     # Publication year
     datacite_publication_year_tag = "publicationYear"
-    publication_year = publication.get(ENVIDAT[datacite_publication_year_tag], "")
+    publication_year = publication.get(config[datacite_publication_year_tag], "")
     if publication_year:
         datacite["resource"][datacite_publication_year_tag] = {
             "#text": publication_year
@@ -136,31 +136,31 @@ def datacite_convert_dataset_test(dataset: dict, name_doi_map: dict):
 
     # Publisher
     datacite_publisher_tag = "publisher"
-    publisher = publication.get(ENVIDAT[datacite_publisher_tag], "")
+    publisher = publication.get(config[datacite_publisher_tag], "")
     if publisher:
         datacite["resource"][datacite_publisher_tag] = {
             f"@{datacite_xml_lang_tag}": "en-us",
             "#text": publisher.strip(),
         }
 
-    # TODO start refactoring from tags
-    # # Subjects
-    # datacite_subjects = []
-    #
-    # # Get tags list
-    # tags = dataset.get("tags", [])
-    #
-    # for tag in tags:
-    #     tag_name = tag.get("display_name", tag.get("name", ""))
-    #     datacite_subjects += [{f"@{datacite_xml_lang_tag}": "en-us", "#text": tag_name}]
-    #
-    # if datacite_subjects:
-    #     datacite_subjects_tag = "subjects"
-    #     datacite_subject_tag = "subject"
-    #     datacite["resource"][datacite_subjects_tag] = {
-    #         datacite_subject_tag: datacite_subjects
-    #     }
-    #
+    # Subjects
+    datacite_subjects_tag = "subjects"
+    datacite_subject_tag = "subject"
+    datacite_subjects = []
+
+    # Get tags list
+    tags = dataset.get(config[datacite_subjects_tag], [])
+
+    for tag in tags:
+        tag_name = tag.get(config[datacite_subject_tag], tag.get("name", ""))
+        datacite_subjects += [{f"@{datacite_xml_lang_tag}": "en-us", "#text": tag_name}]
+
+    if datacite_subjects:
+        datacite["resource"][datacite_subjects_tag] = {
+            datacite_subject_tag: datacite_subjects
+        }
+
+    # TODO start refactoring from here
     # # Contributor (contact person)
     # datacite_contributors_tag = "contributors"
     # datacite_contributor_tag = "contributor"
@@ -328,22 +328,33 @@ def datacite_convert_dataset_test(dataset: dict, name_doi_map: dict):
     #             ]
     #             continue
     #
-    #         # TODO review if it valid to assume DOIs found in "related_datasets"
-    #         #  should be assigned:  relationType="isSupplementTo"
-    #         # TODO review how to assign DORA links without DOIS,
-    #         #  example package "survey-energy-transition-municipal-level-switzerland"
-    #         # Apply URL validator to find other URLs (that are not DOIs)
-    #         is_url = validators.url(word)
+
+    # TODO fix indentation here
+    # # Apply URL validator to find other URLs (that are not DOIs)
+    # is_url = validators.url(word)
     #
-    #         if all([is_url, word not in related_ids, "doi" not in word]):
-    #             related_ids.append(word)
-    #             datacite_related_urls["relatedIdentifier"] += [
-    #                 {
-    #                     "#text": word,
-    #                     "@relatedIdentifierType": "URL",
-    #                     "@relationType": "Cites",
-    #                 }
-    #             ]
+    # if all([is_url, word not in related_ids, "doi" not in word]):
+    #     related_ids.append(word)
+    #
+    #     # EnviDat datasets are assigned a relationType of "Cites"
+    #     if word.startswith(('https://envidat.ch/#/metadata/',
+    #                         'https://envidat.ch/dataset/')):
+    #         datacite_related_urls["relatedIdentifier"] += [
+    #             {
+    #                 "#text": word,
+    #                 "@relatedIdentifierType": "URL",
+    #                 "@relationType": "Cites",
+    #             }
+    #         ]
+    #     else:
+    #         # All other URLs are assigned a relationType of "isSupplementTo"
+    #         datacite_related_urls["relatedIdentifier"] += [
+    #             {
+    #                 "#text": word,
+    #                 "@relatedIdentifierType": "URL",
+    #                 "@relationType": "isSupplementTo",
+    #             }
+    #         ]
     #
     # if len(datacite_related_urls["relatedIdentifier"]) > 0:
     #     datacite["resource"]["relatedIdentifiers"] = datacite_related_urls
@@ -568,17 +579,17 @@ def datacite_convert_dataset_test(dataset: dict, name_doi_map: dict):
     return datacite
 
 
-def get_datacite_creator(author: dict):
+def get_datacite_creator(author: dict, config: dict):
     """Returns author information in DataCite "creator" tag format"""
 
     datacite_creator_tag = "creator"
     datacite_creator = collections.OrderedDict()
 
     creator_family_name = author.get(
-        ENVIDAT[datacite_creator_tag]["familyName"], ""
+        config[datacite_creator_tag]["familyName"], ""
     ).strip()
     creator_given_name = author.get(
-        ENVIDAT[datacite_creator_tag]["givenName"], ""
+        config[datacite_creator_tag]["givenName"], ""
     ).strip()
 
     if creator_given_name:
@@ -588,7 +599,7 @@ def get_datacite_creator(author: dict):
     else:
         datacite_creator["creatorName"] = creator_family_name
 
-    creator_identifier = author.get(ENVIDAT[datacite_creator_tag]["nameIdentifier"], "")
+    creator_identifier = author.get(config[datacite_creator_tag]["nameIdentifier"], "")
     if creator_identifier:
         datacite_creator["nameIdentifier"] = {
             "#text": creator_identifier.strip(),
@@ -596,7 +607,7 @@ def get_datacite_creator(author: dict):
         }
 
     affiliations = []
-    affiliation = author.get(ENVIDAT[datacite_creator_tag]["affiliation"], "")
+    affiliation = author.get(config[datacite_creator_tag]["affiliation"], "")
     if affiliation:
         affiliations += [{"#text": affiliation.strip()}]
 
@@ -615,7 +626,8 @@ def get_datacite_creator(author: dict):
 
 
 def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
-    """Create the DataCite XML from API dictionary."""
+    """Convert EnviDat metadata package from CKAN to DataCite XML."""
+
     # Assign datacite to ordered dictionary that will contain
     # dataset content converted to DataCite format
     datacite = collections.OrderedDict()
@@ -631,7 +643,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
     datacite["resource"]["@xmlns"] = f"{namespace}"
     datacite["resource"]["@xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
 
-    # Identifier*
+    # Identifier
     datacite_identifier_tag = "identifier"
     doi = dataset.get("doi", "")
     datacite["resource"][datacite_identifier_tag] = {
@@ -760,6 +772,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
     except JSONDecodeError:
         maintainer = {}
 
+    # TODO put contributor in separate functionality
     datacite_contributor = collections.OrderedDict()
 
     contributor_family_name = maintainer.get("name", "").strip()
@@ -1310,7 +1323,7 @@ def get_doi(word: str):
     return doi
 
 
-def get_dora_doi(dora_pid: str, host: str = "https://envidat.ch/", path: str = "/dora"):
+def get_dora_doi(dora_pid: str, host: str = "https://envidat.ch", path: str = "/dora"):
     """Get DOI string from WSL DORA API using DORA PID
 
     DORA API documentation:
