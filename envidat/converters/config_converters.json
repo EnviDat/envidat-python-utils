@@ -3,15 +3,22 @@
     "identifier": "doi",
     "creators": "author",
     "creator": {
-        "givenName": "given_name",
-        "familyName": "name",
-        "nameIdentifier": "identifier",
-        "affiliation": "affiliation"
+      "givenName": "given_name",
+      "familyName": "name",
+      "nameIdentifier": "identifier",
+      "affiliation": "affiliation"
     },
     "title": "title",
     "publicationYear": "publication_year",
     "publisher": "publisher",
     "subjects": "tags",
-    "subject": "display_name"
+    "subject": "display_name",
+    "contributors": "maintainer",
+    "contributor": {
+      "givenName": "given_name",
+      "familyName": "name",
+      "nameIdentifier": "identifier",
+      "affiliation": "affiliation"
+    }
   }
 }

@@ -92,7 +92,7 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
         "@identifierType": "DOI",
     }
 
-    # creators
+    # Creators
     datacite_creators_tag = "creators"
     datacite_creator_tag = "creator"
     datacite["resource"][datacite_creators_tag] = {datacite_creator_tag: []}
@@ -160,58 +160,24 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
             datacite_subject_tag: datacite_subjects
         }
 
-    # TODO start refactoring from here
-    # # Contributor (contact person)
-    # datacite_contributors_tag = "contributors"
-    # datacite_contributor_tag = "contributor"
-    #
-    # maintainer_dataset = dataset.get("maintainer", {})
-    # try:
-    #     maintainer = json.loads(maintainer_dataset)
-    # except JSONDecodeError:
-    #     maintainer = {}
-    #
-    # datacite_contributor = collections.OrderedDict()
-    #
-    # contributor_family_name = maintainer.get("name", "").strip()
-    # contributor_given_name = maintainer.get("given_name", "").strip()
-    #
-    # if contributor_given_name:
-    #     datacite_contributor[
-    #         "contributorName"
-    #     ] = f"{contributor_given_name} {contributor_family_name}"
-    #     datacite_contributor["givenName"] = contributor_given_name
-    #     datacite_contributor["familyName"] = contributor_family_name
-    # else:
-    #     datacite_contributor["contributorName"] = contributor_family_name
-    #
-    # contributor_identifier = maintainer.get("identifier", "")
-    # if contributor_identifier:
-    #     datacite_contributor["nameIdentifier"] = {
-    #         "#text": contributor_identifier.strip(),
-    #         "@nameIdentifierScheme": maintainer.get(
-    #             join_tags(
-    #                 [datacite_contributor_tag, "nameIdentifier", "nameIdentifierScheme"]
-    #             ),
-    #             "orcid",
-    #         ).upper(),
-    #     }
-    #
-    # contributor_affiliation = maintainer.get("affiliation", "")
-    # datacite_contributor["affiliation"] = contributor_affiliation.strip()
-    #
-    # contributor_type = maintainer.get(
-    #     join_tags([datacite_contributor_tag, "contributorType"]), "ContactPerson"
-    # )
-    # datacite_contributor["@contributorType"] = value_to_datacite_cv(
-    #     contributor_type, "contributorType"
-    # )
-    #
-    # if datacite_contributor:
-    #     datacite["resource"][datacite_contributors_tag] = {
-    #         datacite_contributor_tag: datacite_contributor
-    #     }
-    #
+    # Contributor (contact person)
+    datacite_contributors_tag = "contributors"
+    datacite_contributor_tag = "contributor"
+
+    maintainer_dataset = dataset.get(config[datacite_contributors_tag], {})
+    try:
+        maintainer = json.loads(maintainer_dataset)
+    except JSONDecodeError:
+        maintainer = {}
+
+    datacite_contributor = get_datacite_contributor(maintainer, config)
+
+    if datacite_contributor:
+        datacite["resource"][datacite_contributors_tag] = {
+            datacite_contributor_tag: datacite_contributor
+        }
+
+    # TODO start refactoring here
     # # Dates
     # datacite_dates_tag = "dates"
     # datacite_date_tag = "date"
@@ -625,6 +591,58 @@ def get_datacite_creator(author: dict, config: dict):
     return datacite_creator
 
 
+def get_datacite_contributor(maintainer: dict, config: dict):
+    """Returns maintainer information in DataCite "contributor" tag format"""
+
+    datacite_contributor_tag = "contributor"
+
+    datacite_contributor = collections.OrderedDict()
+
+    contributor_family_name = maintainer.get(
+        config[datacite_contributor_tag]["familyName"], ""
+    ).strip()
+    contributor_given_name = maintainer.get(
+        config[datacite_contributor_tag]["givenName"], ""
+    ).strip()
+
+    if contributor_given_name:
+        datacite_contributor[
+            "contributorName"
+        ] = f"{contributor_given_name} {contributor_family_name} "
+        datacite_contributor["givenName"] = contributor_given_name
+        datacite_contributor["familyName"] = contributor_family_name
+    else:
+        datacite_contributor["contributorName"] = contributor_family_name
+
+    contributor_identifier = maintainer.get(
+        config[datacite_contributor_tag]["nameIdentifier"], ""
+    )
+    if contributor_identifier:
+        datacite_contributor["nameIdentifier"] = {
+            "#text": contributor_identifier.strip(),
+            "@nameIdentifierScheme": maintainer.get(
+                join_tags(
+                    [datacite_contributor_tag, "nameIdentifier", "nameIdentifierScheme"]
+                ),
+                "orcid",
+            ).upper(),
+        }
+
+    contributor_affiliation = maintainer.get(
+        config[datacite_contributor_tag]["affiliation"], ""
+    )
+    datacite_contributor["affiliation"] = contributor_affiliation.strip()
+
+    contributor_type = maintainer.get(
+        join_tags([datacite_contributor_tag, "contributorType"]), "ContactPerson"
+    )
+    datacite_contributor["@contributorType"] = value_to_datacite_cv(
+        contributor_type, "contributorType"
+    )
+
+    return datacite_contributor
+
+
 def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
     """Convert EnviDat metadata package from CKAN to DataCite XML."""
 
@@ -772,7 +790,6 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
     except JSONDecodeError:
         maintainer = {}
 
-    # TODO put contributor in separate functionality
     datacite_contributor = collections.OrderedDict()
 
     contributor_family_name = maintainer.get("name", "").strip()
