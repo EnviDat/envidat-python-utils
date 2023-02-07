@@ -930,22 +930,32 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
                 ]
                 continue
 
-            # TODO review if it valid to assume DOIs found in "related_datasets"
-            #  should be assigned:  relationType="isSupplementTo"
-            # TODO review how to assign DORA links without DOIS,
-            #  example package "survey-energy-transition-municipal-level-switzerland"
             # Apply URL validator to find other URLs (that are not DOIs)
             is_url = validators.url(word)
 
             if all([is_url, word not in related_ids, "doi" not in word]):
                 related_ids.append(word)
-                datacite_related_urls["relatedIdentifier"] += [
-                    {
-                        "#text": word,
-                        "@relatedIdentifierType": "URL",
-                        "@relationType": "Cites",
-                    }
-                ]
+
+                # EnviDat datasets are assigned a relationType of "Cites"
+                if word.startswith(
+                    ("https://envidat.ch/#/metadata/", "https://envidat.ch/dataset/")
+                ):
+                    datacite_related_urls["relatedIdentifier"] += [
+                        {
+                            "#text": word,
+                            "@relatedIdentifierType": "URL",
+                            "@relationType": "Cites",
+                        }
+                    ]
+                else:
+                    # All other URLs are assigned a relationType of "isSupplementTo"
+                    datacite_related_urls["relatedIdentifier"] += [
+                        {
+                            "#text": word,
+                            "@relatedIdentifierType": "URL",
+                            "@relationType": "isSupplementTo",
+                        }
+                    ]
 
     if len(datacite_related_urls["relatedIdentifier"]) > 0:
         datacite["resource"]["relatedIdentifiers"] = datacite_related_urls
