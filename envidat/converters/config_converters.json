@@ -1,0 +1,17 @@
+{
+  "datacite_converter": {
+    "identifier": "doi",
+    "creators": "author",
+    "creator": {
+        "givenName": "given_name",
+        "familyName": "name",
+        "nameIdentifier": "identifier",
+        "affiliation": "affiliation"
+    },
+    "title": "title",
+    "publicationYear": "publication_year",
+    "publisher": "publisher",
+    "subjects": "tags",
+    "subject": "display_name"
+  }
+}
