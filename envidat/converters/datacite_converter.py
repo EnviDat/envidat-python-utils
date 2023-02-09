@@ -267,8 +267,6 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
     if dc_version:
         dc["resource"][dc_version_tag] = {"#text": dc_version}
 
-    # TODO start refactoring from here
-    # TODO extract rights block to separate function
     # Rights
     dc_rights_group_tag = "rightsList"
     dc_rights_tag = "rights"
@@ -289,12 +287,12 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
     if rights_title:
         rights = {f"@{dc_xml_lang_tag}": "en-us", "#text": rights_title}
 
-    rights_uri = dataset.get("license_url", "")
+    rights_uri = dataset.get(config[dc_rights_tag][dc_rights_uri_tag], "")
     if rights_uri:
         rights[f"@{dc_rights_uri_tag}"] = rights_uri
 
-    license_id = dataset.get("license_id", "")
-
+    license_id = dataset.get(config[dc_rights_tag][dc_rights_identifier], "")
+    # TODO investigate default argument
     rights_id_spx = value_to_datacite_cv(license_id, dc_rights_identifier, default=None)
     if rights_id_spx:
         rights[f"@{dc_scheme_uri_tag}"] = default_rights_scheme_uri
@@ -304,38 +302,20 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
     if rights:
         dc["resource"][dc_rights_group_tag] = {dc_rights_tag: [rights]}
 
-    # TODO extract description block to separate function
-    # # Description
-    # datacite_descriptions_tag = "descriptions"
-    # datacite_description_tag = "description"
-    # datacite_description_type_tag = "descriptionType"
-    # datacite_descriptions = []
-    #
-    # description = dataset.get("notes", "")
-    # if description:
-    #     description_text = (
-    #         description.replace("\r", "")
-    #         .replace(">", "-")
-    #         .replace("<", "-")
-    #         .replace("__", "")
-    #         .replace("#", "")
-    #         .replace("\n\n", "\n")
-    #         .replace("\n\n", "\n")
-    #     )
-    #
-    #     datacite_description = {
-    #         "#text": description_text.strip(),
-    #         f"@{datacite_description_type_tag}": "Abstract",
-    #         f"@{datacite_xml_lang_tag}": "en-us",
-    #     }
-    #
-    #     datacite_descriptions += [datacite_description]
-    #
-    # if datacite_descriptions:
-    #     datacite["resource"][datacite_descriptions_tag] = {
-    #         datacite_description_tag: datacite_descriptions
-    #     }
-    #
+    # Description
+    dc_descriptions_tag = "descriptions"
+    dc_description_tag = "description"
+    dc_description_type_tag = "descriptionType"
+
+    notes = dataset.get(config[dc_description_tag], "")
+    dc_descriptions = get_dc_descriptions(
+        notes, dc_description_type_tag, dc_xml_lang_tag
+    )
+
+    if dc_descriptions:
+        dc["resource"][dc_descriptions_tag] = {dc_description_tag: dc_descriptions}
+
+    # TODO start refactoring here
     # TODO separate geolocation block to separate function
     # # GeoLocation
     # datacite_geolocation_place_tag = "geoLocationPlace"
@@ -645,6 +625,32 @@ def get_dc_formats(resources):
                 dc_formats += [dc_format]
 
     return dc_formats
+
+
+def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag):
+    """Returns notes in DataCite "descriptions" tag format"""
+    dc_descriptions = []
+
+    if notes:
+        description_text = (
+            notes.replace("\r", "")
+            .replace(">", "-")
+            .replace("<", "-")
+            .replace("__", "")
+            .replace("#", "")
+            .replace("\n\n", "\n")
+            .replace("\n\n", "\n")
+        )
+
+        datacite_description = {
+            "#text": description_text.strip(),
+            f"@{dc_description_type_tag}": "Abstract",
+            f"@{dc_xml_lang_tag}": "en-us",
+        }
+
+        dc_descriptions += [datacite_description]
+
+    return dc_descriptions
 
 
 def datacite_convert_dataset(dataset: dict, name_doi_map: dict):

@@ -28,7 +28,10 @@
     "resourceTypeGeneral": "resource_type_general",
     "version": "version",
     "rights": {
-      "#text": "license_title"
-    }
+      "#text": "license_title",
+      "rightsURI": "license_url",
+      "rightsIdentifier": "license_id"
+    },
+    "description": "notes"
   }
 }
