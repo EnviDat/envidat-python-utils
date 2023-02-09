@@ -23,6 +23,12 @@
     "dates": "date",
     "date": "date",
     "dateType": "date_type",
-    "language": "language"
+    "language": "language",
+    "resourceType": "resource_type",
+    "resourceTypeGeneral": "resource_type_general",
+    "version": "version",
+    "rights": {
+      "#text": "license_title"
+    }
   }
 }

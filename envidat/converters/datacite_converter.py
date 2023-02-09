@@ -69,53 +69,51 @@ def get_config_datacite_converter() -> dict:
 def datacite_convert_dataset_test(dataset: dict, config: dict):
     """Convert EnviDat metadata package from CKAN to DataCite XML."""
 
-    # Assign datacite to ordered dictionary that will contain
+    # Initialize ordered dictionary that will contain
     # dataset content converted to DataCite format
-    datacite = collections.OrderedDict()
+    dc = collections.OrderedDict()
 
     # Assign language tag used several times in function
-    datacite_xml_lang_tag = "xml:lang"
+    dc_xml_lang_tag = "xml:lang"
 
     # Header
-    datacite["resource"] = collections.OrderedDict()
+    dc["resource"] = collections.OrderedDict()
     namespace = "http://datacite.org/schema/kernel-4"
     schema = "http://schema.datacite.org/meta/kernel-4.4/metadata.xsd"
-    datacite["resource"]["@xsi:schemaLocation"] = f"{namespace} {schema}"
-    datacite["resource"]["@xmlns"] = f"{namespace}"
-    datacite["resource"]["@xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
+    dc["resource"]["@xsi:schemaLocation"] = f"{namespace} {schema}"
+    dc["resource"]["@xmlns"] = f"{namespace}"
+    dc["resource"]["@xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
 
     # Identifier
-    datacite_identifier_tag = "identifier"
-    doi = dataset.get(config[datacite_identifier_tag], "")
-    datacite["resource"][datacite_identifier_tag] = {
+    dc_identifier_tag = "identifier"
+    doi = dataset.get(config[dc_identifier_tag], "")
+    dc["resource"][dc_identifier_tag] = {
         "#text": doi.strip(),
         "@identifierType": "DOI",
     }
 
     # Creators
-    datacite_creators_tag = "creators"
-    datacite_creator_tag = "creator"
-    datacite["resource"][datacite_creators_tag] = {datacite_creator_tag: []}
-    author_dataset = dataset.get(config[datacite_creators_tag], [])
+    dc_creators_tag = "creators"
+    dc_creator_tag = "creator"
+    dc["resource"][dc_creators_tag] = {dc_creator_tag: []}
+    author_dataset = dataset.get(config[dc_creators_tag], [])
     try:
         authors = json.loads(author_dataset)
     except JSONDecodeError:
         authors = []
 
     for author in authors:
-        datacite_creator = get_datacite_creator(author, config)
-        datacite["resource"][datacite_creators_tag][datacite_creator_tag] += [
-            datacite_creator
-        ]
+        dc_creator = get_dc_creator(author, config)
+        dc["resource"][dc_creators_tag][dc_creator_tag] += [dc_creator]
 
     # Titles
-    datacite_titles_tag = "titles"
-    datacite_title_tag = "title"
-    datacite["resource"][datacite_titles_tag] = {datacite_title_tag: []}
-    title = dataset.get(config[datacite_title_tag], "")
+    dc_titles_tag = "titles"
+    dc_title_tag = "title"
+    dc["resource"][dc_titles_tag] = {dc_title_tag: []}
+    title = dataset.get(config[dc_title_tag], "")
     if title:
-        datacite["resource"][datacite_titles_tag][datacite_title_tag] = {
-            f"@{datacite_xml_lang_tag}": "en-us",
+        dc["resource"][dc_titles_tag][dc_title_tag] = {
+            f"@{dc_xml_lang_tag}": "en-us",
             "#text": title,
         }
 
@@ -127,308 +125,185 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
         publication = {}
 
     # Publication year
-    datacite_publication_year_tag = "publicationYear"
-    publication_year = publication.get(config[datacite_publication_year_tag], "")
+    dc_publication_year_tag = "publicationYear"
+    publication_year = publication.get(config[dc_publication_year_tag], "")
     if publication_year:
-        datacite["resource"][datacite_publication_year_tag] = {
-            "#text": publication_year
-        }
+        dc["resource"][dc_publication_year_tag] = {"#text": publication_year}
 
     # Publisher
-    datacite_publisher_tag = "publisher"
-    publisher = publication.get(config[datacite_publisher_tag], "")
+    dc_publisher_tag = "publisher"
+    publisher = publication.get(config[dc_publisher_tag], "")
     if publisher:
-        datacite["resource"][datacite_publisher_tag] = {
-            f"@{datacite_xml_lang_tag}": "en-us",
+        dc["resource"][dc_publisher_tag] = {
+            f"@{dc_xml_lang_tag}": "en-us",
             "#text": publisher.strip(),
         }
 
     # Subjects
-    datacite_subjects_tag = "subjects"
-    datacite_subject_tag = "subject"
-    datacite_subjects = []
+    dc_subjects_tag = "subjects"
+    dc_subject_tag = "subject"
+    dc_subjects = []
 
-    # Get tags list
-    tags = dataset.get(config[datacite_subjects_tag], [])
-
+    tags = dataset.get(config[dc_subjects_tag], [])
     for tag in tags:
-        tag_name = tag.get(config[datacite_subject_tag], tag.get("name", ""))
-        datacite_subjects += [{f"@{datacite_xml_lang_tag}": "en-us", "#text": tag_name}]
+        tag_name = tag.get(config[dc_subject_tag], tag.get("name", ""))
+        dc_subjects += [{f"@{dc_xml_lang_tag}": "en-us", "#text": tag_name}]
 
-    if datacite_subjects:
-        datacite["resource"][datacite_subjects_tag] = {
-            datacite_subject_tag: datacite_subjects
-        }
+    if dc_subjects:
+        dc["resource"][dc_subjects_tag] = {dc_subject_tag: dc_subjects}
 
     # Contributor (contact person)
-    datacite_contributors_tag = "contributors"
-    datacite_contributor_tag = "contributor"
+    dc_contributors_tag = "contributors"
+    dc_contributor_tag = "contributor"
 
-    maintainer_dataset = dataset.get(config[datacite_contributors_tag], {})
+    maintainer_dataset = dataset.get(config[dc_contributors_tag], {})
     try:
         maintainer = json.loads(maintainer_dataset)
     except JSONDecodeError:
         maintainer = {}
 
-    datacite_contributor = get_datacite_contributor(maintainer, config)
-
-    if datacite_contributor:
-        datacite["resource"][datacite_contributors_tag] = {
-            datacite_contributor_tag: datacite_contributor
-        }
+    dc_contributor = get_dc_contributor(maintainer, config)
+    if dc_contributor:
+        dc["resource"][dc_contributors_tag] = {dc_contributor_tag: dc_contributor}
 
     # Dates
-    datacite_dates_tag = "dates"
-    datacite_date_tag = "date"
-    datacite_date_type_tag = "dateType"
-    datacite_dates = []
+    dc_dates_tag = "dates"
+    dc_date_tag = "date"
+    dc_date_type_tag = "dateType"
+    dc_dates = []
 
-    date_input = dataset.get(config[datacite_dates_tag], [])
+    date_input = dataset.get(config[dc_dates_tag], [])
     try:
         dates = json.loads(date_input)
     except JSONDecodeError:
         dates = []
 
     for date in dates:
-        datacite_date = {
-            "#text": date.get(config[datacite_date_tag], ""),
-            f"@{datacite_date_type_tag}": (
-                date.get(config[datacite_date_type_tag], "Valid")
+        dc_date = {
+            "#text": date.get(config[dc_date_tag], ""),
+            f"@{dc_date_type_tag}": (
+                date.get(config[dc_date_type_tag], "Valid")
             ).title(),
         }
-        datacite_dates += [datacite_date]
+        dc_dates += [dc_date]
 
-    if datacite_dates:
-        datacite["resource"][datacite_dates_tag] = {datacite_date_tag: datacite_dates}
+    if dc_dates:
+        dc["resource"][dc_dates_tag] = {dc_date_tag: dc_dates}
 
-    # TODO check if all datasets should be assigned a default language of "en"
-    # Language
-    datacite_language_tag = "language"
-    datacite_language = dataset.get(config[datacite_language_tag], "")
-    if not datacite_language:
-        datacite_language = "en"
-    datacite["resource"][datacite_language_tag] = {"#text": datacite_language}
+    # Language, "en" (English is default langauge)
+    dc_language_tag = "language"
+    dc_language = dataset.get(config[dc_language_tag], "")
+    if not dc_language:
+        dc_language = "en"
+    dc["resource"][dc_language_tag] = {"#text": dc_language}
 
-    # TODO start refactoring from here!!!
-    # # ResourceType
-    # datacite_resource_type_tag = "resourceType"
-    # datacite_resource_type_general_tag = "resourceTypeGeneral"
-    # resource_type_general = dataset.get("resource_type_general", "Dataset")
-    # datacite_resource_type_general = value_to_datacite_cv(
-    #     resource_type_general, datacite_resource_type_general_tag, default="Dataset"
-    # )
-    #
-    # datacite["resource"][datacite_resource_type_tag] = {
-    #     "#text": dataset.get("resource_type", ""),
-    #     # f'@{datacite_resource_type_general_tag}': (
-    #     #     dataset.get('resource_type_general', 'Dataset'
-    #     # )).title()
-    #     f"@{datacite_resource_type_general_tag}": datacite_resource_type_general,
-    # }
-    #
-    # # Alternate Identifier
-    # base_url = "https://www.envidat.ch/dataset/"
-    # alternate_identifiers = []
-    #
-    # package_name = dataset.get("name", "")
-    # if package_name:
-    #     package_url = f"{base_url}{package_name}"
-    #     alternate_identifiers.append(
-    #         {"#text": package_url, "@alternateIdentifierType": "URL"}
-    #     )
-    #
-    # package_id = dataset.get("id", "")
-    # if package_id:
-    #     package_id = f"{base_url}{package_id}"
-    #     alternate_identifiers.append(
-    #         {"#text": package_id, "@alternateIdentifierType": "URL"}
-    #     )
-    #
-    # datacite["resource"]["alternateIdentifiers"] = {
-    #     "alternateIdentifier": alternate_identifiers
-    # }
-    #
-    # TODO extract related identifier block to separate function
-    # # Related identifier
-    # datacite_related_urls = collections.OrderedDict()
-    # datacite_related_urls["relatedIdentifier"] = []
-    #
-    # # Combine "related_publications" and "related_datasets" values
-    # related_publications = dataset.get("related_publications", "")
-    # related_datasets = dataset.get("related_datasets", "")
-    # related_identifiers = f"${related_publications} {related_datasets}"
-    #
-    # # Validate related_identifiers
-    # if len(related_identifiers) > 0:
-    #     # Remove special characters "\r", "\n" and
-    #     # remove Markdown link syntax using brackets and parentheses
-    #     # and replace with one space " "
-    #     related_identifiers = re.sub(r"\r|\n|\[|\]|\(|\)", " ", related_identifiers)
-    #
-    #     # Assign empty array to hold "related_ids" values that will be used to check for
-    #     # duplicates
-    #     related_ids = []
-    #
-    #     for word in related_identifiers.split(" "):
-    #
-    #         # Apply search function to find DOIs
-    #         doi = get_doi(word)
-    #
-    #         # Apply search criteria to find DOIs from DORA API
-    #         # DORA API documentation:
-    #         # https://www.wiki.lib4ri.ch/display/HEL/Technical+details+of+DORA
-    #         dora_str = "dora.lib4ri.ch/wsl/islandora/object/"
-    #         if dora_str in word:
-    #             dora_index = word.find(dora_str)
-    #             dora_pid = word[(dora_index + len(dora_str)) :]
-    #
-    #             # Call DORA API and get DOI if it listed in citation
-    #             doi_dora = get_dora_doi(dora_pid)
-    #             if doi_dora:
-    #                 doi = doi_dora
-    #
-    #         if doi and "/" in doi and doi not in related_ids:
-    #             related_ids.append(doi)
-    #             datacite_related_urls["relatedIdentifier"] += [
-    #                 {
-    #                     "#text": doi,
-    #                     "@relatedIdentifierType": "DOI",
-    #                     "@relationType": "isSupplementTo",
-    #                 }
-    #             ]
-    #             continue
-    #
+    # ResourceType
+    dc_resource_type_tag = "resourceType"
+    dc_resource_type_general_tag = "resourceTypeGeneral"
+    resource_type_general = dataset.get(config[dc_resource_type_general_tag], "Dataset")
+    dc_resource_type_general = value_to_datacite_cv(
+        resource_type_general, dc_resource_type_general_tag, default="Dataset"
+    )
 
-    # TODO fix indentation here
-    # # Apply URL validator to find other URLs (that are not DOIs)
-    # is_url = validators.url(word)
-    #
-    # if all([is_url, word not in related_ids, "doi" not in word]):
-    #     related_ids.append(word)
-    #
-    #     # EnviDat datasets are assigned a relationType of "Cites"
-    #     if word.startswith(('https://envidat.ch/#/metadata/',
-    #                         'https://envidat.ch/dataset/')):
-    #         datacite_related_urls["relatedIdentifier"] += [
-    #             {
-    #                 "#text": word,
-    #                 "@relatedIdentifierType": "URL",
-    #                 "@relationType": "Cites",
-    #             }
-    #         ]
-    #     else:
-    #         # All other URLs are assigned a relationType of "isSupplementTo"
-    #         datacite_related_urls["relatedIdentifier"] += [
-    #             {
-    #                 "#text": word,
-    #                 "@relatedIdentifierType": "URL",
-    #                 "@relationType": "isSupplementTo",
-    #             }
-    #         ]
-    #
-    # if len(datacite_related_urls["relatedIdentifier"]) > 0:
-    #     datacite["resource"]["relatedIdentifiers"] = datacite_related_urls
-    #
-    # TODO extract sizes block to seprate block
-    # # Sizes (from resources)
-    # datacite_size_group_tag = "sizes"
-    # datacite_size_tag = "size"
-    # datacite_sizes = []
-    #
-    # for resource in dataset.get("resources", []):
-    #     if resource.get("size", ""):
-    #         datacite_sizes += [{"#text": str(resource.get("size", " ")) + " bytes"}]
-    #     elif resource.get("resource_size", ""):
-    #         resource_size = resource.get("resource_size", "")
-    #         try:
-    #             resource_size_obj = json.loads(resource_size)
-    #             datacite_sizes += [
-    #                 {
-    #                     "#text": (
-    #                         resource_size_obj.get("size_value", "0")
-    #                         + " "
-    #                         + resource_size_obj.get("size_unit", "KB").upper()
-    #                     ).strip()
-    #                 }
-    #             ]
-    #         except JSONDecodeError:
-    #             log.error("non-parsable value at resource_size:" + str(resource_size))
-    #
-    # if datacite_sizes:
-    #     datacite["resource"][datacite_size_group_tag] = {
-    #         datacite_size_tag: datacite_sizes
-    #     }
-    #
-    # TODO extract formats block to separate functionality
-    # # Formats (from resources)
-    # datacite_format_group_tag = "formats"
-    # datacite_format_tag = "format"
-    # datacite_formats = []
-    #
-    # for resource in dataset.get("resources", []):
-    #
-    #     default_format = resource.get("mimetype", resource.get("mimetype_inner", ""))
-    #     resource_format = resource.get("format", "")
-    #
-    #     if not resource_format:
-    #         resource_format = default_format
-    #
-    #     if resource_format:
-    #         datacite_format = {"#text": resource_format}
-    #
-    #         if datacite_format not in datacite_formats:
-    #             datacite_formats += [datacite_format]
-    #
-    # if datacite_formats:
-    #     datacite["resource"][datacite_format_group_tag] = {
-    #         datacite_format_tag: datacite_formats
-    #     }
-    #
-    # # Version
-    # datacite_version_tag = "version"
-    # datacite_version = dataset.get("version", "")
-    # if datacite_version:
-    #     datacite["resource"][datacite_version_tag] = {"#text": datacite_version}
-    #
+    dc["resource"][dc_resource_type_tag] = {
+        "#text": dataset.get(config[dc_resource_type_tag], ""),
+        f"@{dc_resource_type_general_tag}": dc_resource_type_general,
+    }
+
+    # Alternate Identifier
+    base_url = "https://www.envidat.ch/#/metadata/"
+    alternate_identifiers = []
+
+    package_name = dataset.get("name", "")
+    if package_name:
+        package_url = f"{base_url}{package_name}"
+        alternate_identifiers.append(
+            {"#text": package_url, "@alternateIdentifierType": "URL"}
+        )
+
+    package_id = dataset.get("id", "")
+    if package_id:
+        package_id = f"{base_url}{package_id}"
+        alternate_identifiers.append(
+            {"#text": package_id, "@alternateIdentifierType": "URL"}
+        )
+
+    dc["resource"]["alternateIdentifiers"] = {
+        "alternateIdentifier": alternate_identifiers
+    }
+
+    # Related identifier
+    # Combine "related_publications" and "related_datasets" values
+    # Note: EnviDat keys hard-coded because DataCite "relatedIdentifier" tags
+    # combines two EnviDat fields
+    related_publications = dataset.get("related_publications", "")
+    related_datasets = dataset.get("related_datasets", "")
+    related_identifiers = f"${related_publications} {related_datasets}"
+
+    dc_related_identifiers = get_dc_related_identifiers(related_identifiers)
+    if len(dc_related_identifiers["relatedIdentifier"]) > 0:
+        dc["resource"]["relatedIdentifiers"] = dc_related_identifiers
+
+    # Get "resources" from EnviDat package, used for Datacite "sizes" and "formats" tags
+    resources = dataset.get("resources", [])
+
+    # Sizes (from resources)
+    dc_sizes = get_dc_sizes(resources)
+    if dc_sizes:
+        dc_size_group_tag = "sizes"
+        dc_size_tag = "size"
+        dc["resource"][dc_size_group_tag] = {dc_size_tag: dc_sizes}
+
+    # Formats (from resources)
+    dc_formats = get_dc_formats(resources)
+    if dc_formats:
+        dc_format_group_tag = "formats"
+        dc_format_tag = "format"
+        dc["resource"][dc_format_group_tag] = {dc_format_tag: dc_formats}
+
+    # Version
+    dc_version_tag = "version"
+    dc_version = dataset.get(config[dc_version_tag], "")
+    if dc_version:
+        dc["resource"][dc_version_tag] = {"#text": dc_version}
+
+    # TODO start refactoring from here
     # TODO extract rights block to separate function
-    # # Rights
-    # datacite_rights_group_tag = "rightsList"
-    # datacite_rights_tag = "rights"
-    # datacite_rights_uri_tag = "rightsURI"
-    #
-    # datacite_scheme_uri_tag = "schemeURI"
-    # default_rights_scheme_uri = "https://spdx.org/licenses/"
-    #
-    # datacite_rights_identifier_scheme = "rightsIdentifierScheme"
-    # default_rights_identifier = "SPDX"
-    #
-    # datacite_rights_identifier = "rightsIdentifier"  # "CC0 1.0"
-    #
-    # rights = {}
-    #
-    # rights_title = dataset.get("license_title", "")
-    # if rights_title:
-    #     rights = {f"@{datacite_xml_lang_tag}": "en-us", "#text": rights_title}
-    #
-    # rights_uri = dataset.get("license_url", "")
-    # if rights_uri:
-    #     rights[f"@{datacite_rights_uri_tag}"] = rights_uri
-    #
-    # license_id = dataset.get("license_id", "")
-    #
-    # rights_id_spx = value_to_datacite_cv(
-    #     license_id, datacite_rights_identifier, default=None
-    # )
-    # if rights_id_spx:
-    #     rights[f"@{datacite_scheme_uri_tag}"] = default_rights_scheme_uri
-    #     rights[f"@{datacite_rights_identifier_scheme}"] = default_rights_identifier
-    #     rights[f"@{datacite_rights_identifier}"] = rights_id_spx
-    #
-    # if rights:
-    #     datacite["resource"][datacite_rights_group_tag] = {
-    #         datacite_rights_tag: [rights]
-    #     }
-    #
+    # Rights
+    dc_rights_group_tag = "rightsList"
+    dc_rights_tag = "rights"
+    dc_rights_uri_tag = "rightsURI"
+
+    dc_scheme_uri_tag = "schemeURI"
+    default_rights_scheme_uri = "https://spdx.org/licenses/"
+
+    dc_rights_identifier_scheme = "rightsIdentifierScheme"
+    default_rights_identifier = "SPDX"
+
+    dc_rights_identifier = "rightsIdentifier"  # "CC0 1.0"
+
+    rights = {}
+
+    dc_rights_text = "#text"
+    rights_title = dataset.get(config[dc_rights_tag][dc_rights_text], "")
+    if rights_title:
+        rights = {f"@{dc_xml_lang_tag}": "en-us", "#text": rights_title}
+
+    rights_uri = dataset.get("license_url", "")
+    if rights_uri:
+        rights[f"@{dc_rights_uri_tag}"] = rights_uri
+
+    license_id = dataset.get("license_id", "")
+
+    rights_id_spx = value_to_datacite_cv(license_id, dc_rights_identifier, default=None)
+    if rights_id_spx:
+        rights[f"@{dc_scheme_uri_tag}"] = default_rights_scheme_uri
+        rights[f"@{dc_rights_identifier_scheme}"] = default_rights_identifier
+        rights[f"@{dc_rights_identifier}"] = rights_id_spx
+
+    if rights:
+        dc["resource"][dc_rights_group_tag] = {dc_rights_tag: [rights]}
+
     # TODO extract description block to separate function
     # # Description
     # datacite_descriptions_tag = "descriptions"
@@ -552,38 +427,34 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
     #         datacite_funding_ref_tag: datacite_funding_refs
     #     }
 
-    return datacite
+    return dc
 
 
-def get_datacite_creator(author: dict, config: dict):
+def get_dc_creator(author: dict, config: dict):
     """Returns author information in DataCite "creator" tag format"""
 
-    datacite_creator_tag = "creator"
-    datacite_creator = collections.OrderedDict()
+    dc_creator_tag = "creator"
+    dc_creator = collections.OrderedDict()
 
-    creator_family_name = author.get(
-        config[datacite_creator_tag]["familyName"], ""
-    ).strip()
-    creator_given_name = author.get(
-        config[datacite_creator_tag]["givenName"], ""
-    ).strip()
+    creator_family_name = author.get(config[dc_creator_tag]["familyName"], "").strip()
+    creator_given_name = author.get(config[dc_creator_tag]["givenName"], "").strip()
 
     if creator_given_name:
-        datacite_creator["creatorName"] = f"{creator_given_name} {creator_family_name}"
-        datacite_creator["givenName"] = creator_given_name
-        datacite_creator["familyName"] = creator_family_name
+        dc_creator["creatorName"] = f"{creator_given_name} {creator_family_name}"
+        dc_creator["givenName"] = creator_given_name
+        dc_creator["familyName"] = creator_family_name
     else:
-        datacite_creator["creatorName"] = creator_family_name
+        dc_creator["creatorName"] = creator_family_name
 
-    creator_identifier = author.get(config[datacite_creator_tag]["nameIdentifier"], "")
+    creator_identifier = author.get(config[dc_creator_tag]["nameIdentifier"], "")
     if creator_identifier:
-        datacite_creator["nameIdentifier"] = {
+        dc_creator["nameIdentifier"] = {
             "#text": creator_identifier.strip(),
             "@nameIdentifierScheme": "ORCID",
         }
 
     affiliations = []
-    affiliation = author.get(config[datacite_creator_tag]["affiliation"], "")
+    affiliation = author.get(config[dc_creator_tag]["affiliation"], "")
     if affiliation:
         affiliations += [{"#text": affiliation.strip()}]
 
@@ -596,61 +467,184 @@ def get_datacite_creator(author: dict, config: dict):
         affiliations += [{"#text": affiliation_03.strip()}]
 
     if affiliations:
-        datacite_creator["affiliation"] = affiliations
+        dc_creator["affiliation"] = affiliations
 
-    return datacite_creator
+    return dc_creator
 
 
-def get_datacite_contributor(maintainer: dict, config: dict):
+def get_dc_contributor(maintainer: dict, config: dict):
     """Returns maintainer information in DataCite "contributor" tag format"""
 
-    datacite_contributor_tag = "contributor"
-
-    datacite_contributor = collections.OrderedDict()
+    dc_contributor = collections.OrderedDict()
+    dc_contributor_tag = "contributor"
 
     contributor_family_name = maintainer.get(
-        config[datacite_contributor_tag]["familyName"], ""
+        config[dc_contributor_tag]["familyName"], ""
     ).strip()
     contributor_given_name = maintainer.get(
-        config[datacite_contributor_tag]["givenName"], ""
+        config[dc_contributor_tag]["givenName"], ""
     ).strip()
 
     if contributor_given_name:
-        datacite_contributor[
+        dc_contributor[
             "contributorName"
         ] = f"{contributor_given_name} {contributor_family_name} "
-        datacite_contributor["givenName"] = contributor_given_name
-        datacite_contributor["familyName"] = contributor_family_name
+        dc_contributor["givenName"] = contributor_given_name
+        dc_contributor["familyName"] = contributor_family_name
     else:
-        datacite_contributor["contributorName"] = contributor_family_name
+        dc_contributor["contributorName"] = contributor_family_name
 
     contributor_identifier = maintainer.get(
-        config[datacite_contributor_tag]["nameIdentifier"], ""
+        config[dc_contributor_tag]["nameIdentifier"], ""
     )
     if contributor_identifier:
-        datacite_contributor["nameIdentifier"] = {
+        dc_contributor["nameIdentifier"] = {
             "#text": contributor_identifier.strip(),
             "@nameIdentifierScheme": maintainer.get(
                 join_tags(
-                    [datacite_contributor_tag, "nameIdentifier", "nameIdentifierScheme"]
+                    [dc_contributor_tag, "nameIdentifier", "nameIdentifierScheme"]
                 ),
                 "orcid",
             ).upper(),
         }
 
     contributor_affiliation = maintainer.get(
-        config[datacite_contributor_tag]["affiliation"], ""
+        config[dc_contributor_tag]["affiliation"], ""
     )
-    datacite_contributor["affiliation"] = contributor_affiliation.strip()
+    dc_contributor["affiliation"] = contributor_affiliation.strip()
 
     contributor_type = maintainer.get(
-        join_tags([datacite_contributor_tag, "contributorType"]), "ContactPerson"
+        join_tags([dc_contributor_tag, "contributorType"]), "ContactPerson"
     )
-    datacite_contributor["@contributorType"] = value_to_datacite_cv(
+    dc_contributor["@contributorType"] = value_to_datacite_cv(
         contributor_type, "contributorType"
     )
 
-    return datacite_contributor
+    return dc_contributor
+
+
+def get_dc_related_identifiers(related_identifiers):
+    """Return related datasets and related publications in
+    DataCite "relatedIdentifiers" tag format"""
+
+    dc_related_identifiers = collections.OrderedDict()
+    dc_related_identifiers["relatedIdentifier"] = []
+
+    # Validate related_identifiers
+    if len(related_identifiers) > 0:
+        # Remove special characters "\r", "\n" and
+        # remove Markdown link syntax using brackets and parentheses
+        # and replace with one space " "
+        related_identifiers = re.sub(r"\r|\n|\[|\]|\(|\)", " ", related_identifiers)
+
+        # Assign empty array to hold "related_ids" values that will be used to check for
+        # duplicates
+        related_ids = []
+
+        for word in related_identifiers.split(" "):
+
+            # Apply search function to find DOIs
+            doi = get_doi(word)
+
+            # Apply search criteria to find DOIs from DORA API
+            # DORA API documentation:
+            # https://www.wiki.lib4ri.ch/display/HEL/Technical+details+of+DORA
+            dora_str = "dora.lib4ri.ch/wsl/islandora/object/"
+            if dora_str in word:
+                dora_index = word.find(dora_str)
+                dora_pid = word[(dora_index + len(dora_str)) :]
+
+                # Call DORA API and get DOI if it listed in citation
+                doi_dora = get_dora_doi(dora_pid)
+                if doi_dora:
+                    doi = doi_dora
+
+            if doi and "/" in doi and doi not in related_ids:
+                related_ids.append(doi)
+                dc_related_identifiers["relatedIdentifier"] += [
+                    {
+                        "#text": doi,
+                        "@relatedIdentifierType": "DOI",
+                        "@relationType": "isSupplementTo",
+                    }
+                ]
+                continue
+
+            # Apply URL validator to find other URLs (that are not DOIs)
+            is_url = validators.url(word)
+
+            if all([is_url, word not in related_ids, "doi" not in word]):
+                related_ids.append(word)
+
+                # EnviDat datasets are assigned a relationType of "Cites"
+                if word.startswith(
+                    ("https://envidat.ch/#/metadata/", "https://envidat.ch/dataset/")
+                ):
+                    dc_related_identifiers["relatedIdentifier"] += [
+                        {
+                            "#text": word,
+                            "@relatedIdentifierType": "URL",
+                            "@relationType": "Cites",
+                        }
+                    ]
+                else:
+                    # All other URLs are assigned a relationType of "isSupplementTo"
+                    dc_related_identifiers["relatedIdentifier"] += [
+                        {
+                            "#text": word,
+                            "@relatedIdentifierType": "URL",
+                            "@relationType": "isSupplementTo",
+                        }
+                    ]
+
+    return dc_related_identifiers
+
+
+def get_dc_sizes(resources):
+    """Returns resources sizes in DataCite "sizes" tag format"""
+    dc_sizes = []
+
+    for resource in resources:
+        if resource.get("size", ""):
+            dc_sizes += [{"#text": str(resource.get("size", " ")) + " bytes"}]
+        elif resource.get("resource_size", ""):
+            resource_size = resource.get("resource_size", "")
+            try:
+                resource_size_obj = json.loads(resource_size)
+                dc_sizes += [
+                    {
+                        "#text": (
+                            resource_size_obj.get("size_value", "0")
+                            + " "
+                            + resource_size_obj.get("size_units", "KB").upper()
+                        ).strip()
+                    }
+                ]
+            except JSONDecodeError:
+                log.error("non-parsable value at resource_size:" + str(resource_size))
+
+    return dc_sizes
+
+
+def get_dc_formats(resources):
+    """Returns resources formats in DataCite "formats" tag format"""
+    dc_formats = []
+
+    for resource in resources:
+
+        default_format = resource.get("mimetype", resource.get("mimetype_inner", ""))
+        resource_format = resource.get("format", "")
+
+        if not resource_format:
+            resource_format = default_format
+
+        if resource_format:
+            dc_format = {"#text": resource_format}
+
+            if dc_format not in dc_formats:
+                dc_formats += [dc_format]
+
+    return dc_formats
 
 
 def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
