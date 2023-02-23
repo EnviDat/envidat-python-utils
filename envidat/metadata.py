@@ -114,7 +114,7 @@ class Record:
             "funding",
             "id",
             "isopen",
-            "language",
+            # "language", NOT ALWAYS PRESENT
             "license_id",
             "license_title",
             "maintainer",
