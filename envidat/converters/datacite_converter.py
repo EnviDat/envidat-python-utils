@@ -15,8 +15,7 @@ from envidat.utils import get_url
 log = getLogger(__name__)
 
 
-# TODO investigate if name_doi_map needed
-def convert_datacite(metadata_record: dict, name_doi_map: dict) -> str:
+def convert_datacite(metadata_record: dict) -> str:
     """Generate XML formatted string in DataCite format.
 
     Note:

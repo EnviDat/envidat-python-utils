@@ -87,11 +87,7 @@ class Record:
                 "ris": self.to_ris,
                 "dcat-ap": self.to_dcat_ap,
             }
-            if convert == "datacite":
-                name_doi_map = get_metadata_name_doi()
-                self.content = mapping[convert](name_doi_map)
-            else:
-                self.content = mapping[convert]()
+            self.content = mapping[convert]()
 
     def get_content(self):
         """
@@ -221,17 +217,14 @@ class Record:
         """
         return convert_dif(self.content)
 
-    def to_datacite(self, name_doi_map: dict) -> str:
+    def to_datacite(self) -> str:
         """
         Convert content to DataCite format.
-
-        Args:
-            name_doi_map (dict): Mapping of dataset name to DOI, format name:doi.
 
         Returns:
             str: DataCite formatted string of metadata record.
         """
-        return convert_datacite(self.content, name_doi_map)
+        return convert_datacite(self.content)
 
     def to_dcat_ap(self) -> str:
         """
