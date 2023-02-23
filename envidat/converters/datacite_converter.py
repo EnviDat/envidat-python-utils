@@ -493,8 +493,12 @@ def get_dc_related_identifiers(related_identifiers):
             # https://www.wiki.lib4ri.ch/display/HEL/Technical+details+of+DORA
             dora_str = "dora.lib4ri.ch/wsl/islandora/object/"
             if dora_str in word:
-                dora_index = word.find(dora_str)
-                dora_pid = word[(dora_index + len(dora_str)):]
+                dora_start_index = word.find(dora_str)
+                dora_pid = word[(dora_start_index + len(dora_str)):]
+
+                # Remove any characters that may exist after DORA PID
+                dora_end_index = dora_pid.find('/')
+                dora_pid = dora_pid[:dora_end_index]
 
                 # Call DORA API and get DOI if it listed in citation
                 doi_dora = get_dora_doi(dora_pid)
@@ -798,23 +802,30 @@ def get_dora_doi(dora_pid: str, host: str = "https://envidat.ch", path: str = "/
     # Replace '%3A' ASCII II code with semicolon ':'
     dora_pid = re.sub("%3A", ":", dora_pid)
 
+    # Replace literal asterisk "\*" with empty string ""
+    dora_pid = re.sub("\*", "", dora_pid)
+
     # Assemble url used to call DORA API
     dora_url = f"{host}{path}/{dora_pid}"
 
     try:
         data = get_url(dora_url).json()
-        citation = data[dora_pid]["citation"]["WSL"]
 
-        for word in citation.split(" "):
-            doi = get_doi(word)
+        if data:
+            citation = data[dora_pid]["citation"]["WSL"]
 
-            # Return DOI if it exists
-            if doi:
-                return doi
+            for word in citation.split(" "):
+                # Return DOI if it exists
+                doi = get_doi(word)
+                if doi:
+                    return doi
 
-        # If DOI not found then return None
+            # If DOI not found then return None
+            return None
+
         return None
 
     except Exception as e:
         log.error(f"ERROR: Failed to retrieve'{dora_url}' and extract DOI")
         log.error(e)
+        return None
