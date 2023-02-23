@@ -236,6 +236,7 @@ class Record:
         return convert_dcat_ap(self.content)
 
 
+# TODO implement error handling
 def get_all_metadata_record_list(
     convert: Literal[
         "str", "xml", "iso", "bibtex", "dif", "datacite", "ris", "dcat-ap"
@@ -264,10 +265,6 @@ def get_all_metadata_record_list(
         loaded_metadata = [Record(entry).content for entry in metadata]
         return convert_dcat_ap(loaded_metadata)
 
-    # Only get metadata:doi mapping once
-    if convert == "datacite":
-        name_doi_map = get_metadata_name_doi()
-
     record_list = []
 
     for metadata_entry in metadata:
@@ -285,10 +282,7 @@ def get_all_metadata_record_list(
                 # dcat-ap handled separately above
             }
 
-            if convert == "datacite":
-                record.content = mapping[convert](name_doi_map)
-            else:
-                record.content = mapping[convert]()
+            record.content = mapping[convert]()
 
         if content_only:
             record_list.append(record.content)
