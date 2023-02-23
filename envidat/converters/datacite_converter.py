@@ -49,6 +49,7 @@ def get_config_datacite_converter() -> dict:
     """Return datacite converter JSON config as Python dictionary.
     Dictionary maps Datacite XML schema tags (keys)
     to EnviDat schema fields (values).
+    Dictionary maps Datacite XML schema tags (keys) to EnviDat schema fields (values).
     """
     with open("envidat/converters/config_converters.json") as config_json:
         config: dict = json.load(config_json)
@@ -315,97 +316,65 @@ def datacite_convert_dataset_test(dataset: dict, config: dict):
     if dc_descriptions:
         dc["resource"][dc_descriptions_tag] = {dc_description_tag: dc_descriptions}
 
-    # TODO start refactoring here
-    # TODO separate geolocation block to separate function
-    # # GeoLocation
-    # datacite_geolocation_place_tag = "geoLocationPlace"
-    #
-    # datacite_geolocations = []
-    # try:
-    #     # Get spatial data from dataset
-    #     pkg_spatial = json.loads(dataset["spatial"])
-    #     log.debug("pkg_spatial=" + str(pkg_spatial))
-    #     if pkg_spatial:
-    #         coordinates = flatten(pkg_spatial.get("coordinates", "[]"), reverse=True)
-    #         if pkg_spatial.get("type", "").lower() == "polygon":
-    #             datacite_geolocation = collections.OrderedDict()
-    #             datacite_geolocation["geoLocationPolygon"] = {"polygonPoint": []}
-    #             for coordinates_pair in pkg_spatial.get("coordinates", "[[]]")[0]:
-    #                 geolocation_point = collections.OrderedDict()
-    #                 geolocation_point["pointLongitude"] = coordinates_pair[0]
-    #                 geolocation_point["pointLatitude"] = coordinates_pair[1]
-    #                 datacite_geolocation["geoLocationPolygon"]["polygonPoint"] += [
-    #                     geolocation_point
-    #                 ]
-    #             datacite_geolocations += [datacite_geolocation]
-    #         else:
-    #             if pkg_spatial.get("type", "").lower() == "multipoint":
-    #                 for coordinates_pair in pkg_spatial.get("coordinates", "[]"):
-    #                     log.debug("point=" + str(coordinates_pair))
-    #                     datacite_geolocation = collections.OrderedDict()
-    #                     datacite_geolocation[
-    #                         "geoLocationPoint"
-    #                     ] = collections.OrderedDict()
-    #                     datacite_geolocation["geoLocationPoint"][
-    #                         "pointLongitude"
-    #                     ] = coordinates_pair[0]
-    #                     datacite_geolocation["geoLocationPoint"][
-    #                         "pointLatitude"
-    #                     ] = coordinates_pair[1]
-    #                     datacite_geolocations += [datacite_geolocation]
-    #             else:
-    #                 datacite_geolocation = collections.OrderedDict()
-    #                 datacite_geolocation["geoLocationPoint"] = collections.OrderedDict()
-    #                 datacite_geolocation["geoLocationPoint"][
-    #                     "pointLongitude"
-    #                 ] = coordinates[1]
-    #                 datacite_geolocation["geoLocationPoint"][
-    #                     "pointLatitude"
-    #                 ] = coordinates[0]
-    #                 datacite_geolocations += [datacite_geolocation]
-    # except JSONDecodeError:
-    #     datacite_geolocations = []
-    #
-    # if datacite_geolocations:
-    #
-    #     geolocation_place = dataset.get("spatial_info", "")
-    #     if geolocation_place:
-    #         datacite_geolocation_place = {
-    #             datacite_geolocation_place_tag: geolocation_place.strip()
-    #         }
-    #         datacite_geolocations += [datacite_geolocation_place]
-    #
-    #     datacite["resource"]["geoLocations"] = {"geoLocation": datacite_geolocations}
-    #
-    # TODO separate funding block to separate function
-    # # Funding Information
-    # datacite_funding_refs_tag = "fundingReferences"
-    # datacite_funding_ref_tag = "fundingReference"
-    #
-    # datacite_funding_refs = []
-    #
-    # funding_dataset = dataset.get("funding", [])
-    # try:
-    #     funding = json.loads(funding_dataset)
-    # except JSONDecodeError:
-    #     funding = []
-    #
-    # for funder in funding:
-    #
-    #     datacite_funding_ref = collections.OrderedDict()
-    #
-    #     funder_name = funder.get("institution", "")
-    #     if funder_name:
-    #         datacite_funding_ref["funderName"] = funder_name.strip()
-    #         award_number = funder.get("grant_number", "")
-    #         if award_number:
-    #             datacite_funding_ref["awardNumber"] = award_number.strip()
-    #         datacite_funding_refs += [datacite_funding_ref]
-    #
-    # if datacite_funding_refs:
-    #     datacite["resource"][datacite_funding_refs_tag] = {
-    #         datacite_funding_ref_tag: datacite_funding_refs
-    #     }
+    # GeoLocation
+    dc_geolocations_tag = "geoLocations"
+    dc_geolocations = []
+
+    # Get spatial data from dataset
+    try:
+        spatial = json.loads(dataset.get(config[dc_geolocations_tag], ""))
+        if spatial:
+            dc_geolocations = get_dc_geolocations(spatial)
+    except JSONDecodeError:
+        dc_geolocations = []
+
+    # Assign converted spatial and spatial_info values to corresponding DataCite tags
+    if dc_geolocations:
+        dc_geolocation_place_tag = "geoLocationPlace"
+
+        geolocation_place = dataset.get(config[dc_geolocation_place_tag], "")
+        if geolocation_place:
+            datacite_geolocation_place = {
+                dc_geolocation_place_tag: geolocation_place.strip()
+            }
+            dc_geolocations += [datacite_geolocation_place]
+
+        dc["resource"][dc_geolocations_tag] = {"geoLocation": dc_geolocations}
+
+    # Funding Information
+    dc_funding_refs_tag = "fundingReferences"
+    dc_funding_ref_tag = "fundingReference"
+
+    funding_dataset = dataset.get(config[dc_funding_refs_tag], [])
+    try:
+        funding = json.loads(funding_dataset)
+    except JSONDecodeError:
+        funding = []
+
+    dc_funding_refs = []
+
+    for funder in funding:
+
+        dc_funding_ref = collections.OrderedDict()
+        dc_funder_name_tag = "funderName"
+
+        funder_name = funder.get(config[dc_funding_ref_tag][dc_funder_name_tag], "")
+        if funder_name:
+            dc_funding_ref[dc_funder_name_tag] = funder_name.strip()
+
+            dc_award_number_tag = "awardNumber"
+            award_number = funder.get(
+                config[dc_funding_ref_tag][dc_award_number_tag], ""
+            )
+            if award_number:
+                dc_funding_ref[dc_award_number_tag] = award_number.strip()
+
+            dc_funding_refs += [dc_funding_ref]
+
+    if dc_funding_refs:
+        dc["resource"][dc_funding_refs_tag] = {
+            dc_funding_ref_tag: dc_funding_refs
+        }
 
     return dc
 
@@ -466,9 +435,7 @@ def get_dc_contributor(maintainer: dict, config: dict):
     ).strip()
 
     if contributor_given_name:
-        dc_contributor[
-            "contributorName"
-        ] = f"{contributor_given_name} {contributor_family_name} "
+        dc_contributor["contributorName"] = f"{contributor_given_name} {contributor_family_name}"
         dc_contributor["givenName"] = contributor_given_name
         dc_contributor["familyName"] = contributor_family_name
     else:
@@ -532,7 +499,7 @@ def get_dc_related_identifiers(related_identifiers):
             dora_str = "dora.lib4ri.ch/wsl/islandora/object/"
             if dora_str in word:
                 dora_index = word.find(dora_str)
-                dora_pid = word[(dora_index + len(dora_str)) :]
+                dora_pid = word[(dora_index + len(dora_str)):]
 
                 # Call DORA API and get DOI if it listed in citation
                 doi_dora = get_dora_doi(dora_pid)
@@ -558,7 +525,7 @@ def get_dc_related_identifiers(related_identifiers):
 
                 # EnviDat datasets are assigned a relationType of "Cites"
                 if word.startswith(
-                    ("https://envidat.ch/#/metadata/", "https://envidat.ch/dataset/")
+                        ("https://envidat.ch/#/metadata/", "https://envidat.ch/dataset/")
                 ):
                     dc_related_identifiers["relatedIdentifier"] += [
                         {
@@ -594,9 +561,9 @@ def get_dc_sizes(resources):
                 dc_sizes += [
                     {
                         "#text": (
-                            resource_size_obj.get("size_value", "0")
-                            + " "
-                            + resource_size_obj.get("size_units", "KB").upper()
+                                resource_size_obj.get("size_value", "0")
+                                + " "
+                                + resource_size_obj.get("size_units", "KB").upper()
                         ).strip()
                     }
                 ]
@@ -634,12 +601,12 @@ def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag):
     if notes:
         description_text = (
             notes.replace("\r", "")
-            .replace(">", "-")
-            .replace("<", "-")
-            .replace("__", "")
-            .replace("#", "")
-            .replace("\n\n", "\n")
-            .replace("\n\n", "\n")
+                .replace(">", "-")
+                .replace("<", "-")
+                .replace("__", "")
+                .replace("#", "")
+                .replace("\n\n", "\n")
+                .replace("\n\n", "\n")
         )
 
         datacite_description = {
@@ -651,6 +618,48 @@ def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag):
         dc_descriptions += [datacite_description]
 
     return dc_descriptions
+
+
+def get_dc_geolocations(spatial: dict):
+    """Returns spatial information in DataCite "geoLocations" format"""
+
+    dc_geolocations = []
+
+    if spatial.get("type", "").lower() == "polygon":
+        dc_geolocation = collections.OrderedDict()
+        dc_gelocation_polygon_tag = "geoLocationPolygon"
+        dc_geolocation[dc_gelocation_polygon_tag] = {"polygonPoint": []}
+
+        for coordinates_pair in spatial.get("coordinates", "[[]]")[0]:
+            geolocation_point = collections.OrderedDict()
+            geolocation_point["pointLongitude"] = coordinates_pair[0]
+            geolocation_point["pointLatitude"] = coordinates_pair[1]
+            dc_geolocation[dc_gelocation_polygon_tag]["polygonPoint"] += [geolocation_point]
+
+        dc_geolocations += [dc_geolocation]
+
+    else:
+        dc_geolocation_point_tag = "geoLocationPoint"
+
+        if spatial.get("type", "").lower() == "multipoint":
+
+            for coordinates_pair in spatial.get("coordinates", "[]"):
+                dc_geolocation = collections.OrderedDict()
+                dc_geolocation[dc_geolocation_point_tag] = collections.OrderedDict()
+                dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = coordinates_pair[0]
+                dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = coordinates_pair[1]
+                dc_geolocations += [dc_geolocation]
+
+        else:
+            dc_geolocation = collections.OrderedDict()
+            dc_geolocation[dc_geolocation_point_tag] = collections.OrderedDict()
+
+            coordinates = flatten(spatial.get("coordinates", "[]"), reverse=True)
+            dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = coordinates[1]
+            dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = coordinates[0]
+            dc_geolocations += [dc_geolocation]
+
+    return dc_geolocations
 
 
 def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
@@ -939,7 +948,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
             dora_str = "dora.lib4ri.ch/wsl/islandora/object/"
             if dora_str in word:
                 dora_index = word.find(dora_str)
-                dora_pid = word[(dora_index + len(dora_str)) :]
+                dora_pid = word[(dora_index + len(dora_str)):]
 
                 # Call DORA API and get DOI if it listed in citation
                 doi_dora = get_dora_doi(dora_pid)
@@ -965,7 +974,7 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
 
                 # EnviDat datasets are assigned a relationType of "Cites"
                 if word.startswith(
-                    ("https://envidat.ch/#/metadata/", "https://envidat.ch/dataset/")
+                        ("https://envidat.ch/#/metadata/", "https://envidat.ch/dataset/")
                 ):
                     datacite_related_urls["relatedIdentifier"] += [
                         {
@@ -1002,9 +1011,9 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
                 datacite_sizes += [
                     {
                         "#text": (
-                            resource_size_obj.get("size_value", "0")
-                            + " "
-                            + resource_size_obj.get("size_unit", "KB").upper()
+                                resource_size_obj.get("size_value", "0")
+                                + " "
+                                + resource_size_obj.get("size_unit", "KB").upper()
                         ).strip()
                     }
                 ]
@@ -1094,12 +1103,12 @@ def datacite_convert_dataset(dataset: dict, name_doi_map: dict):
     if description:
         description_text = (
             description.replace("\r", "")
-            .replace(">", "-")
-            .replace("<", "-")
-            .replace("__", "")
-            .replace("#", "")
-            .replace("\n\n", "\n")
-            .replace("\n\n", "\n")
+                .replace(">", "-")
+                .replace("<", "-")
+                .replace("__", "")
+                .replace("#", "")
+                .replace("\n\n", "\n")
+                .replace("\n\n", "\n")
         )
 
         datacite_description = {
@@ -1392,7 +1401,7 @@ def get_dora_doi(dora_pid: str, host: str = "https://envidat.ch", path: str = "/
 
     try:
         data = get_url(dora_url).json()
-        citation = data[dora_pid]["citation"]["ACS"]
+        citation = data[dora_pid]["citation"]["WSL"]
 
         for word in citation.split(" "):
             doi = get_doi(word)
@@ -1405,5 +1414,5 @@ def get_dora_doi(dora_pid: str, host: str = "https://envidat.ch", path: str = "/
         return None
 
     except Exception as e:
-        print(f"ERROR: Failed to retrieve'{dora_url}' and extract DOI")
-        print(e)
+        log.error(f"ERROR: Failed to retrieve'{dora_url}' and extract DOI")
+        log.error(e)

@@ -32,6 +32,13 @@
       "rightsURI": "license_url",
       "rightsIdentifier": "license_id"
     },
-    "description": "notes"
+    "description": "notes",
+    "geoLocations": "spatial",
+    "geoLocationPlace": "spatial_info",
+    "fundingReferences": "funding",
+    "fundingReference": {
+      "funderName": "institution",
+      "awardNumber": "grant_number"
+    }
   }
 }
