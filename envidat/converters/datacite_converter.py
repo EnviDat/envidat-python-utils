@@ -29,10 +29,9 @@ def convert_datacite(metadata_record: dict) -> str:
     """
     try:
         # TODO finish refactoring Datacite converter
-        # TODO improve get_config_datacite_converter() to use file path as argument
         config: dict = get_config_datacite_converter()
         converted_package = datacite_convert_dataset(metadata_record, config)
-        return unparse(converted_package, pretty=True)     # Convert OrderedDict to XML
+        return unparse(converted_package, pretty=True)  # Convert OrderedDict to XML
     except ValueError as e:
         log.error(e)
         log.error("Cannot convert package to DataCite format.")
@@ -41,22 +40,30 @@ def convert_datacite(metadata_record: dict) -> str:
 
 # TODO possibly implement JSON schema to make sure all required keys included in config,
 #  see https://pypi.org/project/jsonschema/ and
-#  https://towardsdatascience.com/how-to-use-json-schema-to-validate-json-documents-ae9d8d1db344
-def get_config_datacite_converter() -> dict:
+#  https://towardsdatascience.com/how-to-use-json-schema-to-validate-json-documents
+#  -ae9d8d1db344
+def get_config_datacite_converter(
+        config_path: str = "envidat/converters/config_converters.json"
+) -> dict:
     """Return datacite converter JSON config as Python dictionary.
-    Dictionary maps Datacite XML schema tags (keys)
-    to EnviDat schema fields (values).
+
     Dictionary maps Datacite XML schema tags (keys) to EnviDat schema fields (values).
+
+    Args:
+        config_path (str): Path to JSON config file,
+                           default path is "envidat/converters/config_converters.json"
+
+    Returns:
+        dict: datacite converter JSON config as Python dictionary
+
     """
-    with open("envidat/converters/config_converters.json") as config_json:
+    with open(config_path) as config_json:
         config: dict = json.load(config_json)
         datacite_config: dict = config["datacite_converter"]
     return datacite_config
 
 
 # TODO connect DataCite converter to DOI CKAN extension
-# TODO test refactoring datacite_covert_datasets() using dictionary of Datacite schema
-#  keys and corresponding EnviDat schema fields as values
 # TODO keep in mind that a reverse converter will
 #  also need to be written (Datacite to EnviDat)
 # TODO investigate if any additional fields from EnviDat schema can be matched
@@ -149,6 +156,8 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         dc["resource"][dc_subjects_tag] = {dc_subject_tag: dc_subjects}
 
     # Contributor (contact person)
+    # TODO investigate adding to contriutors using DataCredit roles that correspond to
+    #  "contibutorType", see pg. 40 of DatacCite documentation
     dc_contributors_tag = "contributors"
     dc_contributor_tag = "contributor"
 
@@ -228,6 +237,10 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         "alternateIdentifier": alternate_identifiers
     }
 
+    # Get "resources" from EnviDat package,
+    # used for DataCite "relatedIdentifiers" and "formats" tags
+    resources = dataset.get("resources", [])
+
     # Related identifier
     # Combine "related_publications" and "related_datasets" values
     # Note: EnviDat keys hard-coded because DataCite "relatedIdentifier" tags
@@ -236,19 +249,9 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     related_datasets = dataset.get("related_datasets", "")
     related_identifiers = f"${related_publications} {related_datasets}"
 
-    dc_related_identifiers = get_dc_related_identifiers(related_identifiers)
+    dc_related_identifiers = get_dc_related_identifiers(related_identifiers, resources)
     if len(dc_related_identifiers["relatedIdentifier"]) > 0:
         dc["resource"]["relatedIdentifiers"] = dc_related_identifiers
-
-    # Get "resources" from EnviDat package, used for Datacite "sizes" and "formats" tags
-    resources = dataset.get("resources", [])
-
-    # Sizes (from resources)
-    dc_sizes = get_dc_sizes(resources)
-    if dc_sizes:
-        dc_size_group_tag = "sizes"
-        dc_size_tag = "size"
-        dc["resource"][dc_size_group_tag] = {dc_size_tag: dc_sizes}
 
     # Formats (from resources)
     dc_formats = get_dc_formats(resources)
@@ -430,7 +433,8 @@ def get_dc_contributor(maintainer: dict, config: dict):
     ).strip()
 
     if contributor_given_name:
-        dc_contributor["contributorName"] = f"{contributor_given_name} {contributor_family_name}"
+        dc_contributor[
+            "contributorName"] = f"{contributor_given_name} {contributor_family_name}"
         dc_contributor["givenName"] = contributor_given_name
         dc_contributor["familyName"] = contributor_family_name
     else:
@@ -465,8 +469,8 @@ def get_dc_contributor(maintainer: dict, config: dict):
     return dc_contributor
 
 
-def get_dc_related_identifiers(related_identifiers):
-    """Return related datasets and related publications in
+def get_dc_related_identifiers(related_identifiers, resources):
+    """Return related datasets, related publications and URLs from resources in
     DataCite "relatedIdentifiers" tag format"""
 
     dc_related_identifiers = collections.OrderedDict()
@@ -524,7 +528,8 @@ def get_dc_related_identifiers(related_identifiers):
 
                 # EnviDat datasets are assigned a relationType of "Cites"
                 if word.startswith(
-                        ("https://envidat.ch/#/metadata/", "https://envidat.ch/dataset/")
+                        (
+                        "https://envidat.ch/#/metadata/", "https://envidat.ch/dataset/")
                 ):
                     dc_related_identifiers["relatedIdentifier"] += [
                         {
@@ -543,33 +548,19 @@ def get_dc_related_identifiers(related_identifiers):
                         }
                     ]
 
-    return dc_related_identifiers
-
-
-def get_dc_sizes(resources):
-    """Returns resources sizes in DataCite "sizes" tag format"""
-    dc_sizes = []
-
+    # Add URLs from resources
     for resource in resources:
-        if resource.get("size", ""):
-            dc_sizes += [{"#text": str(resource.get("size", " ")) + " bytes"}]
-        elif resource.get("resource_size", ""):
-            resource_size = resource.get("resource_size", "")
-            try:
-                resource_size_obj = json.loads(resource_size)
-                dc_sizes += [
-                    {
-                        "#text": (
-                                resource_size_obj.get("size_value", "0")
-                                + " "
-                                + resource_size_obj.get("size_units", "KB").upper()
-                        ).strip()
-                    }
-                ]
-            except JSONDecodeError:
-                log.error("non-parsable value at resource_size:" + str(resource_size))
+        resource_url = resource.get("url", "")
+        if resource_url:
+            dc_related_identifiers["relatedIdentifier"] += [
+                {
+                    "#text": resource_url,
+                    "@relatedIdentifierType": "URL",
+                    "@relationType": "isRequiredBy",
+                }
+            ]
 
-    return dc_sizes
+    return dc_related_identifiers
 
 
 def get_dc_formats(resources):
