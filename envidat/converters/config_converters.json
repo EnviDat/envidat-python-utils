@@ -38,7 +38,8 @@
     "fundingReferences": "funding",
     "fundingReference": {
       "funderName": "institution",
-      "awardNumber": "grant_number"
+      "awardNumber": "grant_number",
+      "awardURI": "institution_url"
     }
   }
 }
