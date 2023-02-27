@@ -364,7 +364,25 @@ def datacite_convert_dataset(dataset: dict, config: dict):
             award_number = funder.get(
                 config[dc_funding_ref_tag][dc_award_number_tag], ""
             )
-            if award_number:
+
+            dc_award_uri_tag = "awardURI"
+            award_uri = funder.get(config[dc_funding_ref_tag][dc_award_uri_tag], "")
+
+            # TODO test new "awardURI" tag with DataCite test API
+            # Assign awardNumber and awardURI if they exist
+            # NOTE: For reverse converter be sure to parse default value for
+            # awardNumber, ":unav"
+            # DataCite documentation for unknown information: p. 74
+            # https://schema.datacite.org/meta/kernel-4.4/doc/DataCite
+            # -MetadataKernel_v4.4.pdf
+            if award_uri:
+                if award_number:
+                    award = {f"@{dc_award_uri_tag}": award_uri,
+                             "#text": award_number.strip()}
+                else:
+                    award = {f"@{dc_award_uri_tag}": award_uri, "#text": ":unav"}
+                dc_funding_ref[dc_award_number_tag] = award
+            elif award_number:
                 dc_funding_ref[dc_award_number_tag] = award_number.strip()
 
             dc_funding_refs += [dc_funding_ref]
