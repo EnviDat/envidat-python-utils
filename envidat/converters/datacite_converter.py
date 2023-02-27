@@ -595,9 +595,7 @@ def get_dc_formats(resources):
 
         if resource_format:
             dc_format = {"#text": resource_format}
-
-            if dc_format not in dc_formats:
-                dc_formats += [dc_format]
+            dc_formats += [dc_format]
 
     return dc_formats
 
