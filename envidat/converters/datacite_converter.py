@@ -640,7 +640,8 @@ def get_dc_geolocations(spatial: dict):
             geolocation_point = collections.OrderedDict()
             geolocation_point["pointLongitude"] = coordinates_pair[0]
             geolocation_point["pointLatitude"] = coordinates_pair[1]
-            dc_geolocation[dc_gelocation_polygon_tag]["polygonPoint"] += [geolocation_point]
+            dc_geolocation[dc_gelocation_polygon_tag]["polygonPoint"] += [
+                geolocation_point]
 
         dc_geolocations += [dc_geolocation]
 
@@ -652,8 +653,10 @@ def get_dc_geolocations(spatial: dict):
             for coordinates_pair in spatial.get("coordinates", "[]"):
                 dc_geolocation = collections.OrderedDict()
                 dc_geolocation[dc_geolocation_point_tag] = collections.OrderedDict()
-                dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = coordinates_pair[0]
-                dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = coordinates_pair[1]
+                dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = \
+                coordinates_pair[0]
+                dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = \
+                coordinates_pair[1]
                 dc_geolocations += [dc_geolocation]
 
         else:
