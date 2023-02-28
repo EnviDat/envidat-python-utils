@@ -57,7 +57,7 @@ def get_config_datacite_converter(
         dict: datacite converter JSON config as Python dictionary
 
     """
-    with open(config_path) as config_json:
+    with open(config_path, encoding='utf-8') as config_json:
         config: dict = json.load(config_json)
         datacite_config: dict = config["datacite_converter"]
     return datacite_config
