@@ -150,7 +150,8 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     tags = dataset.get(config[dc_subjects_tag], [])
     for tag in tags:
         tag_name = tag.get(config[dc_subject_tag], tag.get("name", ""))
-        dc_subjects += [{f"@{dc_xml_lang_tag}": "en-us", "#text": tag_name}]
+        if tag_name:
+            dc_subjects += [{f"@{dc_xml_lang_tag}": "en-us", "#text": tag_name}]
 
     if dc_subjects:
         dc["resource"][dc_subjects_tag] = {dc_subject_tag: dc_subjects}
@@ -416,6 +417,7 @@ def get_dc_creator(author: dict, config: dict):
         dc_creator["nameIdentifier"] = {
             "#text": creator_identifier.strip(),
             "@nameIdentifierScheme": "ORCID",
+            "@schemeURI": "https://orcid.org/"
         }
 
     affiliations = []
@@ -470,6 +472,7 @@ def get_dc_contributor(maintainer: dict, config: dict):
                 ),
                 "orcid",
             ).upper(),
+            "@schemeURI": "https://orcid.org/"
         }
 
     contributor_affiliation = maintainer.get(
@@ -547,7 +550,8 @@ def get_dc_related_identifiers(related_identifiers, resources):
                 # EnviDat datasets are assigned a relationType of "Cites"
                 if word.startswith(
                         (
-                        "https://envidat.ch/#/metadata/", "https://envidat.ch/dataset/")
+                                "https://envidat.ch/#/metadata/",
+                                "https://envidat.ch/dataset/")
                 ):
                     dc_related_identifiers["relatedIdentifier"] += [
                         {
@@ -654,9 +658,9 @@ def get_dc_geolocations(spatial: dict):
                 dc_geolocation = collections.OrderedDict()
                 dc_geolocation[dc_geolocation_point_tag] = collections.OrderedDict()
                 dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = \
-                coordinates_pair[0]
+                    coordinates_pair[0]
                 dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = \
-                coordinates_pair[1]
+                    coordinates_pair[1]
                 dc_geolocations += [dc_geolocation]
 
         else:
