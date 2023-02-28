@@ -40,6 +40,11 @@
       "funderName": "institution",
       "awardNumber": "grant_number",
       "awardURI": "institution_url"
+    },
+    "affiliation": {
+      "wsl": {
+        "test": "blah"
+      }
     }
   }
 }

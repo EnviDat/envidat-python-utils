@@ -435,14 +435,23 @@ def get_dc_creator(author: dict, config: dict):
     affiliations = []
     affiliation = author.get(config[dc_creator_tag]["affiliation"], "")
     if affiliation:
+        # TODO test calling affiliation_to_dc()
+        aff = affiliation_to_dc(affiliation, config)
+        # print(aff)
         affiliations += [{"#text": affiliation.strip()}]
 
     affiliation_02 = author.get("affiliation_02", "")
     if affiliation_02:
+        # TODO test calling affiliation_to_dc()
+        aff_02 = affiliation_to_dc(affiliation_02, config)
+        # print(aff_02)
         affiliations += [{"#text": affiliation_02.strip()}]
 
     affiliation_03 = author.get("affiliation_03", "")
     if affiliation_03:
+        # TODO test calling affiliation_to_dc()
+        aff_03 = affiliation_to_dc(affiliation_03, config)
+        # print(aff_03)
         affiliations += [{"#text": affiliation_03.strip()}]
 
     if affiliations:
@@ -451,8 +460,59 @@ def get_dc_creator(author: dict, config: dict):
     return dc_creator
 
 
+# TODO finish function
+# TODO check names
+# TODO finish "affiliation" config in "config_converters.json"
+def affiliation_to_dc(affiliation, config):
+    """Returns affiliation in DataCite "affiliation" tag format.
+       Uses config to map commonly used affiliations in EnviDat packages
+       (i.e. "WSL", "SLF") with long names of instiutions
+       and ROR identifiers when available.
+    """
+
+    # Get key from config that corresponds to affiliation
+    aff_keys = {
+        "WSL": "wsl",
+        "Swiss Federal Institute for Forest, Snow and Landscape Research WSL": "wsl",
+        "WSL Swiss Federal Research Institute, Birmensdorf, Switzerland": "wsl",
+        "SLF": "slf",
+        "WSL Institute for Snow and Avalanche Research SLF, Davos Dorf, Switzerland":
+            "slf",
+        "WSL Institute for Snow and Avalanche Research SLF": "slf",
+        "ETH": "eth",
+        "ETHZ": "eth",  # TODO check this
+        "Eawag": "eawag",
+        "EPFL": "epfl",
+        "IAP": "iap",
+        "PSI": "psi",
+        "PSI, Paul Scherrer Institute, Villigen": "psi",
+        # TODO check this
+        "UZH": "uzh",
+        "University of Zurich": "uzh",
+        "University of Zürich": "uzh",
+        "TROPOS": "tropos",
+        "UNIL": "unil"
+    }
+
+    # TODO check if aff_key in config, else return default
+    # Get affiliation config
+    aff_config = config["affiliation"]
+
+    # Strip whitespace from affiliation argument
+    aff = affiliation.strip()
+
+    # Get org dictionary if it exists in config
+    aff_key = aff_keys.get(aff, "")
+    org = aff_config.get(aff_key, {})
+
+    if org:
+        return org
+
+    return {"#text": aff}
+
+
 def get_dc_contributor(maintainer: dict, config: dict):
-    """Returns maintainer information in DataCite "contributor" tag format with a
+    """Returns maintainer in DataCite "contributor" tag format with a
     contributorType of "ContactPerson" """
 
     dc_contributor = collections.OrderedDict()
@@ -491,7 +551,8 @@ def get_dc_contributor(maintainer: dict, config: dict):
     contributor_affiliation = maintainer.get(
         config[dc_contributor_tag]["affiliation"], ""
     )
-    dc_contributor["affiliation"] = contributor_affiliation.strip()
+    if contributor_affiliation:
+        dc_contributor["affiliation"] = contributor_affiliation.strip()
 
     contributor_type = maintainer.get(
         join_tags([dc_contributor_tag, "contributorType"]), "ContactPerson"
