@@ -43,7 +43,55 @@
     },
     "affiliation": {
       "wsl": {
-        "test": "blah"
+        "#text": "Swiss Federal Institute for Forest, Snow and Landscape Research WSL",
+        "@affiliationIdentifier": "https://ror.org/04bs5yc70",
+        "@affiliationIdentifierScheme": "ROR",
+        "@schemeURI": "https://ror.org/"
+      },
+      "slf": {
+        "#text": "WSL Institute for Snow and Avalanche Research SLF",
+        "@affiliationIdentifier": "https://ror.org/04bs5yc70",
+        "@affiliationIdentifierScheme": "ROR",
+        "@schemeURI": "https://ror.org/"
+      },
+      "eth": {
+        "#text": "ETH Zurich",
+        "@affiliationIdentifier": "https://ror.org/05a28rw58",
+        "@affiliationIdentifierScheme": "ROR",
+        "@schemeURI": "https://ror.org/"
+      },
+      "uzh": {
+        "#text": "University of Zurich",
+        "@affiliationIdentifier": "https://ror.org/02crff812",
+        "@affiliationIdentifierScheme": "ROR",
+        "@schemeURI": "https://ror.org/"
+      },
+      "epfl": {
+        "#text": "École Polytechnique Fédérale de Lausanne",
+        "@affiliationIdentifier": "https://ror.org/02s376052",
+        "@affiliationIdentifierScheme": "ROR",
+        "@schemeURI": "https://ror.org/"
+      },
+      "psi": {
+        "#text": "Paul Scherrer Institute",
+        "@affiliationIdentifier": "https://ror.org/03eh3y714",
+        "@affiliationIdentifierScheme": "ROR",
+        "@schemeURI": "https://ror.org/"
+      },
+      "iap": {
+        "#text": "Institute for Applied Plant Biology"
+      },
+      "tropos": {
+        "#text": "Leibniz Institute for Tropospheric Research",
+        "@affiliationIdentifier": "https://ror.org/03a5xsc56",
+        "@affiliationIdentifierScheme": "ROR",
+        "@schemeURI": "https://ror.org/"
+      },
+      "unil": {
+        "#text": "University of Lausanne",
+        "@affiliationIdentifier": "https://ror.org/019whta54",
+        "@affiliationIdentifierScheme": "ROR",
+        "@schemeURI": "https://ror.org/"
       }
     }
   }
