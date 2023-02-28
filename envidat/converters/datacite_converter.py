@@ -69,6 +69,7 @@ def get_config_datacite_converter(
 # TODO investigate if any additional fields from EnviDat schema can be matched
 #  to Datacite schema, for example custom fields
 # TODO write docstring
+# TODO map "affiliation" for "Contributor" and "Creator" tags
 def datacite_convert_dataset(dataset: dict, config: dict):
     """Convert EnviDat metadata package from CKAN to DataCite XML."""
 
@@ -157,11 +158,12 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         dc["resource"][dc_subjects_tag] = {dc_subject_tag: dc_subjects}
 
     # Contributor (contact person)
-    # TODO investigate adding to contriutors using DataCredit roles that correspond to
-    #  "contibutorType", see pg. 40 of DatacCite documentation
     dc_contributors_tag = "contributors"
     dc_contributor_tag = "contributor"
+    dc["resource"][dc_contributors_tag] = {dc_contributor_tag: []}
 
+    # Get "maintainer" from EnviDat package,
+    # assigned as DataCite Contributor "ContactPerson"
     maintainer_dataset = dataset.get(config[dc_contributors_tag], {})
     try:
         maintainer = json.loads(maintainer_dataset)
@@ -170,7 +172,17 @@ def datacite_convert_dataset(dataset: dict, config: dict):
 
     dc_contributor = get_dc_contributor(maintainer, config)
     if dc_contributor:
-        dc["resource"][dc_contributors_tag] = {dc_contributor_tag: dc_contributor}
+        dc["resource"][dc_contributors_tag][dc_contributor_tag] += [dc_contributor]
+
+    # Get "organization" dataset and extract "name" value,
+    # assigned as DataCite Contributor "ResearchGroup"
+    organization = dataset.get("organization", {})
+    if organization:
+        organization_title = organization.get("title", "")
+        if organization_title:
+            dc_research_group = get_dc_research_group(organization_title)
+            dc["resource"][dc_contributors_tag][dc_contributor_tag] \
+                += [dc_research_group]
 
     # Dates
     dc_dates_tag = "dates"
@@ -440,7 +452,8 @@ def get_dc_creator(author: dict, config: dict):
 
 
 def get_dc_contributor(maintainer: dict, config: dict):
-    """Returns maintainer information in DataCite "contributor" tag format"""
+    """Returns maintainer information in DataCite "contributor" tag format with a
+    contributorType of "ContactPerson" """
 
     dc_contributor = collections.OrderedDict()
     dc_contributor_tag = "contributor"
@@ -486,6 +499,22 @@ def get_dc_contributor(maintainer: dict, config: dict):
     dc_contributor["@contributorType"] = value_to_datacite_cv(
         contributor_type, "contributorType"
     )
+
+    return dc_contributor
+
+
+def get_dc_research_group(organization_title):
+    """Returns organization title in DataCite "contributor" format with a
+    contributorType of "ResearchGroup" """
+
+    dc_contributor = collections.OrderedDict()
+
+    dc_contributor["@contributorType"] = "ResearchGroup"
+
+    dc_contributor["contributorName"] = {
+        "#text": organization_title.strip(),
+        "@nameType": "Organizational"
+    }
 
     return dc_contributor
 
