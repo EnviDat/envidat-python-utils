@@ -8,9 +8,11 @@ log = logging.getLogger(__name__)
 # TODO finish function
 # TODO call conversion function instead of directly, use a "pkg" arguguent,
 #  see ckanext/datacite_publication/datacite_publisher.py
+# TODO refine package_url argument and related logic
 def publish_datacite(url: str,
                      auth: tuple,
                      doi: str,
+                     package_url: str,
                      xml_data: str,
                      headers="Content-Type: application/vnd.api+json"
                      ) -> requests.Response:
@@ -21,10 +23,15 @@ def publish_datacite(url: str,
         url (str): DataCite URL to PUT package data
         auth (tuple): Authorization tuple in format ('user', 'pass')
         doi (str): DOI assigned to newly published package
+        package_url (str): EnviDat URL assigned to package
         xml_data (str): XML input data of EnviDat package
         headers (str): Defaults to "Content-Type: application/vnd.api+json"
     """
     try:
+        # TODO start dev here
+        # Get package metadata into JSON string
+        package_json = get_datacite_json(doi, package_url, xml_data)
+
         log.debug(f"Attempting to get {url}")
         # r = requests.put(url, data=payload)
         r = requests.put(url, headers=headers, auth=auth)
@@ -60,3 +67,20 @@ def xml_to_base64(xml: str):
         xml_bytes = xml.encode('utf-8')
         xml_encoded = base64.b64encode(xml_bytes)
         return xml_encoded
+
+
+# TODO finish and test function
+def get_datacite_json(doi: str, package_url: str, xml_data: str):
+    """Return package metadata as JSON string in format compatible with DataCite API,
+    see https://support.datacite.org/docs/api-create-dois#provide-metadata-in-formats-other-than-json
+
+    Args:
+        doi (str): DOI assigned to newly published package
+        package_url (str): EnviDat URL assigned to package
+        xml_data (str): XML input data of EnviDat package
+
+     Returns:
+        str: JSON formatted string of package metadata
+    """
+    return ""
+

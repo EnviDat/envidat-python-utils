@@ -66,10 +66,7 @@ def get_config_datacite_converter(
 # TODO connect DataCite converter to DOI CKAN extension
 # TODO keep in mind that a reverse converter will
 #  also need to be written (Datacite to EnviDat)
-# TODO investigate if any additional fields from EnviDat schema can be matched
-#  to Datacite schema, for example custom fields
 # TODO write docstring
-# TODO review EnviDat packages from "organization"
 def datacite_convert_dataset(dataset: dict, config: dict):
     """Convert EnviDat metadata package from CKAN to DataCite XML."""
 
