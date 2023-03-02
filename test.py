@@ -18,10 +18,11 @@
 # record.to_datacite()
 import json
 
+from envidat.doi.datacite_publisher import xml_to_base64
 from xmltodict import parse
 
 from envidat.api.v1 import get_package
-from envidat.metadata import Record
+from envidat.metadata import Record, get_all_metadata_record_list
 
 # from tests.conftest import datacite_converter_one_package
 # from tests.test_converters import get_datacite_converters_one_package
@@ -39,6 +40,10 @@ from envidat.metadata import Record
 # package_name = "distribution-maps-of-permanent-grassland-habitats-for-switzerland"
 # package_name = "observed-and-simulated-snow-profile-data-from-switzerland"
 
+# Used for testing DORA
+# package_name = "wml_bilderstudie"
+# package_name = "hydropot_integral"
+
 # DORA PID has no DOI  for this package
 # package_name = "accessibility-of-the-swiss-forest-for-economic-wood-extraction"
 
@@ -53,6 +58,33 @@ from envidat.metadata import Record
 # package_name = "survey-energy-transition-municipal-level-switzerland"
 # package_name = "arthropod-biomass-abundance-species-richness-trends-limpach"
 
+# Used for testing "sizes"
+# package_name = "multifaceted-diversity-alps"
+
+# Used for testing "rightsList" and multiple author "affiliation" values
+# package_name = "satellite-avalanche-mapping-validation"
+# package_name = "pfynwaldgasexchange"
+# package_name = "nacl_interfacial_phasechanges"
+# package_name = "soil-water-measurements-wdb"
+# package_name = "lidar-davos-wolfgang"
+# package_name = "sediment-transport-observations-in-swiss-mountain-streams"
+
+# Used for testing restricted resources
+# package_name = "stable-water-isotopes-in-snow-and-vapor-on-the-weissfluhjoch"
+
+# Used for testing "geoLocations"
+# package_name = "envidat-lwf-51"  # Multipoint
+# package_name = "als-based-snow-depth"   # Point
+
+# Used for testing "fundingReferences"
+# package_name = "distributed-subcanopy-datasets"   # grant_number
+
+# Used for testing "contributor" tag with "affiliation"
+# package_name = "the-origin"
+
+# Used for testing conrtibutor without "affiliation"
+# package_name = "multifaceted-diversity-alps"
+
 # TEST package used for dev
 package_name = "accessibility-of-the-swiss-forest-for-economic-wood-extraction"
 
@@ -62,7 +94,12 @@ record = Record(package, "datacite")
 
 result = record.get_content()
 # print('\n\n')
-print(result)
+# print(result)
+
+print(type(result))
+
+xml = xml_to_base64(result)
+print(xml)
 
 # json_result = parse(result)
 # # print(json_result)
@@ -72,3 +109,12 @@ print(result)
 #
 # with open("sample.json", "w") as outfile:
 #     outfile.write(json_obj)
+
+
+# test = get_all_metadata_record_list("datacite")
+#
+# print(test)
+#
+# print(len(test))
+#
+# print(test[3].get_content())
