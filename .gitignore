@@ -9,3 +9,4 @@
 dist
 .pdm.toml
 __pypackages__/
+/.env

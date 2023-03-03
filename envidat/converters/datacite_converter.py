@@ -42,6 +42,7 @@ def convert_datacite(metadata_record: dict) -> str:
 #  see https://pypi.org/project/jsonschema/ and
 #  https://towardsdatascience.com/how-to-use-json-schema-to-validate-json-documents
 #  -ae9d8d1db344
+# TODO move "envidat/converters/config_converters.json" to "config" directory
 def get_config_datacite_converter(
         config_path: str = "envidat/converters/config_converters.json"
 ) -> dict:
@@ -68,7 +69,11 @@ def get_config_datacite_converter(
 #  also need to be written (Datacite to EnviDat)
 # TODO write docstring
 def datacite_convert_dataset(dataset: dict, config: dict):
-    """Convert EnviDat metadata package from CKAN to DataCite XML."""
+    """Convert EnviDat metadata package from CKAN to DataCite XML.
+
+       Notes: This converter is compatible with DataCite Metadata Schema 4.4, for
+       documentation see https://schema.datacite.org/meta/kernel-4.4/
+    """
 
     # Initialize ordered dictionary that will contain
     # dataset content converted to DataCite format
