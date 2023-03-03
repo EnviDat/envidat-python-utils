@@ -18,6 +18,7 @@
 # record.to_datacite()
 import json
 
+from envidat.doi.datacite_doi import reserve_draft_doi_datacite
 from envidat.doi.datacite_publisher import xml_to_base64
 from xmltodict import parse
 
@@ -70,7 +71,7 @@ from envidat.metadata import Record, get_all_metadata_record_list
 # package_name = "sediment-transport-observations-in-swiss-mountain-streams"
 
 # Used for testing restricted resources
-# package_name = "stable-water-isotopes-in-snow-and-vapor-on-the-weissfluhjoch"
+package_name = "stable-water-isotopes-in-snow-and-vapor-on-the-weissfluhjoch"
 
 # Used for testing "geoLocations"
 # package_name = "envidat-lwf-51"  # Multipoint
@@ -86,35 +87,24 @@ from envidat.metadata import Record, get_all_metadata_record_list
 # package_name = "multifaceted-diversity-alps"
 
 # TEST package used for dev
-package_name = "accessibility-of-the-swiss-forest-for-economic-wood-extraction"
+# package_name = "accessibility-of-the-swiss-forest-for-economic-wood-extraction"
 
 package = get_package(package_name)
+# print(type(package))
+# print(package)
 
-record = Record(package, "datacite")
+result = reserve_draft_doi_datacite(package)
+print(result)
 
-result = record.get_content()
-# print('\n\n')
+# record = Record(package, "datacite")
+#
+# result = record.get_content()
+# print(type(result))
 # print(result)
-
-print(type(result))
-
-xml = xml_to_base64(result)
-print(xml)
-
-# json_result = parse(result)
-# # print(json_result)
 #
-# json_obj = json.dumps(json_result)
+# print('\n\n')
 #
-#
-# with open("sample.json", "w") as outfile:
-#     outfile.write(json_obj)
+# xml = xml_to_base64(result)
+# print(xml)
 
 
-# test = get_all_metadata_record_list("datacite")
-#
-# print(test)
-#
-# print(len(test))
-#
-# print(test[3].get_content())
