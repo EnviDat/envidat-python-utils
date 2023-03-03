@@ -620,7 +620,7 @@ def get_dc_related_identifiers(related_identifiers, resources):
                     {
                         "#text": doi,
                         "@relatedIdentifierType": "DOI",
-                        "@relationType": "isSupplementTo",
+                        "@relationType": "IsSupplementTo",
                     }
                 ]
                 continue
@@ -645,12 +645,12 @@ def get_dc_related_identifiers(related_identifiers, resources):
                         }
                     ]
                 else:
-                    # All other URLs are assigned a relationType of "isSupplementTo"
+                    # All other URLs are assigned a relationType of "IsSupplementTo"
                     dc_related_identifiers["relatedIdentifier"] += [
                         {
                             "#text": word,
                             "@relatedIdentifierType": "URL",
-                            "@relationType": "isSupplementTo",
+                            "@relationType": "IsSupplementTo",
                         }
                     ]
 
@@ -662,7 +662,7 @@ def get_dc_related_identifiers(related_identifiers, resources):
                 {
                     "#text": resource_url,
                     "@relatedIdentifierType": "URL",
-                    "@relationType": "isRequiredBy",
+                    "@relationType": "IsRequiredBy",
                 }
             ]
 
