@@ -6,7 +6,7 @@ import os
 import re
 from json import JSONDecodeError
 from logging import getLogger
-
+from typing import Union
 import validators
 from xmltodict import unparse
 
@@ -15,7 +15,7 @@ from envidat.utils import get_url
 log = getLogger(__name__)
 
 
-def convert_datacite(metadata_record: dict) -> str:
+def convert_datacite(metadata_record: dict) -> Union[str, None]:
     """Generate XML formatted string in DataCite format.
 
     Note:
@@ -32,10 +32,9 @@ def convert_datacite(metadata_record: dict) -> str:
         config: dict = get_config_datacite_converter()
         converted_package = datacite_convert_dataset(metadata_record, config)
         return unparse(converted_package, pretty=True)  # Convert OrderedDict to XML
-    except ValueError as e:
-        log.error(e)
-        log.error("Cannot convert package to DataCite format.")
-        raise ValueError("Failed to convert package to DataCite format.")
+    except TypeError as err:
+        log.error(f"ERROR failed to convert package to DataCite format, error: {err}")
+        return None
 
 
 # TODO possibly implement JSON schema to make sure all required keys included in config,
@@ -90,6 +89,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     dc["resource"]["@xmlns"] = f"{namespace}"
     dc["resource"]["@xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
 
+    # TODO handle that Identifier ("doi") is a required tag
     # Identifier
     dc_identifier_tag = "identifier"
     doi = dataset.get(config[dc_identifier_tag], "")
@@ -98,19 +98,33 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         "@identifierType": "DOI",
     }
 
-    # Creators
+    # Creators (REQUIRED DataCite field)
     dc_creators_tag = "creators"
     dc_creator_tag = "creator"
     dc["resource"][dc_creators_tag] = {dc_creator_tag: []}
     author_dataset = dataset.get(config[dc_creators_tag], [])
-    try:
-        authors = json.loads(author_dataset)
-    except JSONDecodeError:
-        authors = []
 
+    if author_dataset:
+        try:
+            authors = json.loads(author_dataset)
+        except JSONDecodeError:
+            log.error(
+                f"ERROR cannot parse '{config[dc_creators_tag]}' value from package")
+            return None
+    else:
+        log.error(
+            f"ERROR missing required '{config[dc_creators_tag]}' field from package")
+        return None
+
+    # "creatorName" is a REQUIRED DataCite field for each Creator
     for author in authors:
         dc_creator = get_dc_creator(author, config)
-        dc["resource"][dc_creators_tag][dc_creator_tag] += [dc_creator]
+        if "creatorName" in dc_creator:
+            dc["resource"][dc_creators_tag][dc_creator_tag] += [dc_creator]
+        else:
+            log.error(f"ERROR missing required 'family name' field from author in "
+                      f"'{config[dc_creators_tag]}' value in package ")
+            return None
 
     # Titles
     dc_titles_tag = "titles"
@@ -410,7 +424,6 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     return dc
 
 
-# TODO research if author email can/should be included
 def get_dc_creator(author: dict, config: dict):
     """Returns author information in DataCite "creator" tag format"""
 
@@ -420,11 +433,11 @@ def get_dc_creator(author: dict, config: dict):
     creator_family_name = author.get(config[dc_creator_tag]["familyName"], "").strip()
     creator_given_name = author.get(config[dc_creator_tag]["givenName"], "").strip()
 
-    if creator_given_name:
+    if creator_given_name and creator_family_name:
         dc_creator["creatorName"] = f"{creator_given_name} {creator_family_name}"
         dc_creator["givenName"] = creator_given_name
         dc_creator["familyName"] = creator_family_name
-    else:
+    elif creator_family_name:
         dc_creator["creatorName"] = creator_family_name
 
     creator_identifier = author.get(config[dc_creator_tag]["nameIdentifier"], "")
@@ -669,6 +682,7 @@ def get_dc_related_identifiers(related_identifiers, resources):
     return dc_related_identifiers
 
 
+# TODO review if all formats should be included
 def get_dc_formats(resources):
     """Returns resources formats in DataCite "formats" tag format"""
     dc_formats = []
