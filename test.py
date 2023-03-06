@@ -18,12 +18,15 @@
 # record.to_datacite()
 import json
 
-from envidat.doi.datacite_doi import reserve_draft_doi_datacite
-from envidat.doi.datacite_publisher import xml_to_base64
+from envidat.doi.datacite_publisher import xml_to_base64, publish_datacite
 from xmltodict import parse
 
 from envidat.api.v1 import get_package
 from envidat.metadata import Record, get_all_metadata_record_list
+
+
+with open("test.json", encoding="utf-8") as test_json:
+    test_package = json.load(test_json)
 
 # from tests.conftest import datacite_converter_one_package
 # from tests.test_converters import get_datacite_converters_one_package
@@ -68,10 +71,9 @@ from envidat.metadata import Record, get_all_metadata_record_list
 # package_name = "nacl_interfacial_phasechanges"
 # package_name = "soil-water-measurements-wdb"
 # package_name = "lidar-davos-wolfgang"
-# package_name = "sediment-transport-observations-in-swiss-mountain-streams"
 
 # Used for testing restricted resources
-package_name = "stable-water-isotopes-in-snow-and-vapor-on-the-weissfluhjoch"
+# package_name = "stable-water-isotopes-in-snow-and-vapor-on-the-weissfluhjoch"
 
 # Used for testing "geoLocations"
 # package_name = "envidat-lwf-51"  # Multipoint
@@ -86,14 +88,27 @@ package_name = "stable-water-isotopes-in-snow-and-vapor-on-the-weissfluhjoch"
 # Used for testing conrtibutor without "affiliation"
 # package_name = "multifaceted-diversity-alps"
 
+# Used for testing datasets without DOIs
+package_name = "sediment-transport-observations-in-swiss-mountain-streams"
+# doi = "10.16904/test6"
+
+# DOI in draft state
+# doi = "10.16904/6s7f-am07"
+
+
 # TEST package used for dev
 # package_name = "accessibility-of-the-swiss-forest-for-economic-wood-extraction"
+# doi = "10.16904/envidat.363"
 
-package = get_package(package_name)
-# print(type(package))
-# print(package)
+# package = get_package(package_name)
 
-result = reserve_draft_doi_datacite(package)
+# result = reserve_draft_doi_datacite(package)
+
+doi = "10.16904/test6"
+result = publish_datacite(doi, test_package)
+
+# result = publish_datacite(doi, package)
+# result = publish_datacite(doi, package, is_update=True)
 print(result)
 
 # record = Record(package, "datacite")

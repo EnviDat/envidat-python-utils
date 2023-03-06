@@ -94,8 +94,8 @@ def reserve_draft_doi_datacite(metadata_record: dict) -> Union[str, None]:
 
 # TODO investigate not reserving DOI at DataCite and instead directly publish new
 #  dataset by reserving DOI within CKAN or other database
-# TODO test using datasets that have DOIs reserved in test environment
-def publish_datacite(doi: str, metadata_record: dict) -> Union[str, None]:
+def publish_datacite(doi: str, metadata_record: dict, is_update=False) \
+        -> Union[str, None]:
     """Publish a EnviDat record in EnviDat using the "publish" event.
 
        Converts EnviDat record to DataCite XML format before publication.
@@ -107,6 +107,8 @@ def publish_datacite(doi: str, metadata_record: dict) -> Union[str, None]:
     Args:
         doi (str): DOI of metadata_record
         metadata_record (dict): Individual EnviDat metadata entry record dictionary.
+        is_update (bool): If true then updates existing DOI, else creates new DOI.
+                          Default value is False.
 
     Returns:
         str/None: DOI reserved in DataCite or None if DOI reservation failed
@@ -125,20 +127,19 @@ def publish_datacite(doi: str, metadata_record: dict) -> Union[str, None]:
         log.error(f'KeyError: {e} does not exist in config')
         return None
 
+    # TODO note in documentation for config that environment variables with a hash
+    #   must be enclosed in quotes
     # Get metadata record URL
     name = metadata_record.get("name", metadata_record["id"])
-    if site_url == "https://envidat.ch":
-        # Handle situation where URL includes hash '#'
-        # TODO note this in documentation for config
-        url = f"{site_url}/#/metadata/{name}"
-    else:
-        url = f"{site_url}/{name}"
+    url = f"{site_url}/{name}"
 
-    # Convert metadata record to DataCite XML
+    # Convert metadata record to DataCite XML and encode to base64 formatted string
     xml = convert_datacite(metadata_record)
-
-    # Encode XML to base64 formatted string
-    xml_encoded = xml_to_base64(xml)
+    if xml:
+        xml_encoded = xml_to_base64(xml)
+    else:
+        log.error("ERROR unable to convert record to DataCite XML format")
+        return None
 
     # Create payload
     payload = {
@@ -154,14 +155,23 @@ def publish_datacite(doi: str, metadata_record: dict) -> Union[str, None]:
         }
     }
 
-    # Convert payload to JSON and then send POST request to DataCite API
+    # Convert payload to JSON
     payload_json = json.dumps(payload)
     headers = {"Content-Type": "application/vnd.api+json"}
 
-    r = requests.post(api_url,
-                      headers=headers,
-                      auth=(client_id, password),
-                      data=payload_json)
+    # If is_update is True update DOI that is already registered
+    if is_update:
+        api_url = f"{api_url}/{doi}"
+        r = requests.put(api_url,
+                          headers=headers,
+                          auth=(client_id, password),
+                          data=payload_json)
+    # Else create new DOI
+    else:
+        r = requests.post(api_url,
+                          headers=headers,
+                          auth=(client_id, password),
+                          data=payload_json)
 
     # Return DOI
     if r.status_code == 201 or r.status_code == 200:
@@ -170,11 +180,11 @@ def publish_datacite(doi: str, metadata_record: dict) -> Union[str, None]:
             return published_doi
         else:
             log.error(
-                f"Error cannot parse published DOI from DataCite response: {r.json()}")
+                f"ERROR cannot parse published DOI from DataCite response: {r.json()}")
             return None
     else:
-        log.error(f"Error publishing DOI on DataCite:  HTTP Code {r.status_code}")
-        log.error(f"Error:{r.json()}")
+        log.error(f"ERROR publishing DOI on DataCite:  HTTP Code {r.status_code}")
+        log.error(f"ERROR:{r.json()}")
         return None
 
 
