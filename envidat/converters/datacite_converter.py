@@ -39,8 +39,7 @@ def convert_datacite(metadata_record: dict) -> Union[str, None]:
 
 # TODO possibly implement JSON schema to make sure all required keys included in config,
 #  see https://pypi.org/project/jsonschema/ and
-#  https://towardsdatascience.com/how-to-use-json-schema-to-validate-json-documents
-#  -ae9d8d1db344
+#  https://towardsdatascience.com/how-to-use-json-schema-to-validate-json-documents-ae9d8d1db344
 # TODO move "envidat/converters/config_converters.json" to "config" directory
 def get_config_datacite_converter(
         config_path: str = "envidat/converters/config_converters.json"
@@ -65,8 +64,9 @@ def get_config_datacite_converter(
 
 # TODO connect DataCite converter to DOI CKAN extension
 # TODO keep in mind that a reverse converter will
-#  also need to be written (Datacite to EnviDat)
+#  also need to be written (DataCite to EnviDat)
 # TODO write docstring
+# TODO implement log_falsy_value() for DataCite REQUIRED properties
 def datacite_convert_dataset(dataset: dict, config: dict):
     """Convert EnviDat metadata package from CKAN to DataCite XML.
 
@@ -91,15 +91,14 @@ def datacite_convert_dataset(dataset: dict, config: dict):
 
     # Identifier with DOI type is a REQUIRED DataCite field
     dc_identifier_tag = "identifier"
-    doi = dataset.get(config[dc_identifier_tag], "")
+    doi = dataset.get(config[dc_identifier_tag])
     if doi:
         dc["resource"][dc_identifier_tag] = {
             "#text": doi.strip(),
             "@identifierType": "DOI",
         }
     else:
-        log.error(
-            f"ERROR missing required '{config[dc_identifier_tag]}' field from package")
+        log_falsy_value(config[dc_identifier_tag])
         return None
 
     # Creators is a REQUIRED DataCite field
@@ -116,8 +115,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
                 f"ERROR cannot parse '{config[dc_creators_tag]}' value from package")
             return None
     else:
-        log.error(
-            f"ERROR missing required '{config[dc_creators_tag]}' field from package")
+        log_falsy_value(config[dc_creators_tag])
         return None
 
     # "creatorName" is a REQUIRED DataCite field for each Creator
@@ -127,8 +125,8 @@ def datacite_convert_dataset(dataset: dict, config: dict):
             if "creatorName" in dc_creator:
                 dc["resource"][dc_creators_tag][dc_creator_tag] += [dc_creator]
             else:
-                log.error(f"ERROR missing required 'family name' field from author in "
-                          f"'{config[dc_creators_tag]}' value in package ")
+                log.error(f"ERROR missing required 'name' value from author in "
+                          f"'{config[dc_creators_tag]}' key in input record")
                 return None
         else:
             return None
@@ -144,7 +142,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
             "#text": title,
         }
     else:
-        log.error(f"ERROR missing required '{config[dc_title_tag]}' value in package")
+        log_falsy_value(config[dc_title_tag])
         return None
 
     # Get publication dictionary
@@ -979,3 +977,19 @@ def get_dora_doi(dora_pid: str, host: str = "https://envidat.ch", path: str = "/
         log.error(f"ERROR: Failed to retrieve'{dora_url}' and extract DOI")
         log.error(e)
         return None
+
+
+def log_falsy_value(key: str):
+    """Logs error message for a falsy value from a EnviDat key that corresponds
+    to a required DataCite property.
+
+     Notes: This function used in datacite_convert_dataset() for required properties
+     according toDataCite Metadata Schema 4.4, for documentation see
+      https://schema.datacite.org/meta/kernel-4.4/
+
+    Args:
+        key (str): key that does not have truthy value from input EnviDat record
+    """
+    log.error(
+        f"ERROR input record does not have truthy value "
+        f"for DataCite required key: '{key}'")
