@@ -89,16 +89,20 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     dc["resource"]["@xmlns"] = f"{namespace}"
     dc["resource"]["@xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
 
-    # TODO handle that Identifier ("doi") is a required tag
-    # Identifier
+    # Identifier with DOI type is a REQUIRED DataCite field
     dc_identifier_tag = "identifier"
     doi = dataset.get(config[dc_identifier_tag], "")
-    dc["resource"][dc_identifier_tag] = {
-        "#text": doi.strip(),
-        "@identifierType": "DOI",
-    }
+    if doi:
+        dc["resource"][dc_identifier_tag] = {
+            "#text": doi.strip(),
+            "@identifierType": "DOI",
+        }
+    else:
+        log.error(
+            f"ERROR missing required '{config[dc_identifier_tag]}' field from package")
+        return None
 
-    # Creators (REQUIRED DataCite field)
+    # Creators is a REQUIRED DataCite field
     dc_creators_tag = "creators"
     dc_creator_tag = "creator"
     dc["resource"][dc_creators_tag] = {dc_creator_tag: []}
@@ -119,14 +123,17 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     # "creatorName" is a REQUIRED DataCite field for each Creator
     for author in authors:
         dc_creator = get_dc_creator(author, config)
-        if "creatorName" in dc_creator:
-            dc["resource"][dc_creators_tag][dc_creator_tag] += [dc_creator]
+        if dc_creator:
+            if "creatorName" in dc_creator:
+                dc["resource"][dc_creators_tag][dc_creator_tag] += [dc_creator]
+            else:
+                log.error(f"ERROR missing required 'family name' field from author in "
+                          f"'{config[dc_creators_tag]}' value in package ")
+                return None
         else:
-            log.error(f"ERROR missing required 'family name' field from author in "
-                      f"'{config[dc_creators_tag]}' value in package ")
             return None
 
-    # Titles
+    # "title" is a REQUIRED DataCite field
     dc_titles_tag = "titles"
     dc_title_tag = "title"
     dc["resource"][dc_titles_tag] = {dc_title_tag: []}
@@ -136,6 +143,9 @@ def datacite_convert_dataset(dataset: dict, config: dict):
             f"@{dc_xml_lang_tag}": "en-us",
             "#text": title,
         }
+    else:
+        log.error(f"ERROR missing required '{config[dc_title_tag]}' value in package")
+        return None
 
     # Get publication dictionary
     pub = dataset.get("publication", {})
@@ -144,15 +154,21 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     except JSONDecodeError:
         publication = {}
 
-    # Publication year
+    # TODO implement logic so that there is a default value for
+    #  required "publication" year field
+    # "publicationYear" is a REQUIRED DataCite field
     dc_publication_year_tag = "publicationYear"
     publication_year = publication.get(config[dc_publication_year_tag], "")
     if publication_year:
         dc["resource"][dc_publication_year_tag] = {"#text": publication_year}
 
-    # Publisher
+    # TODO review that is ok to assign as default publisher "EnviDat"
+    # "publisher" is a REQUIRED DataCite field, assign default publisher to EnviDat
     dc_publisher_tag = "publisher"
-    publisher = publication.get(config[dc_publisher_tag], "")
+    publisher = publication.get(config[dc_publisher_tag], "EnviDat")
+    if not publisher:
+        publisher = "EnviDat"
+
     if publisher:
         dc["resource"][dc_publisher_tag] = {
             f"@{dc_xml_lang_tag}": "en-us",
@@ -189,6 +205,8 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     dc_contributor = get_dc_contributor(maintainer, config)
     if dc_contributor:
         dc["resource"][dc_contributors_tag][dc_contributor_tag] += [dc_contributor]
+    else:
+        return None
 
     # Get "organization" dataset and extract "name" value,
     # assigned as DataCite Contributor "ResearchGroup"
@@ -452,17 +470,26 @@ def get_dc_creator(author: dict, config: dict):
     affiliation = author.get(config[dc_creator_tag]["affiliation"], "")
     if affiliation:
         aff = affiliation_to_dc(affiliation, config)
-        affiliations += [aff]
+        if aff:
+            affiliations += [aff]
+        else:
+            return None
 
     affiliation_02 = author.get("affiliation_02", "")
     if affiliation_02:
         aff_02 = affiliation_to_dc(affiliation_02, config)
-        affiliations += [aff_02]
+        if aff_02:
+            affiliations += [aff_02]
+        else:
+            return None
 
     affiliation_03 = author.get("affiliation_03", "")
     if affiliation_03:
         aff_03 = affiliation_to_dc(affiliation_03, config)
-        affiliations += [aff_03]
+        if aff_03:
+            affiliations += [aff_03]
+        else:
+            return None
 
     if affiliations:
         dc_creator["affiliation"] = affiliations
@@ -512,8 +539,11 @@ def get_dc_contributor(maintainer: dict, config: dict):
     )
 
     if contributor_affiliation:
-        dc_contributor["affiliation"] = \
-            affiliation_to_dc(contributor_affiliation, config)
+        affiliation_dc = affiliation_to_dc(contributor_affiliation, config)
+        if affiliation_dc:
+            dc_contributor["affiliation"] = affiliation_dc
+        else:
+            return None
 
     contributor_type = maintainer.get(
         join_tags([dc_contributor_tag, "contributorType"]), "ContactPerson"
@@ -566,6 +596,14 @@ def affiliation_to_dc(affiliation, config):
     aff_key = aff_keys.get(aff, "")
     org = aff_config.get(aff_key, {})
     if org:
+        # If affiliationIdentifier exists then affiliationIdentifierScheme REQUIRED
+        # DataCite field
+        if "@affiliationIdentifier" in org:
+            if "@affiliationIdentifierScheme" not in org:
+                log.error(
+                    f"ERROR missing required '@affiliationIdentifierScheme' "
+                    f"key from config")
+                return None
         return org
     # Else return only affiliation
     return {"#text": aff}
