@@ -94,8 +94,7 @@ def reserve_draft_doi_datacite(metadata_record: dict) -> Union[str, None]:
 
 # TODO investigate not reserving DOI at DataCite and instead directly publish new
 #  dataset by reserving DOI within CKAN or other database
-def publish_datacite(doi: str, metadata_record: dict, is_update=False) \
-        -> Union[str, None]:
+def publish_datacite(metadata_record: dict, is_update=False) -> Union[str, None]:
     """Publish a EnviDat record in EnviDat using the "publish" event.
 
        Converts EnviDat record to DataCite XML format before publication.
@@ -105,7 +104,6 @@ def publish_datacite(doi: str, metadata_record: dict, is_update=False) \
        https://support.datacite.org/docs/api-create-dois#provide-metadata-in-formats-other-than-json
 
     Args:
-        doi (str): DOI of metadata_record
         metadata_record (dict): Individual EnviDat metadata entry record dictionary.
         is_update (bool): If true then updates existing DOI, else creates new DOI.
                           Default value is False.
@@ -125,6 +123,12 @@ def publish_datacite(doi: str, metadata_record: dict, is_update=False) \
         site_url = config["SITE_DATASET_URL"]  # TODO check if this is correct
     except KeyError as e:
         log.error(f'KeyError: {e} does not exist in config')
+        return None
+
+    # Get DOI
+    doi = metadata_record.get("doi")
+    if not doi:
+        log.error("ERROR record does not have a 'doi' value")
         return None
 
     # TODO note in documentation for config that environment variables with a hash

@@ -89,8 +89,7 @@ with open("test.json", encoding="utf-8") as test_json:
 # package_name = "multifaceted-diversity-alps"
 
 # Used for testing datasets without DOIs
-package_name = "sediment-transport-observations-in-swiss-mountain-streams"
-# doi = "10.16904/test6"
+# package_name = "sediment-transport-observations-in-swiss-mountain-streams"
 
 # DOI in draft state
 # doi = "10.16904/6s7f-am07"
@@ -104,8 +103,7 @@ package_name = "sediment-transport-observations-in-swiss-mountain-streams"
 
 # result = reserve_draft_doi_datacite(package)
 
-doi = "10.16904/test6"
-result = publish_datacite(doi, test_package)
+result = publish_datacite(test_package)
 
 # result = publish_datacite(doi, package)
 # result = publish_datacite(doi, package, is_update=True)
@@ -116,10 +114,3 @@ print(result)
 # result = record.get_content()
 # print(type(result))
 # print(result)
-#
-# print('\n\n')
-#
-# xml = xml_to_base64(result)
-# print(xml)
-
-
