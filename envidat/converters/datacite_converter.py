@@ -8,12 +8,15 @@ from json import JSONDecodeError
 from logging import getLogger
 from typing import Union
 import validators
+from datetime import datetime, date
 from xmltodict import unparse
 
 from envidat.utils import get_url
 
 log = getLogger(__name__)
 
+
+# TODO add return type hints to functions
 
 def convert_datacite(metadata_record: dict) -> Union[str, None]:
     """Generate XML formatted string in DataCite format.
@@ -54,7 +57,6 @@ def get_config_datacite_converter(
 
     Returns:
         dict: datacite converter JSON config as Python dictionary
-
     """
     with open(config_path, encoding='utf-8') as config_json:
         config: dict = json.load(config_json)
@@ -89,7 +91,8 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     dc["resource"]["@xmlns"] = f"{namespace}"
     dc["resource"]["@xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
 
-    # Identifier with DOI type is a REQUIRED DataCite field
+    # REQUIRED DataCite property: "Identifer",
+    #   required attribute is "identifierType" (must be "DOI")
     dc_identifier_tag = "identifier"
     doi = dataset.get(config[dc_identifier_tag])
     if doi:
@@ -101,7 +104,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         log_falsy_value(config[dc_identifier_tag])
         return None
 
-    # Creators is a REQUIRED DataCite field
+    # REQUIRED DataCite property: "Creator"
     dc_creators_tag = "creators"
     dc_creator_tag = "creator"
     dc["resource"][dc_creators_tag] = {dc_creator_tag: []}
@@ -118,7 +121,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         log_falsy_value(config[dc_creators_tag])
         return None
 
-    # "creatorName" is a REQUIRED DataCite field for each Creator
+    # REQUIRED DataCite attibute for each "creator" property: "creatorName"
     for author in authors:
         dc_creator = get_dc_creator(author, config)
         if dc_creator:
@@ -131,7 +134,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         else:
             return None
 
-    # "title" is a REQUIRED DataCite field
+    # REQUIRED DataCite property: "title"
     dc_titles_tag = "titles"
     dc_title_tag = "title"
     dc["resource"][dc_titles_tag] = {dc_title_tag: []}
@@ -152,16 +155,8 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     except JSONDecodeError:
         publication = {}
 
-    # TODO implement logic so that there is a default value for
-    #  required "publication" year field
-    # "publicationYear" is a REQUIRED DataCite field
-    dc_publication_year_tag = "publicationYear"
-    publication_year = publication.get(config[dc_publication_year_tag], "")
-    if publication_year:
-        dc["resource"][dc_publication_year_tag] = {"#text": publication_year}
-
     # TODO review that is ok to assign as default publisher "EnviDat"
-    # "publisher" is a REQUIRED DataCite field, assign default publisher to EnviDat
+    # REQUIRED DataCite property: "publisher" (default publisher is "EnviDat")
     dc_publisher_tag = "publisher"
     publisher = publication.get(config[dc_publisher_tag], "EnviDat")
     if not publisher:
@@ -172,6 +167,31 @@ def datacite_convert_dataset(dataset: dict, config: dict):
             f"@{dc_xml_lang_tag}": "en-us",
             "#text": publisher.strip(),
         }
+
+    # TODO review assumptions made for default "publicationYea"
+    # REQUIRED DataCite property: "publicationYear"
+    dc_publication_year_tag = "publicationYear"
+    publication_year = publication.get(config[dc_publication_year_tag], "")
+    if publication_year:
+        dc["resource"][dc_publication_year_tag] = {"#text": publication_year}
+    else:
+        publication_year = get_default_publication_year(dataset)
+        dc["resource"][dc_publication_year_tag] = {"#text": publication_year}
+
+    # REQUIRED DataCite property: "resourceType" (default value is "dataset"),
+    #   required attribute is "resourceTypeGeneral" (default value is "Dataset")
+    dc_resource_type_tag = "resourceType"
+    dc_resource_type_general_tag = "resourceTypeGeneral"
+    resource_type_general = dataset.get(config[dc_resource_type_general_tag], "Dataset")
+    dc_resource_type_general = value_to_datacite_cv(
+        resource_type_general, dc_resource_type_general_tag, default="Dataset"
+    )
+
+    # TODO review default value "dataset" for "resourceType" property
+    dc["resource"][dc_resource_type_tag] = {
+        "#text": dataset.get(config[dc_resource_type_tag], "dataset"),
+        f"@{dc_resource_type_general_tag}": dc_resource_type_general,
+    }
 
     # Subjects
     dc_subjects_tag = "subjects"
@@ -228,6 +248,9 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     except JSONDecodeError:
         dates = []
 
+    # TODO verify that "Valid" is acceptable default value for "dateType" and that
+    #  only values from controlled list are included (see p.22 in docs)
+    # "dateType" is REQUIRED DataCite attribute for each "Date"
     for date in dates:
         dc_date = {
             "#text": date.get(config[dc_date_tag], ""),
@@ -247,20 +270,9 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         dc_language = "en"
     dc["resource"][dc_language_tag] = {"#text": dc_language}
 
-    # ResourceType
-    dc_resource_type_tag = "resourceType"
-    dc_resource_type_general_tag = "resourceTypeGeneral"
-    resource_type_general = dataset.get(config[dc_resource_type_general_tag], "Dataset")
-    dc_resource_type_general = value_to_datacite_cv(
-        resource_type_general, dc_resource_type_general_tag, default="Dataset"
-    )
-
-    dc["resource"][dc_resource_type_tag] = {
-        "#text": dataset.get(config[dc_resource_type_tag], ""),
-        f"@{dc_resource_type_general_tag}": dc_resource_type_general,
-    }
-
     # Alternate Identifier
+    # "alternateIdentifierType" is a required attribute for each "alternateIdentifier",
+    #   (value assigned to "URL")
     base_url = "https://www.envidat.ch/#/metadata/"
     alternate_identifiers = []
 
@@ -401,6 +413,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         dc_funding_ref = collections.OrderedDict()
         dc_funder_name_tag = "funderName"
 
+        # "funderName" is a REQUIRED DataCite attribute for each "fundingReference"
         funder_name = funder.get(config[dc_funding_ref_tag][dc_funder_name_tag], "")
         if funder_name:
             dc_funding_ref[dc_funder_name_tag] = funder_name.strip()
@@ -456,6 +469,8 @@ def get_dc_creator(author: dict, config: dict):
     elif creator_family_name:
         dc_creator["creatorName"] = creator_family_name
 
+    # REQUIRED DataCite property for each "Creator"
+    # with a "nameIdentifier": "nameIdentifierScheme" (value assigned to "ORCID")
     creator_identifier = author.get(config[dc_creator_tag]["nameIdentifier"], "")
     if creator_identifier:
         dc_creator["nameIdentifier"] = {
@@ -495,9 +510,36 @@ def get_dc_creator(author: dict, config: dict):
     return dc_creator
 
 
+# TODO review assumptions made for default publication year
+def get_default_publication_year(dataset: dict) -> str:
+    """Returns default publiation year for DataCite "publicationYear" tag.
+
+       Default year parsed from year in dataset's "metadata_created" value.
+       If unavailable then current year returned.
+    """
+    metadata_created = dataset.get("metadata_created")
+    if metadata_created:
+        try:
+            dt = datetime.fromisoformat(metadata_created)
+            return str(dt.year)
+        except ValueError:
+            return str(date.today().year)
+    else:
+        return str(date.today().year)
+
+
 def get_dc_contributor(maintainer: dict, config: dict):
     """Returns maintainer in DataCite "contributor" tag format with a
-    contributorType of "ContactPerson" """
+    contributorType of "ContactPerson"
+
+    REQUIRED DataCite attribute for each "contributor": "contributorType",
+                                      (value assigned is "Contact Person")
+
+    REQUIRED DataCite property for each "contibutor": "contributorName"
+
+    REQUIRED DataCite property for each "nameIdentifier" property:
+                                       "nameIdentifierScheme" (default value is "ORCID")
+    """
 
     dc_contributor = collections.OrderedDict()
     dc_contributor_tag = "contributor"
@@ -553,6 +595,8 @@ def get_dc_contributor(maintainer: dict, config: dict):
     return dc_contributor
 
 
+# TODO refactor logic in calls to this function after refactoring function to
+#  return {"#text": aff} instead of None
 def affiliation_to_dc(affiliation, config):
     """Returns affiliation in DataCite "affiliation" tag format.
        Uses config to map commonly used affiliations in EnviDat packages
@@ -594,8 +638,8 @@ def affiliation_to_dc(affiliation, config):
     aff_key = aff_keys.get(aff, "")
     org = aff_config.get(aff_key, {})
     if org:
-        # If affiliationIdentifier exists then affiliationIdentifierScheme REQUIRED
-        # DataCite field
+        # If "affiliationIdentifier" exists then "affiliationIdentifierScheme" REQUIRED
+        # DataCite attibute
         if "@affiliationIdentifier" in org:
             if "@affiliationIdentifierScheme" not in org:
                 log.error(
@@ -625,7 +669,11 @@ def get_dc_research_group(organization_title):
 
 def get_dc_related_identifiers(related_identifiers, resources):
     """Return related datasets, related publications and URLs from resources in
-    DataCite "relatedIdentifiers" tag format"""
+    DataCite "relatedIdentifiers" tag format
+
+    "relatedIdentiferType" and "relationType" are required attributes
+    for each "relatedIdentifer" (values are assigned)
+    """
 
     dc_related_identifiers = collections.OrderedDict()
     dc_related_identifiers["relatedIdentifier"] = []
@@ -739,7 +787,11 @@ def get_dc_formats(resources):
 
 
 def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag):
-    """Returns notes in DataCite "descriptions" tag format"""
+    """Returns notes in DataCite "descriptions" tag format
+
+    "descriptionType" is a REQUIRED DataCite attribute for each "description",
+         (value assigned to "Abstract")
+    """
     dc_descriptions = []
 
     if notes:
@@ -764,8 +816,14 @@ def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag):
     return dc_descriptions
 
 
+# TODO review if all potential geolocation types in our database are handled, s
+#  such as "GeometryCollection"
 def get_dc_geolocations(spatial: dict):
-    """Returns spatial information in DataCite "geoLocations" format"""
+    """Returns spatial information in DataCite "geoLocations" format
+
+    For list of required attributes for each type of GeoLocation
+    see DataCite documentation.
+    """
 
     dc_geolocations = []
 
@@ -991,5 +1049,5 @@ def log_falsy_value(key: str):
         key (str): key that does not have truthy value from input EnviDat record
     """
     log.error(
-        f"ERROR input record does not have truthy value "
-        f"for DataCite required key: '{key}'")
+        f"ERROR input record does not have truthy value for key '{key}', "
+        f"this key corresponds to a required DataCite property")

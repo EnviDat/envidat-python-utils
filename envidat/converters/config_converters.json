@@ -9,8 +9,10 @@
       "affiliation": "affiliation"
     },
     "title": "title",
-    "publicationYear": "publication_year",
     "publisher": "publisher",
+    "publicationYear": "publication_year",
+    "resourceType": "resource_type",
+    "resourceTypeGeneral": "resource_type_general",
     "subjects": "tags",
     "subject": "display_name",
     "contributors": "maintainer",
@@ -24,8 +26,6 @@
     "date": "date",
     "dateType": "date_type",
     "language": "language",
-    "resourceType": "resource_type",
-    "resourceTypeGeneral": "resource_type_general",
     "version": "version",
     "rights": {
       "#text": "license_title",
