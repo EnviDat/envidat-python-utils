@@ -31,15 +31,26 @@ def convert_datacite(metadata_record: dict) -> Union[str, None]:
         str: XML formatted string compatible with DataCite DIF 10.2 standard
     """
     try:
-        # TODO finish refactoring Datacite converter
+        # Load config
         config: dict = get_config_datacite_converter()
+
+        # Convert metadata record to OrderedDict in DataCite format
         converted_package = datacite_convert_dataset(metadata_record, config)
-        return unparse(converted_package, pretty=True)  # Convert OrderedDict to XML
+
+        # Convert OrderedDict to XML
+        if converted_package:
+            return unparse(converted_package, pretty=True)
+        else:
+            log.error(f"ERROR failed to convert record to DataCite format, "
+                      f"check log for error causes")
+            return None
+
     except TypeError as err:
-        log.error(f"ERROR failed to convert package to DataCite format, error: {err}")
+        log.error(f"ERROR failed to convert record to DataCite format, error: {err}")
         return None
 
 
+# TODO finish refactoring Datacite converter
 # TODO possibly implement JSON schema to make sure all required keys included in config,
 #  see https://pypi.org/project/jsonschema/ and
 #  https://towardsdatascience.com/how-to-use-json-schema-to-validate-json-documents-ae9d8d1db344
