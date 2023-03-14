@@ -75,11 +75,9 @@ def get_config_datacite_converter(
     return datacite_config
 
 
-# TODO connect DataCite converter to DOI CKAN extension
 # TODO keep in mind that a reverse converter will
 #  also need to be written (DataCite to EnviDat)
 # TODO write docstring
-# TODO implement log_falsy_value() for DataCite REQUIRED properties
 def datacite_convert_dataset(dataset: dict, config: dict):
     """Convert EnviDat metadata package from CKAN to DataCite XML.
 
@@ -139,11 +137,17 @@ def datacite_convert_dataset(dataset: dict, config: dict):
             if "creatorName" in dc_creator:
                 dc["resource"][dc_creators_tag][dc_creator_tag] += [dc_creator]
             else:
+                # TODO check if this should return None or just give a warning
                 log.error(f"ERROR missing required 'name' value from author in "
                           f"'{config[dc_creators_tag]}' key in input record")
                 return None
-        else:
-            return None
+
+    # Check if there is at least one Creator in dc
+    creators = dc["resource"][dc_creators_tag][dc_creator_tag]
+    if not creators:
+        log.error(f"ERROR missing at least one required valid 'Creator' derived from "
+                  f"'{config[dc_creators_tag]}' key in input record")
+        return None
 
     # REQUIRED DataCite property: "title"
     dc_titles_tag = "titles"
@@ -179,7 +183,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
             "#text": publisher.strip(),
         }
 
-    # TODO review assumptions made for default "publicationYea"
+    # TODO review assumptions made for default "publicationYear"
     # REQUIRED DataCite property: "publicationYear"
     dc_publication_year_tag = "publicationYear"
     publication_year = publication.get(config[dc_publication_year_tag], "")
@@ -234,8 +238,6 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     dc_contributor = get_dc_contributor(maintainer, config)
     if dc_contributor:
         dc["resource"][dc_contributors_tag][dc_contributor_tag] += [dc_contributor]
-    else:
-        return None
 
     # Get "organization" dataset and extract "name" value,
     # assigned as DataCite Contributor "ResearchGroup"
@@ -262,11 +264,11 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     # TODO verify that "Valid" is acceptable default value for "dateType" and that
     #  only values from controlled list are included (see p.22 in docs)
     # "dateType" is REQUIRED DataCite attribute for each "Date"
-    for date in dates:
+    for dte in dates:
         dc_date = {
-            "#text": date.get(config[dc_date_tag], ""),
+            "#text": dte.get(config[dc_date_tag], ""),
             f"@{dc_date_type_tag}": (
-                date.get(config[dc_date_type_tag], "Valid")
+                dte.get(config[dc_date_type_tag], "Valid")
             ).title(),
         }
         dc_dates += [dc_date]
@@ -437,7 +439,6 @@ def datacite_convert_dataset(dataset: dict, config: dict):
             dc_award_uri_tag = "awardURI"
             award_uri = funder.get(config[dc_funding_ref_tag][dc_award_uri_tag], "")
 
-            # TODO test new "awardURI" tag with DataCite test API
             # Assign awardNumber and awardURI if they exist
             # NOTE: For reverse converter be sure to parse default value for
             # awardNumber, ":unav"
@@ -496,24 +497,18 @@ def get_dc_creator(author: dict, config: dict):
         aff = affiliation_to_dc(affiliation, config)
         if aff:
             affiliations += [aff]
-        else:
-            return None
 
     affiliation_02 = author.get("affiliation_02", "")
     if affiliation_02:
         aff_02 = affiliation_to_dc(affiliation_02, config)
         if aff_02:
             affiliations += [aff_02]
-        else:
-            return None
 
     affiliation_03 = author.get("affiliation_03", "")
     if affiliation_03:
         aff_03 = affiliation_to_dc(affiliation_03, config)
         if aff_03:
             affiliations += [aff_03]
-        else:
-            return None
 
     if affiliations:
         dc_creator["affiliation"] = affiliations
@@ -593,8 +588,6 @@ def get_dc_contributor(maintainer: dict, config: dict):
         affiliation_dc = affiliation_to_dc(contributor_affiliation, config)
         if affiliation_dc:
             dc_contributor["affiliation"] = affiliation_dc
-        else:
-            return None
 
     contributor_type = maintainer.get(
         join_tags([dc_contributor_tag, "contributorType"]), "ContactPerson"
@@ -606,10 +599,9 @@ def get_dc_contributor(maintainer: dict, config: dict):
     return dc_contributor
 
 
-# TODO refactor logic in calls to this function after refactoring function to
-#  return {"#text": aff} instead of None
 def affiliation_to_dc(affiliation, config):
     """Returns affiliation in DataCite "affiliation" tag format.
+
        Uses config to map commonly used affiliations in EnviDat packages
        (i.e. "WSL", "SLF") with long names of instiutions
        and ROR identifiers when available.
@@ -651,13 +643,14 @@ def affiliation_to_dc(affiliation, config):
     if org:
         # If "affiliationIdentifier" exists then "affiliationIdentifierScheme" REQUIRED
         # DataCite attibute
-        if "@affiliationIdentifier" in org:
-            if "@affiliationIdentifierScheme" not in org:
-                log.error(
-                    f"ERROR missing required '@affiliationIdentifierScheme' "
-                    f"key from config")
-                return None
-        return org
+        if "@affiliationIdentifier" in org and "@affiliationIdentifierScheme" not in org:
+            log.warning(
+                f"WARNING missing required '@affiliationIdentifierScheme' "
+                f"key from config for affiliation: '{aff_key}'")
+            return {"#text": aff}
+        else:
+            return org
+
     # Else return only affiliation
     return {"#text": aff}
 
@@ -827,7 +820,7 @@ def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag):
     return dc_descriptions
 
 
-# TODO review if all potential geolocation types in our database are handled, s
+# TODO review if all potential geolocation types in our database are handled,
 #  such as "GeometryCollection"
 def get_dc_geolocations(spatial: dict):
     """Returns spatial information in DataCite "geoLocations" format
