@@ -50,13 +50,11 @@ def convert_datacite(metadata_record: dict) -> Union[str, None]:
         return None
 
 
-# TODO finish refactoring Datacite converter
 # TODO possibly implement JSON schema to make sure all required keys included in config,
 #  see https://pypi.org/project/jsonschema/ and
 #  https://towardsdatascience.com/how-to-use-json-schema-to-validate-json-documents-ae9d8d1db344
-# TODO move "envidat/converters/config_converters.json" to "config" directory
 def get_config_datacite_converter(
-        config_path: str = "envidat/converters/config_converters.json"
+        config_path: str = "envidat/config/config_converters.json"
 ) -> dict:
     """Return datacite converter JSON config as Python dictionary.
 
