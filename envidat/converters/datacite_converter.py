@@ -7,6 +7,7 @@ import re
 from json import JSONDecodeError
 from logging import getLogger
 from typing import Union
+import jsonschema
 import validators
 from datetime import date
 from xmltodict import unparse
@@ -31,8 +32,10 @@ def convert_datacite(metadata_record: dict) -> Union[str, None]:
         str: XML formatted string compatible with DataCite DIF 10.2 standard
     """
     try:
-        # Load config
+        # Load and validate config
         config: dict = get_config_datacite_converter()
+        if not config:
+            return None
 
         # Convert metadata record to OrderedDict in DataCite format
         converted_package = datacite_convert_dataset(metadata_record, config)
@@ -50,27 +53,36 @@ def convert_datacite(metadata_record: dict) -> Union[str, None]:
         return None
 
 
-# TODO possibly implement JSON schema to make sure all required keys included in config,
-#  see https://pypi.org/project/jsonschema/ and
-#  https://towardsdatascience.com/how-to-use-json-schema-to-validate-json-documents-ae9d8d1db344
 def get_config_datacite_converter(
         config_path: str = "envidat/config/config_converters.json"
-) -> dict:
-    """Return datacite converter JSON config as Python dictionary.
+) -> Union[dict, None]:
+    """Return validated datacite converter JSON config as Python dictionary.
 
     Dictionary maps Datacite XML schema tags (keys) to EnviDat schema fields (values).
 
     Args:
         config_path (str): Path to JSON config file,
-                           default path is "envidat/converters/config_converters.json"
+                           default path is "envidat/config/config_converters.json"
 
     Returns:
         dict: datacite converter JSON config as Python dictionary
+        None: if config failed validation
     """
     with open(config_path, encoding='utf-8') as config_json:
+
+        # Load config
         config: dict = json.load(config_json)
         datacite_config: dict = config["datacite_converter"]
-    return datacite_config
+
+        # Validate DataCite config has keys REQUIRED by DataCite Metadata Schema 4.4,
+        # for documentation see https://schema.datacite.org/meta/kernel-4.4/
+        try:
+            validate_dc_config(datacite_config)
+            return datacite_config
+        except jsonschema.exceptions.ValidationError as e:
+            log.error(f"ERROR 'datacite_converter' config"
+                      f" in '{config_path}' invalid:  {e}")
+            return None
 
 
 # TODO finish refactoring Datacite converter
@@ -627,7 +639,8 @@ def affiliation_to_dc(affiliation, config):
     if org:
         # If "affiliationIdentifier" exists then "affiliationIdentifierScheme" REQUIRED
         # DataCite attibute
-        if "@affiliationIdentifier" in org and "@affiliationIdentifierScheme" not in org:
+        if "@affiliationIdentifier" in org and "@affiliationIdentifierScheme" not in \
+                org:
             log.warning(
                 f"WARNING missing required '@affiliationIdentifierScheme' "
                 f"key from config for affiliation: '{aff_key}'")
@@ -1039,3 +1052,32 @@ def log_falsy_value(key: str):
     log.error(
         f"ERROR input record does not have truthy value for key '{key}', "
         f"this key corresponds to a required DataCite property")
+
+
+def validate_dc_config(datacite_config: dict):
+    """Validate DataCite config has DataCite required keys using jsonschema.
+
+    Note: There are other DataCite required properties not included in this schema that
+          are handled differently in the converter (such as using default values).
+
+    Returns jsonschema.exceptions.ValidationError if input config invalid with schema.
+
+    Args:
+        datacite_config (dict): dictionary derived from "datacite_converter"
+                                object in JSON config
+
+    Returns:
+        None: if datacite_config is valid against schema
+        jsonschema.exceptions.ValidationError: if datacite_config is invalid
+    """
+    dc_schema = {
+        "type": "object",
+        "properties": {
+            "identifier": {"type": "string"},
+            "creators": {"type": "string"},
+            "title": {"type": "string"}
+        },
+        "required": ["identifier", "creators", "title"],
+    }
+
+    jsonschema.validate(instance=datacite_config, schema=dc_schema)

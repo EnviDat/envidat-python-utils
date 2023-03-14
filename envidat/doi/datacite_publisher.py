@@ -188,7 +188,7 @@ def publish_datacite(metadata_record: dict, is_update=False) -> Union[str, None]
             return None
     else:
         log.error(f"ERROR publishing DOI on DataCite:  HTTP Code {r.status_code}")
-        log.error(f"ERROR:{r.json()}")
+        log.error(f"ERROR: {r.json()}")
         return None
 
 
