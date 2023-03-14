@@ -8,7 +8,7 @@ from json import JSONDecodeError
 from logging import getLogger
 from typing import Union
 import validators
-from datetime import datetime, date
+from datetime import date
 from xmltodict import unparse
 
 from envidat.utils import get_url
@@ -25,7 +25,7 @@ def convert_datacite(metadata_record: dict) -> Union[str, None]:
         Converter is only valid for the metadata schema for EnviDat.
 
     Args:
-        metadata_record (dict): Individual EnviDat metadata entry record dictionary.
+        metadata_record (dict): EnviDat metadata entry record dictionary.
 
     Returns:
         str: XML formatted string compatible with DataCite DIF 10.2 standard
@@ -73,14 +73,22 @@ def get_config_datacite_converter(
     return datacite_config
 
 
+# TODO finish refactoring Datacite converter
 # TODO keep in mind that a reverse converter will
 #  also need to be written (DataCite to EnviDat)
-# TODO write docstring
 def datacite_convert_dataset(dataset: dict, config: dict):
     """Convert EnviDat metadata package from CKAN to DataCite XML.
 
        Notes: This converter is compatible with DataCite Metadata Schema 4.4, for
        documentation see https://schema.datacite.org/meta/kernel-4.4/
+
+       Args:
+           dataset (dict): EnviDat metadata entry record dictionary.
+           config (dict): datacite converter config dervied from JSON config
+
+        Returns:
+            collections.orderedDict: ordered dictionary with input record converted to
+            DataCite format
     """
 
     # Initialize ordered dictionary that will contain
@@ -135,10 +143,9 @@ def datacite_convert_dataset(dataset: dict, config: dict):
             if "creatorName" in dc_creator:
                 dc["resource"][dc_creators_tag][dc_creator_tag] += [dc_creator]
             else:
-                # TODO check if this should return None or just give a warning
-                log.error(f"ERROR missing required 'name' value from author in "
-                          f"'{config[dc_creators_tag]}' key in input record")
-                return None
+                log.error(f"ERROR missing required 'name' value from "
+                          f"'{config[dc_creators_tag]}' key in input record for author "
+                          f"{author}")
 
     # Check if there is at least one Creator in dc
     creators = dc["resource"][dc_creators_tag][dc_creator_tag]
@@ -168,7 +175,6 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     except JSONDecodeError:
         publication = {}
 
-    # TODO review that is ok to assign as default publisher "EnviDat"
     # REQUIRED DataCite property: "publisher" (default publisher is "EnviDat")
     dc_publisher_tag = "publisher"
     publisher = publication.get(config[dc_publisher_tag], "EnviDat")
@@ -181,14 +187,13 @@ def datacite_convert_dataset(dataset: dict, config: dict):
             "#text": publisher.strip(),
         }
 
-    # TODO review assumptions made for default "publicationYear"
-    # REQUIRED DataCite property: "publicationYear"
+    # REQUIRED DataCite property: "publicationYear" (default value is current year)
     dc_publication_year_tag = "publicationYear"
     publication_year = publication.get(config[dc_publication_year_tag], "")
     if publication_year:
         dc["resource"][dc_publication_year_tag] = {"#text": publication_year}
     else:
-        publication_year = get_default_publication_year(dataset)
+        publication_year = str(date.today().year)
         dc["resource"][dc_publication_year_tag] = {"#text": publication_year}
 
     # REQUIRED DataCite property: "resourceType" (default value is "dataset"),
@@ -200,7 +205,6 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         resource_type_general, dc_resource_type_general_tag, default="Dataset"
     )
 
-    # TODO review default value "dataset" for "resourceType" property
     dc["resource"][dc_resource_type_tag] = {
         "#text": dataset.get(config[dc_resource_type_tag], "dataset"),
         f"@{dc_resource_type_general_tag}": dc_resource_type_general,
@@ -512,24 +516,6 @@ def get_dc_creator(author: dict, config: dict):
         dc_creator["affiliation"] = affiliations
 
     return dc_creator
-
-
-# TODO review assumptions made for default publication year
-def get_default_publication_year(dataset: dict) -> str:
-    """Returns default publiation year for DataCite "publicationYear" tag.
-
-       Default year parsed from year in dataset's "metadata_created" value.
-       If unavailable then current year returned.
-    """
-    metadata_created = dataset.get("metadata_created")
-    if metadata_created:
-        try:
-            dt = datetime.fromisoformat(metadata_created)
-            return str(dt.year)
-        except ValueError:
-            return str(date.today().year)
-    else:
-        return str(date.today().year)
 
 
 def get_dc_contributor(maintainer: dict, config: dict):
