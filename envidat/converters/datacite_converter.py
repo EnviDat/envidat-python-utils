@@ -275,15 +275,19 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     except JSONDecodeError:
         dates = []
 
-    # TODO verify that "Valid" is acceptable default value for "dateType" and that
-    #  only values from controlled list are included (see p.22 in docs)
-    # "dateType" is REQUIRED DataCite attribute for each "Date"
+    # "dateType" is REQUIRED DataCite attribute for each "Date", (default value is
+    #    "Valid"), log values that are not "Created" or "colected"
     for dte in dates:
+
+        date_type = (dte.get(config[dc_date_type_tag]))
+        if date_type not in ["created", "Created", "collected", "Collected"]:
+            date_type = "Valid"
+            log.warning(f"WARNING {config[dc_date_type_tag]} value '{date_type}' "
+                        f"not a valid DataCite {dc_date_type_tag} ")
+
         dc_date = {
             "#text": dte.get(config[dc_date_tag], ""),
-            f"@{dc_date_type_tag}": (
-                dte.get(config[dc_date_type_tag], "Valid")
-            ).title(),
+            f"@{dc_date_type_tag}": date_type.title()
         }
         dc_dates += [dc_date]
 
@@ -397,6 +401,10 @@ def datacite_convert_dataset(dataset: dict, config: dict):
 
     if dc_descriptions:
         dc["resource"][dc_descriptions_tag] = {dc_description_tag: dc_descriptions}
+    else:
+        log.warning(
+            f"WARNING dataset does not have a truthy value for metadata record key: "
+            f"{config[dc_description_tag]} ")
 
     # GeoLocation
     dc_geolocations_tag = "geoLocations"
@@ -767,7 +775,6 @@ def get_dc_related_identifiers(related_identifiers, resources):
     return dc_related_identifiers
 
 
-# TODO review if all formats should be included
 def get_dc_formats(resources):
     """Returns resources formats in DataCite "formats" tag format"""
     dc_formats = []
@@ -792,6 +799,8 @@ def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag):
 
     "descriptionType" is a REQUIRED DataCite attribute for each "description",
          (value assigned to "Abstract")
+
+    Logs warning for a description that is less than 100 characters.
     """
     dc_descriptions = []
 
@@ -812,6 +821,10 @@ def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag):
             f"@{dc_xml_lang_tag}": "en-us",
         }
 
+        if len(description_text) < 100:
+            log.warning(
+                f"WARNING description is less than 100 characters: {description_text}")
+
         dc_descriptions += [datacite_description]
 
     return dc_descriptions
@@ -819,6 +832,7 @@ def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag):
 
 # TODO review if all potential geolocation types in our database are handled,
 #  such as "GeometryCollection"
+# TODO discuss this with Sam
 def get_dc_geolocations(spatial: dict):
     """Returns spatial information in DataCite "geoLocations" format
 
