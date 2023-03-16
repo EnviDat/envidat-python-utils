@@ -94,7 +94,7 @@ def reserve_draft_doi_datacite(metadata_record: dict) -> Union[str, None]:
 
 # TODO investigate not reserving DOI at DataCite and instead directly publish new
 #  dataset by reserving DOI within CKAN or other database
-def publish_datacite(metadata_record: dict, is_update=False) -> Union[str, None]:
+def publish_datacite(metadata_record: dict, is_update=False) -> dict | None:
     """Publish a EnviDat record in EnviDat using the "publish" event.
 
        Converts EnviDat record to DataCite XML format before publication.
@@ -177,19 +177,25 @@ def publish_datacite(metadata_record: dict, is_update=False) -> Union[str, None]
                           auth=(client_id, password),
                           data=payload_json)
 
-    # Return DOI
-    if r.status_code == 201 or r.status_code == 200:
+    # Return DOI if successful, else return error message
+    if r.status_code == 201:
         published_doi = r.json().get('data').get('id')
         if published_doi:
-            return published_doi
+            return {
+                "status_code": r.status_code,
+                "result": published_doi
+            }
         else:
-            log.error(
-                f"ERROR cannot parse published DOI from DataCite response: {r.json()}")
-            return None
+            return {
+                "status_code": r.status_code,
+                "result": f"ERROR cannot parse published DOI from DataCite response: "
+                          f"{r.json()}"
+            }
     else:
-        log.error(f"ERROR publishing DOI on DataCite:  HTTP Code {r.status_code}")
-        log.error(f"ERROR: {r.json()}")
-        return None
+        return {
+            "status_code": r.status_code,
+            "result": f"ERROR publishing DOI on DataCite:  {r.json()}"
+        }
 
 
 def xml_to_base64(xml: str) -> str:

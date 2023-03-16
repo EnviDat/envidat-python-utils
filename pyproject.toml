@@ -13,16 +13,18 @@ dependencies = [
     "lxml>=4.9.1",
     "validators>=0.20.0",
     "python-dotenv>=1.0.0",
+    "jsonschema>=4.17.3",
+    "fastapi[all]>=0.94.1",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "MIT"}
 keywords = ["envidat", "s3", "ckan", "wsl"]
 classifiers = [
     "Topic :: Utilities",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.11",
 ]
 
 [project.urls]

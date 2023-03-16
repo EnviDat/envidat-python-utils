@@ -6,7 +6,7 @@
 import logging
 import os
 
-from envidat.utils import get_url
+from envidat.utils import get_url, get_package_url
 
 log = logging.getLogger(__name__)
 
@@ -107,6 +107,59 @@ def get_package(
         raise AttributeError("Failed to extract package as JSON.")
 
     return package
+
+
+# TODO refactor this or get_package() as they have similar functionality
+def get_envidat_record(
+    package_name: str,
+    host: str = "https://www.envidat.ch",
+    path: str = "/api/action/package_show?id=",
+) -> dict | None:
+    """Get individual EnviDat record (metadata entry) as dictionary from API.
+
+    Args:
+        package_name (str): API package 'name' or 'id' value.
+        host (str): API host url. Attempts to get from environment if omitted.
+            Defaults to "https://www.envidat.ch"
+        path (str): API host path. Attempts to get from environment if omitted.
+            Defaults to "api/action/package_show?id="
+
+    Returns:
+        dict: Dictionary of package (metadata entry).
+    """
+    if "API_HOST" in os.environ and "API_PACKAGE_SHOW" in os.environ:
+        log.debug("Getting API host and path from environment variables.")
+        host = os.getenv("API_HOST")
+        path = os.getenv("API_PACKAGE_SHOW")
+
+    log.info(f"Getting package from {host}.")
+    try:
+        # Extract result dictionary from API call
+        response = get_package_url(f"{host}{path}{package_name}")
+
+        # TODO improve error handling
+        # Handle HTTPError from API call
+        if response.status_code != 200:
+            return {
+                "status_code": response.status_code,
+                "result": response.content
+            }
+
+        # Return package (derived from "result" key in response)
+        if response:
+            data = response.json()
+            package = data["result"]
+            return {
+                "status_code": response.status_code,
+                "result": package
+            }
+
+    except AttributeError as e:
+        log.error(e)
+        return {
+            "status_code": 500,
+            "result": "Failed to extract package as JSON from API, check logs"
+        }
 
 
 def get_metadata_json_with_resources(

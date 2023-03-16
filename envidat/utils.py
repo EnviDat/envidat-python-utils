@@ -107,3 +107,33 @@ def get_url(url: str) -> requests.Response:
         log.error(f"Unhandled exception occurred on get: {r.request.url}")
 
     return None
+
+
+# TODO refactor this or get_url() as they have similar functionality
+def get_package_url(url: str) -> requests.Response:
+    """Get a URL with additional error handling.
+
+    Args:
+        url (str): The URL to GET.
+    """
+    try:
+        log.debug(f"Attempting to get {url}")
+        r = requests.get(url)
+        r.raise_for_status()
+    except requests.exceptions.ConnectionError as e:
+        log.error(f"Could not connect to internet on get: {r.request.url}")
+        log.error(e)
+    except requests.exceptions.HTTPError:
+        log.error(f"HTTP response error on get: {r.request.url}")
+    except requests.exceptions.RequestException as e:
+        log.error(f"Request error on get: {r.request.url}")
+        log.error(f"Request: {e.request}")
+        log.error(f"Response: {e.response}")
+    except Exception as e:
+        log.error(e)
+        log.error(f"Unhandled exception occurred on get: {r.request.url}")
+
+    return r
+
+
+
