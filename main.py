@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+import router_publish
 
-
-import publish_router
-
+# Declare app instance of FastAPI()
 app = FastAPI()
 
-app.include_router(publish_router.router)
+# Add router_publish to app
+app.include_router(router_publish.router)
 
 
 @app.get("/", tags=["home"])
