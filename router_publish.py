@@ -15,9 +15,10 @@ router = APIRouter(
 # TODO check if AttributeError is best way to handle unknown errors
 # TODO check if 500 is best default error status code
 # TODO investigate how to add schema to API documentation on /docs
+# TODO write doc string
 # TODO test triggering all errors
 @router.get("/datacite", tags=["publish"])
-def publish_to_datacite(name: str, response: Response):
+def publish_record_to_datacite(name: str, response: Response):
 
     # Get EnviDat record from CKAN API call
     try:
