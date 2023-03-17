@@ -13,33 +13,42 @@ router = APIRouter(
 
 # TODO implement authentication, likely with JWT tokens
 # TODO check if AttributeError is best way to handle unknown errors
+# TODO check if 500 is best default error status code
 # TODO investigate how to add schema to API documentation on /docs
 # TODO test triggering all errors
-@router.get("", tags=["publish"])
-def publish(name: str, response: Response):
+@router.get("/datacite", tags=["publish"])
+def publish_to_datacite(name: str, response: Response):
 
     # Get EnviDat record from CKAN API call
     try:
         record = get_envidat_record(name)
 
-        # Handle HTTP errors from CKAN API call
-        status_code = record.get("status_code")
+        # Handle HTTP errors from CKAN API call (default status_code is 500)
+        status_code = record.get("status_code", 500)
         if status_code != 200:
             response.status_code = status_code
-            return {"error": record["result"]}
-
+            return {"error": record.get("result",
+                                        "Failed to extract record as JSON from CKAN "
+                                        "API, check logs")}
     except AttributeError as e:
         log.error(e)
         response.status_code = 500
-        return {"error": "Failed to extract package as JSON from CKAN API, check logs"}
+        return {"error": "Failed to extract record as JSON from CKAN API, check logs"}
 
     # Publish package to DataCite and return DOI
     try:
-        package = record["result"]
-        dc_response = publish_datacite(package)
+        # Extract package from record result
+        package = record.get("result")
 
-        # Assign response status_code
-        dc_status_code = dc_response.get("status_code")
+        # Publish package to DataCite
+        if package:
+            dc_response = publish_datacite(package)
+        else:
+            response.status_code = 500
+            return {"error": "Failed to extract 'result' from record"}
+
+        # Assign response status_code (default status_code is 500)
+        dc_status_code = dc_response.get("status_code", 500)
         response.status_code = dc_status_code
 
         # Handle HTTP errors from publishing to DataCite
