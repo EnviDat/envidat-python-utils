@@ -13,39 +13,44 @@ router = APIRouter(
 
 # TODO implement authentication, likely with JWT tokens
 # TODO check if AttributeError is best way to handle unknown errors
-# TODO test with package 'id' value
 # TODO investigate how to add schema to API documentation on /docs
+# TODO test triggering all errors
 @router.get("", tags=["publish"])
 def publish(name: str, response: Response):
 
     # Get EnviDat record from CKAN API call
     try:
         record = get_envidat_record(name)
-        # Handle errors
+
+        # Handle HTTP errors from CKAN API call
         status_code = record.get("status_code")
         if status_code != 200:
             response.status_code = status_code
-            return {
-                "status_code": status_code,
-                "result": record["result"]
-            }
+            return {"error": record["result"]}
+
     except AttributeError as e:
         log.error(e)
-        return {
-            "status_code": 500,
-            "result": "Failed to extract package as JSON from API, check logs"
-        }
+        response.status_code = 500
+        return {"error": "Failed to extract package as JSON from CKAN API, check logs"}
 
-    # Publish package to DataCite
+    # Publish package to DataCite and return DOI
     try:
         package = record["result"]
         dc_response = publish_datacite(package)
+
+        # Assign response status_code
         dc_status_code = dc_response.get("status_code")
         response.status_code = dc_status_code
-        return dc_response
+
+        # Handle HTTP errors from publishing to DataCite
+        if dc_status_code != 201:
+            return {"error": dc_response.get("result")}
+
+        # Else return published DOI
+        return {"doi": dc_response.get("result")}
+
     except AttributeError as e:
         log.error(e)
+        response.status_code = 500
         return {
-            "status_code": 500,
-            "result": "Failed to extract publish EnviDat record to DataCite, check logs"
-        }
+            "error": "Failed to extract publish EnviDat record to DataCite, check logs"}

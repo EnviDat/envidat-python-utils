@@ -154,6 +154,8 @@ def get_envidat_record(
                 "result": package
             }
 
+        # TODO handle if response is None
+
     except AttributeError as e:
         log.error(e)
         return {

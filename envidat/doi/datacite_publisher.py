@@ -187,14 +187,14 @@ def publish_datacite(metadata_record: dict, is_update=False) -> dict | None:
             }
         else:
             return {
-                "status_code": r.status_code,
-                "result": f"ERROR cannot parse published DOI from DataCite response: "
+                "status_code": 500,
+                "result": f"Failed to parse published DOI from DataCite response: "
                           f"{r.json()}"
             }
     else:
         return {
             "status_code": r.status_code,
-            "result": f"ERROR publishing DOI on DataCite:  {r.json()}"
+            "result": f"Failed publishing DOI on DataCite:  {r.json()}"
         }
 
 
