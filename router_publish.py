@@ -53,7 +53,7 @@ def publish_to_datacite(name: str, response: Response):
 
         # Handle HTTP errors from publishing to DataCite
         if dc_status_code != 201:
-            return {"error": dc_response.get("result")}
+            return {"error": dc_response.get("result", "Internal Server Error")}
 
         # Else return published DOI
         return {"doi": dc_response.get("result")}
@@ -62,4 +62,4 @@ def publish_to_datacite(name: str, response: Response):
         log.error(e)
         response.status_code = 500
         return {
-            "error": "Failed to extract publish EnviDat record to DataCite, check logs"}
+            "error": "Failed to publish EnviDat record to DataCite, check logs"}
