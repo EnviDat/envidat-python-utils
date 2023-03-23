@@ -1,7 +1,10 @@
 import ssl
 
 from fastapi import BackgroundTasks
+
+# TODO remove fastapi_mail
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+
 from dotenv import dotenv_values
 import smtplib
 
@@ -12,6 +15,7 @@ log = getLogger(__name__)
 
 
 # TODO remove unused functions
+# TODO remove unused environment variables
 
 
 # TODO write docstring
@@ -58,10 +62,11 @@ This is a test e-mail message. WHALEY"""
 
 
 # TODO write docstring
-# TODO implement SSL or TLS
 # TODO implement route with background tests
 # TODO rename function
-def send_email_background_test():
+# TODO create template for emails, extract variables needed into a function and
+#  template that writes message
+def send_email_background():
 
     # Load config from environment vairables
     config = dotenv_values(".env")
@@ -82,27 +87,20 @@ def send_email_background_test():
     sender = "test@test.com"
     receiver = "test@test.com"
 
+    # Encrypt message using TLS, login into server and send email
     try:
-        with smtplib.SMTP(mail_server, port) as server:
-            server.login(username, pswd)
-            server.sendmail(sender, receiver, message)
+        # Create SMPT instance
+        server = smtplib.SMTP(mail_server, port)
 
-        # SSL
-        # context = ssl.create_default_context()
-        # with smtplib.SMTP_SSL(mail_server, port, context=context) as server:
-        #     server.login(username, pswd)
-        #     server.sendmail(sender, receiver, message)
+        # Secure the connection
+        context = ssl.create_default_context()
+        server.starttls(context=context)
 
-        # TLS
-        # Create a secure SSL context
-        # context = ssl.create_default_context()
-        #
-        # # Login into server and send email
-        # server = smtplib.SMTP(mail_server, port)
-        # # server.ehlo()  # Can be omitted
-        # server.starttls(context=context)  # Secure the connection
-        # # server.ehlo()  # Can be omitted
-        # server.login(username, pswd)
+        # Login and send email
+        server.login(username, pswd)
+        server.sendmail(sender, receiver, message)
+        server.quit()
+
     except smtplib.SMTPException as e:
         log.error(e)
     except AttributeError as e:
@@ -111,7 +109,7 @@ def send_email_background_test():
 
 # TODO test function
 # TODO remove
-def send_email_background(background_tasks: BackgroundTasks,
+def send_email_background_test(background_tasks: BackgroundTasks,
                           subject: str, email_to: str,
                           # body: dict
                           ):
