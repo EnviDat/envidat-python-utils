@@ -4,6 +4,7 @@ from dotenv import dotenv_values
 import requests
 import base64
 
+
 from envidat.converters.datacite_converter import convert_datacite
 
 # TODO review setup of logging
@@ -18,7 +19,8 @@ log = getLogger(__name__)
 
 # TODO delete test draft DOIs
 # TODO review where to store environment variables
-def reserve_draft_doi_datacite(metadata_record: dict) -> Union[str, None]:
+# TODO review if this function is still needed
+def reserve_draft_doi_datacite(metadata_record: dict) -> str | None:
     """Reserve a DOI identifer in "Draft" state with DataCite.
 
        If DOI not available from input metadata_record
@@ -94,6 +96,7 @@ def reserve_draft_doi_datacite(metadata_record: dict) -> Union[str, None]:
 
 # TODO investigate not reserving DOI at DataCite and instead directly publish new
 #  dataset by reserving DOI within CKAN or other database
+# TODO review dependencies management with PDM
 def publish_datacite(metadata_record: dict, is_update=False) -> dict | None:
     """Publish a EnviDat record in EnviDat using the "publish" event.
 

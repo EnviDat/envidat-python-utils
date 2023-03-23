@@ -49,6 +49,7 @@ def publish_record_to_datacite(name: str, response: Response):
             return {"error": "Failed to extract 'result' from record"}
 
         # Assign response status_code (default status_code is 500)
+        # Expected successful response status_code: 201
         dc_status_code = dc_response.get("status_code", 500)
         response.status_code = dc_status_code
 
@@ -56,7 +57,8 @@ def publish_record_to_datacite(name: str, response: Response):
         if dc_status_code != 201:
             return {"error": dc_response.get("result", "Internal Server Error")}
 
-        # Else return published DOI
+        # TODO implement notification email
+        # Else send notification email and return published DOI
         return {"doi": dc_response.get("result")}
 
     except AttributeError as e:
