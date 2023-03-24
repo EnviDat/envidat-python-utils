@@ -66,6 +66,8 @@ This is a test e-mail message. WHALEY"""
 # TODO rename function
 # TODO create template for emails, extract variables needed into a function and
 #  template that writes message
+# TODO refactor so that None is returned in case of error,
+#  if success return value or message
 def send_email_background():
 
     # Load config from environment vairables
@@ -87,24 +89,28 @@ def send_email_background():
     sender = "test@test.com"
     receiver = "test@test.com"
 
-    # Encrypt message using TLS, login into server and send email
+    # Encrypt message using TLS
     try:
-        # Create SMPT instance
-        server = smtplib.SMTP(mail_server, port)
+        # Start SMPT server
+        with smtplib.SMTP(mail_server, port) as server:
 
-        # Secure the connection
-        context = ssl.create_default_context()
-        server.starttls(context=context)
+            # Secure the connection
+            context = ssl.create_default_context()
+            server.starttls(context=context)
 
-        # Login and send email
-        server.login(username, pswd)
-        server.sendmail(sender, receiver, message)
-        server.quit()
+            # Login and send email
+            server.login(username, pswd)
+            server.sendmail(sender, receiver, message)
+
+            # TODO return success message or other success value
 
     except smtplib.SMTPException as e:
         log.error(e)
+        return None
+
     except AttributeError as e:
         log.error(e)
+        return None
 
 
 # TODO test function
