@@ -1,9 +1,9 @@
 import ssl
 
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, Path
 
 # TODO remove fastapi_mail
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 
 from dotenv import dotenv_values
 import smtplib
@@ -34,13 +34,15 @@ def get_email_config():
             MAIL_FROM=config["MAIL_FROM"],
             MAIL_PORT=config["MAIL_PORT"],  # TODO review port
             MAIL_SERVER=config["MAIL_SERVER"],
-            # TODO include package name in email title
             MAIL_FROM_NAME=config["MAIL_FROM_NAME"],
-            MAIL_STARTTLS=bool(config["MAIL_STARTTLS"]),
-            MAIL_SSL_TLS=bool(config["MAIL_SSL_TLS"]),
-            USE_CREDENTIALS=bool(config["USE_CREDENTIALS"]),
-            VALIDATE_CERTS=bool(config["VALIDATE_CERTS"]),
-            TEMPLATE_FOLDER="envidat/email/templates"
+            MAIL_STARTTLS=True,
+            MAIL_SSL_TLS=False
+            # MAIL_STARTTLS=bool(config["MAIL_STARTTLS"]),
+            # MAIL_SSL_TLS=bool(config["MAIL_SSL_TLS"])
+            # USE_CREDENTIALS=bool(config["USE_CREDENTIALS"]),
+            # VALIDATE_CERTS=bool(config["VALIDATE_CERTS"])
+            # TEMPLATE_FOLDER="envidat/email/templates"
+            # TEMPLATE_FOLDER=Path(__file__).parent / 'templates',
         )
         return connection_config
 
@@ -53,6 +55,7 @@ def get_email_config():
         return None
 
 
+# TODO remove message
 message = f"""\
 Subject: Publication Finished
 To: test@test.com
@@ -61,6 +64,7 @@ From: test@test.com
 This is a test e-mail message. WHALEY"""
 
 
+# TODO remove function
 # TODO write docstring
 # TODO implement route with background tests
 # TODO rename function
@@ -69,7 +73,6 @@ This is a test e-mail message. WHALEY"""
 # TODO refactor so that None is returned in case of error,
 #  if success return value or message
 def send_email_background():
-
     # Load config from environment vairables
     config = dotenv_values(".env")
 
@@ -101,8 +104,13 @@ def send_email_background():
             # Login and send email
             server.login(username, pswd)
             server.sendmail(sender, receiver, message)
+            server.quit()
 
             # TODO return success message or other success value
+            # sucessfully sending mail (not necessarily recieved)
+            # will result in empty dictionary {}
+            # result = server.sendmail(sender, receiver, message)
+            # print(result)
 
     except smtplib.SMTPException as e:
         log.error(e)
@@ -114,11 +122,11 @@ def send_email_background():
 
 
 # TODO test function
-# TODO remove
+# TODO refactor function to use updated config
 def send_email_background_test(background_tasks: BackgroundTasks,
-                          subject: str, email_to: str,
-                          # body: dict
-                          ):
+                               subject: str, email_to: str,
+                               # body: dict
+                               ):
     message = MessageSchema(
         subject=subject,
         recipients=[email_to],
@@ -133,27 +141,36 @@ def send_email_background_test(background_tasks: BackgroundTasks,
     conf = get_email_config()
     fm = FastMail(conf)
 
-    background_tasks.add_task(fm.send_message, message, template_name='email.html')
+    background_tasks.add_task(fm.send_message, message,
+                              # template_name='email.html'
+                              )
 
 
 # TODO test function
-async def send_email_async(subject: str, email_to: str,
+# TODO refactor function to use updated config
+async def send_email_async(subject: str,
+                           # email_to: str,
                            # body: dict
                            ):
     message = MessageSchema(
         subject=subject,
-        recipients=[email_to],
+        # recipients=[email_to],
+        recipients=['test@test.com'],
         # body=body,
         body="""
-        <p>Thanks for using Fastapi-mail</p> 
+        <p>Have a nice day from EnviDat</p> 
         """,
-        subtype='html',
+        # subtype='html',
+        subtype=MessageType.html
     )
 
     # Assign email config
     conf = get_email_config()
     fm = FastMail(conf)
 
-    await fm.send_message(message,
-                          # template_name='email.html'
-                          )
+    # print(fm.config)
+
+    await fm.send_message(message)
+    # await fm.send_message(message, template_name=None)
+    # template_name='email.html'
+    # )
