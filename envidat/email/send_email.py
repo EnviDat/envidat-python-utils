@@ -1,6 +1,9 @@
+import json
 import ssl
+from typing import Dict, Any
+from fastapi.templating import Jinja2Templates
 
-from fastapi import BackgroundTasks, Path
+from fastapi import BackgroundTasks, Path, Request
 
 # TODO remove fastapi_mail
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
@@ -11,11 +14,17 @@ import smtplib
 # TODO review setup of logging
 from logging import getLogger
 
-log = getLogger(__name__)
+from jinja2 import Template, Environment, PackageLoader, select_autoescape
+from pydantic import EmailStr
 
+log = getLogger(__name__)
 
 # TODO remove unused functions
 # TODO remove unused environment variables
+
+
+# Load Jinga2 templates
+# templates = Jinja2Templates(directory="templates")
 
 
 # TODO write docstring
@@ -28,7 +37,6 @@ def get_email_config():
     try:
         # TODO review email config
         connection_config = ConnectionConfig(
-            # TODO test without full address
             MAIL_USERNAME=config["MAIL_USERNAME"],
             MAIL_PASSWORD=config["MAIL_PASSWORD"],
             MAIL_FROM=config["MAIL_FROM"],
@@ -36,13 +44,9 @@ def get_email_config():
             MAIL_SERVER=config["MAIL_SERVER"],
             MAIL_FROM_NAME=config["MAIL_FROM_NAME"],
             MAIL_STARTTLS=True,
-            MAIL_SSL_TLS=False
-            # MAIL_STARTTLS=bool(config["MAIL_STARTTLS"]),
-            # MAIL_SSL_TLS=bool(config["MAIL_SSL_TLS"])
-            # USE_CREDENTIALS=bool(config["USE_CREDENTIALS"]),
-            # VALIDATE_CERTS=bool(config["VALIDATE_CERTS"])
-            # TEMPLATE_FOLDER="envidat/email/templates"
-            # TEMPLATE_FOLDER=Path(__file__).parent / 'templates',
+            MAIL_SSL_TLS=False,
+            # TEMPLATE_FOLDER='envidat/email/templates'
+            # TEMPATE_FOLDER='templates'
         )
         return connection_config
 
@@ -56,7 +60,7 @@ def get_email_config():
 
 
 # TODO remove message
-message = f"""\
+message_test = f"""\
 Subject: Publication Finished
 To: test@test.com
 From: test@test.com
@@ -103,7 +107,7 @@ def send_email_background():
 
             # Login and send email
             server.login(username, pswd)
-            server.sendmail(sender, receiver, message)
+            server.sendmail(sender, receiver, message_test)
             server.quit()
 
             # TODO return success message or other success value
@@ -146,31 +150,105 @@ def send_email_background_test(background_tasks: BackgroundTasks,
                               )
 
 
+# # TODO test function
+# # TODO refactor function to use updated config
+# # async def send_email_async(recipient: str):
+# async def send_email_async(recipient: str, body: dict):
+#
+#     # Load
+#
+#     # Assign message object
+#     message = MessageSchema(
+#
+#         # TODO review default subject, should it include package name
+#         subject='Publication Finished',
+#
+#         # TODO review if EnviDat should be also be default recipient
+#         recipients=[recipient, 'envidat@wsl.ch'],
+#
+#         # body=body,
+#         # body="""
+#         # <p>Have a nice day from EnviDat</p>
+#         # """,
+#         # template_body=json.dumps({'title': 'Hello World', 'name': 'Whaley'}),
+#
+#         tempate_body=body,
+#
+#         subtype=MessageType.html
+#         # subtypte='html'
+#     )
+#
+#     # Assign email config
+#     conf = get_email_config()
+#     fm = FastMail(conf)
+#
+#     print(conf)
+#
+#     # Send email
+#     # await fm.send_message(message)
+#     await fm.send_message(message, template_name='envidat/email/templates/email.html')
+#     # await fm.send_message(message, template_name='email.html')
+#     # await fm.send_message(message, template_name=None)
+#     # template_name='email.html'
+#     # )
+
+
 # TODO test function
 # TODO refactor function to use updated config
-async def send_email_async(subject: str,
-                           # email_to: str,
+# async def send_email_async(recipient: str):
+async def send_email_async(recipients: list[EmailStr],
+                           # template: Template
                            # body: dict
                            ):
-    message = MessageSchema(
-        subject=subject,
-        # recipients=[email_to],
-        recipients=['test@test.com'],
-        # body=body,
-        body="""
-        <p>Have a nice day from EnviDat</p> 
-        """,
-        # subtype='html',
-        subtype=MessageType.html
-    )
 
-    # Assign email config
-    conf = get_email_config()
-    fm = FastMail(conf)
+    # TODO determine template variables based off of template type
+    # TODO try to find correspoding template and match (otherwise send error),
+    #  then send email
+    pass
 
-    # print(fm.config)
+    # email_content = templates.TemplateResponse("email.html", {'request': Request,
+    #                                                           'title': 'Hello World',
+    #                                                           'name': 'Whaley'})
+    #
+    # return email_content
 
-    await fm.send_message(message)
-    # await fm.send_message(message, template_name=None)
-    # template_name='email.html'
+    # env = Environment(loader=PackageLoader('email', 'templates'),
+    #                   autoescape=select_autoescape(['html', 'xml'])
+    #                   )
+    #
+    # template = env.get_template('email.html')
+
+    # # Assign message object
+    # message = MessageSchema(
+    #
+    #     # TODO review default subject, should it include package name
+    #     subject='Publication Finished',
+    #
+    #
+    #     recipients=recipients,
+    #
+    #     # body=body,
+    #     # body="""
+    #     # <p>Have a nice day from EnviDat</p>
+    #     # """,
+    #     # template_body=json.dumps({'title': 'Hello World', 'name': 'Whaley'}),
+    #
+    #     tempate_body=body,
+    #
+    #     subtype=MessageType.html
+    #     # subtypte='html'
     # )
+    #
+    # # Assign email config
+    # conf = get_email_config()
+    # fm = FastMail(conf)
+    #
+    # print(conf)
+    #
+    # # Send email
+    # # await fm.send_message(message)
+    # await fm.send_message(message, template_name='envidat/email/templates/email.html')
+    # # await fm.send_message(message, template_name='email.html')
+    # # await fm.send_message(message, template_name=None)
+    # # template_name='email.html'
+    # # )
