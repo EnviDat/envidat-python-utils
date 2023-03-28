@@ -1,35 +1,25 @@
-import json
-import ssl
-from typing import Dict, Any
-from fastapi.templating import Jinja2Templates
 
-from fastapi import BackgroundTasks, Path, Request
-
-# TODO remove fastapi_mail
+from fastapi import BackgroundTasks
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
-
+from pydantic import EmailStr
 from dotenv import dotenv_values
+
 import smtplib
+import ssl
 
 # TODO review setup of logging
 from logging import getLogger
 
-from jinja2 import Template, Environment, PackageLoader, select_autoescape
-from pydantic import EmailStr
-
 log = getLogger(__name__)
+
 
 # TODO remove unused functions
 # TODO remove unused environment variables
 
-
-# Load Jinga2 templates
-# templates = Jinja2Templates(directory="templates")
-
-
 # TODO write docstring
 # Return ConnectionConfig class extracted from mail environment variables
 def get_email_config():
+
     # Load config from environment vairables
     config = dotenv_values(".env")
 
@@ -44,9 +34,7 @@ def get_email_config():
             MAIL_SERVER=config["MAIL_SERVER"],
             MAIL_FROM_NAME=config["MAIL_FROM_NAME"],
             MAIL_STARTTLS=True,
-            MAIL_SSL_TLS=False,
-            # TEMPLATE_FOLDER='envidat/email/templates'
-            # TEMPATE_FOLDER='templates'
+            MAIL_SSL_TLS=False
         )
         return connection_config
 
@@ -150,105 +138,24 @@ def send_email_background_test(background_tasks: BackgroundTasks,
                               )
 
 
-# # TODO test function
-# # TODO refactor function to use updated config
-# # async def send_email_async(recipient: str):
-# async def send_email_async(recipient: str, body: dict):
-#
-#     # Load
-#
-#     # Assign message object
-#     message = MessageSchema(
-#
-#         # TODO review default subject, should it include package name
-#         subject='Publication Finished',
-#
-#         # TODO review if EnviDat should be also be default recipient
-#         recipients=[recipient, 'envidat@wsl.ch'],
-#
-#         # body=body,
-#         # body="""
-#         # <p>Have a nice day from EnviDat</p>
-#         # """,
-#         # template_body=json.dumps({'title': 'Hello World', 'name': 'Whaley'}),
-#
-#         tempate_body=body,
-#
-#         subtype=MessageType.html
-#         # subtypte='html'
-#     )
-#
-#     # Assign email config
-#     conf = get_email_config()
-#     fm = FastMail(conf)
-#
-#     print(conf)
-#
-#     # Send email
-#     # await fm.send_message(message)
-#     await fm.send_message(message, template_name='envidat/email/templates/email.html')
-#     # await fm.send_message(message, template_name='email.html')
-#     # await fm.send_message(message, template_name=None)
-#     # template_name='email.html'
-#     # )
-
-
 # TODO test function
-# TODO refactor function to use updated config
-# async def send_email_async(recipient: str):
+# TODO implmenet try/exception error handling
 async def send_email_async(recipients: list[EmailStr],
-                           # template: Template
-                           # body: dict
-                           ):
+                           body: str,
+                           subject: str,
+                           subtype: MessageType):
 
-    # TODO determine template variables based off of template type
-    # TODO try to find correspoding template and match (otherwise send error),
-    #  then send email
-    pass
+    # Assign message object
+    message = MessageSchema(
+        subject=subject,
+        recipients=recipients,
+        body=body,
+        subtype=subtype
+    )
 
-    # email_content = templates.TemplateResponse("email.html", {'request': Request,
-    #                                                           'title': 'Hello World',
-    #                                                           'name': 'Whaley'})
-    #
-    # return email_content
+    # Assign email config
+    conf = get_email_config()
+    fm = FastMail(conf)
 
-    # env = Environment(loader=PackageLoader('email', 'templates'),
-    #                   autoescape=select_autoescape(['html', 'xml'])
-    #                   )
-    #
-    # template = env.get_template('email.html')
-
-    # # Assign message object
-    # message = MessageSchema(
-    #
-    #     # TODO review default subject, should it include package name
-    #     subject='Publication Finished',
-    #
-    #
-    #     recipients=recipients,
-    #
-    #     # body=body,
-    #     # body="""
-    #     # <p>Have a nice day from EnviDat</p>
-    #     # """,
-    #     # template_body=json.dumps({'title': 'Hello World', 'name': 'Whaley'}),
-    #
-    #     tempate_body=body,
-    #
-    #     subtype=MessageType.html
-    #     # subtypte='html'
-    # )
-    #
-    # # Assign email config
-    # conf = get_email_config()
-    # fm = FastMail(conf)
-    #
-    # print(conf)
-    #
-    # # Send email
-    # # await fm.send_message(message)
-    # await fm.send_message(message, template_name='envidat/email/templates/email.html')
-    # # await fm.send_message(message, template_name='email.html')
-    # # await fm.send_message(message, template_name=None)
-    # # template_name='email.html'
-    # # )
+    # Send email
+    await fm.send_message(message)

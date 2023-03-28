@@ -1,5 +1,6 @@
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import HTMLResponse
+from fastapi_mail import MessageType
 from pydantic import EmailStr
 from fastapi.templating import Jinja2Templates
 
@@ -56,13 +57,23 @@ def send_email_backgroundtasks(background_tasks: BackgroundTasks):
 #     return 'Success'
 
 
-# TODO rename function, handle specific use cases and gneral ones
+# TODO rename function, handle specific use cases and general ones
 # TODO make a email sender function that uses background tasks
-@app.get('/send-email/asynchronous')
-async def send_email_asynchronous(recipient: EmailStr):
-    # TODO review if EnviDat should be also be default recipient
-    recipients = [recipient, 'envidat@wsl.ch']
+# TODO determine template variables based off of template type
+# TODO try to find correspoding template and match (otherwise send error),
+#  then send email
+# TODO add user's organization admins to recipients
+# TODO implmenet try/exception error handling
+@app.get('/send-email/publication')
+async def send_email_publication_async(recipient: EmailStr,
+                                       admin_email: str = 'envidat@wsl.ch',
+                                       subject: str = 'Publication Finished',
+                                       subtype: MessageType = MessageType.html):
 
+    # Assign recipients
+    recipients = [recipient, admin_email]
+
+    # Use template to get message body
     template = templates.get_template("email.html")
 
     template_variables = {
@@ -70,20 +81,9 @@ async def send_email_asynchronous(recipient: EmailStr):
         "name": "Rebecca"
     }
 
-    test = template.render(**template_variables)
-    return test
+    body = template.render(**template_variables)
 
-    # TODO include package name in email title
-    # return await send_email_async(recipients,
-    #                               templates.get_template('email.html'),
-    # {'title': 'Hello World', 'name': 'Whaley'}
-    # templates.TemplateResponse('email.html',
-    #                            {'title': 'Hello World',
-    #                             'name': 'Whaley'}
-    #                            )
-    # )
+    # TODO include package name in subject
+    await send_email_async(recipients, body, subject, subtype)
 
-    # await send_email_async(recipients,
-    #                        {'title': 'Hello World', 'name': 'Whaley'}
-    #                        )
-    # return 'Success'
+    return 'Success'
