@@ -1,4 +1,3 @@
-
 from fastapi import BackgroundTasks
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from pydantic import EmailStr
@@ -19,7 +18,6 @@ log = getLogger(__name__)
 # TODO write docstring
 # Return ConnectionConfig class extracted from mail environment variables
 def get_email_config():
-
     # Load config from environment vairables
     config = dotenv_values(".env")
 
@@ -140,9 +138,9 @@ def send_email_background_test(background_tasks: BackgroundTasks,
 
 # TODO test function
 # TODO implmenet try/exception error handling
-async def send_email_async(recipients: list[EmailStr],
+async def send_email_async(subject: str,
+                           recipients: list[EmailStr],
                            body: str,
-                           subject: str,
                            subtype: MessageType):
 
     # Assign message object

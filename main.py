@@ -1,3 +1,5 @@
+from enum import Enum
+
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import HTMLResponse
 from fastapi_mail import MessageType
@@ -57,21 +59,53 @@ def send_email_backgroundtasks(background_tasks: BackgroundTasks):
 #     return 'Success'
 
 
+class PublishAction(str, Enum):
+    REQUEST = "request"
+    APPROVE = "approve"
+    DENY = "deny"
+    FINISH = "finish"
+
+
+class PublishSubject(str, Enum):
+    REQUEST = "Publication Request"
+    APPROVE = "Publication Approved"
+    DENY = "Publication Denied"
+    FINISH = "Publication Finished"
+
+
 # TODO rename function, handle specific use cases and general ones
 # TODO make a email sender function that uses background tasks
 # TODO determine template variables based off of template type
 # TODO try to find correspoding template and match (otherwise send error),
 #  then send email
-# TODO add user's organization admins to recipients
-# TODO implmenet try/exception error handling
-@app.get('/send-email/publication')
-async def send_email_publication_async(recipient: EmailStr,
-                                       admin_email: str = 'envidat@wsl.ch',
-                                       subject: str = 'Publication Finished',
-                                       subtype: MessageType = MessageType.html):
-
+# TODO find recipient email by calling CKAN and using user ID
+# TODO change subject based of selected template
+# TODO add user's organization admins to recipients by calling CKAN and using user's
+#  organizations' id
+# TODO implement try/exception error handling
+@app.get('/send-email/publish/{publish_action}')
+async def send_email_publish_async(publish_action: PublishAction,
+                                   recipient: EmailStr,
+                                   admin_email: str = 'envidat@wsl.ch',
+                                   subtype: MessageType = MessageType.html):
     # Assign recipients
     recipients = [recipient, admin_email]
+
+    # TODO extract get template and get subject to separate helper functions
+    # TODO start dev HERE!!!
+    # Get template that corresponds to publication_action
+    match publish_action:
+        case PublishAction.REQUEST:
+            subject = PublishSubject.REQUEST.value
+        case PublishAction.APPROVE:
+            subject = PublishSubject.APPROVE.value
+        case PublishAction.DENY:
+            subject = PublishSubject.DENY.value
+        case PublishAction.FINISH:
+            subject = PublishSubject.FINISH.value
+        # TODO handle default case
+        case _:
+            return
 
     # Use template to get message body
     template = templates.get_template("email.html")
@@ -84,6 +118,9 @@ async def send_email_publication_async(recipient: EmailStr,
     body = template.render(**template_variables)
 
     # TODO include package name in subject
-    await send_email_async(recipients, body, subject, subtype)
+    await send_email_async(subject,
+                           recipients,
+                           body,
+                           subtype)
 
     return 'Success'
