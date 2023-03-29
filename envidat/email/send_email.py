@@ -30,7 +30,7 @@ def get_email_config():
             MAIL_FROM=config["MAIL_FROM"],
             MAIL_PORT=config["MAIL_PORT"],  # TODO review port
             MAIL_SERVER=config["MAIL_SERVER"],
-            MAIL_FROM_NAME=config["MAIL_FROM_NAME"],
+            MAIL_FROM_NAME=config["MAIL_FROM_NAME"],  # TODO review mail from name
             MAIL_STARTTLS=True,
             MAIL_SSL_TLS=False
         )
@@ -137,7 +137,7 @@ def send_email_background_test(background_tasks: BackgroundTasks,
 
 
 # TODO test function
-# TODO implmenet try/exception error handling
+# TODO implement try/exception error handling
 async def send_email_async(subject: str,
                            recipients: list[EmailStr],
                            body: str,
