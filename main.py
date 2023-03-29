@@ -2,13 +2,8 @@ from enum import Enum
 
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import HTMLResponse
-from fastapi_mail import MessageType
-from pydantic import EmailStr
-from fastapi.templating import Jinja2Templates
 
-from envidat.email.constants import PublishAction, PublishSubject, PublishTemplateName
-from envidat.email.send_email import send_email_async, send_email_background, \
-    send_email_background_test
+from envidat.email.send_email import send_email_background, send_email_background_test
 from routers import router_publish
 
 # Declare app instance of FastAPI()
@@ -16,9 +11,6 @@ app = FastAPI()
 
 # Add router_publish to app
 app.include_router(router_publish.router)
-
-# Load Jinga2 templates
-templates = Jinja2Templates(directory="templates")
 
 
 @app.get("/", tags=["home"])
