@@ -6,13 +6,13 @@
 import logging
 import os
 
-from envidat.utils import get_url, get_package_url
+from envidat.utils import get_url, get_url_response
 
 log = logging.getLogger(__name__)
 
 
 def get_metadata_list(
-    host: str = "https://www.envidat.ch", sort_result: bool = None
+        host: str = "https://www.envidat.ch", sort_result: bool = None
 ) -> list:
     """Get package/metadata list from API.
 
@@ -52,7 +52,7 @@ def get_metadata_list(
 
 
 def get_protocol_and_domain(
-    protocol: str = "https", domain: str = "www.envidat.ch"
+        protocol: str = "https", domain: str = "www.envidat.ch"
 ) -> tuple[str, str]:
     """Extract protocol string and domain string from API host.
 
@@ -75,9 +75,9 @@ def get_protocol_and_domain(
 
 
 def get_package(
-    package_name: str,
-    host: str = "https://www.envidat.ch",
-    path: str = "/api/action/package_show?id=",
+        package_name: str,
+        host: str = "https://www.envidat.ch",
+        path: str = "/api/action/package_show?id=",
 ) -> dict:
     """Get individual package (metadata entry) as dictionary from API.
 
@@ -111,9 +111,9 @@ def get_package(
 
 # TODO refactor this or get_package() as they have similar functionality
 def get_envidat_record(
-    package_name: str,
-    host: str = "https://www.envidat.ch",
-    path: str = "/api/action/package_show?id=",
+        package_name: str,
+        host: str = "https://www.envidat.ch",
+        path: str = "/api/action/package_show?id=",
 ) -> dict | None:
     """Get individual EnviDat record (metadata entry) as dictionary from API.
 
@@ -135,7 +135,7 @@ def get_envidat_record(
     log.info(f"Getting package from {host}.")
     try:
         # Extract result dictionary from API call
-        response = get_package_url(f"{host}{path}{package_name}")
+        response = get_url_response(f"{host}{path}{package_name}")
 
         # TODO improve error handling
         # Handle HTTPError from API call
@@ -165,10 +165,11 @@ def get_envidat_record(
 
 
 def get_metadata_json_with_resources(
-    host: str = "https://www.envidat.ch",
-    path: str = "/api/3/action/current_package_list_with_resources?limit=100000",
+        host: str = "https://www.envidat.ch",
+        path: str = "/api/3/action/current_package_list_with_resources?limit=100000",
 ) -> dict:
-    """Get all current package/metadata as dictionary with associated resources from API.
+    """Get all current package/metadata as dictionary with associated resources from
+    API.
 
     Args:
         host (str): API host url. Attempts to get from environment if omitted.
@@ -183,8 +184,8 @@ def get_metadata_json_with_resources(
         dict:  Dictionary of packages, with nested resources.
     """
     if (
-        "API_HOST" in os.environ
-        and "API_PATH_CURRENT_PACKAGE_LIST_WITH_RESOURCES" in os.environ
+            "API_HOST" in os.environ
+            and "API_PATH_CURRENT_PACKAGE_LIST_WITH_RESOURCES" in os.environ
     ):
         log.debug("Getting API host and path from environment variables.")
         host = os.getenv("API_HOST")

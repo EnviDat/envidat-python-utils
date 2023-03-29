@@ -3,14 +3,12 @@ from envidat.doi.datacite_publisher import publish_datacite
 from fastapi import APIRouter, Response
 from fastapi.templating import Jinja2Templates
 from fastapi_mail import MessageType
-from pydantic import EmailStr
-from envidat.email.constants import PublishAction, PublishSubject, PublishTemplateName
+# from pydantic import EmailStr
+from envidat.email.constants import PublishAction
+from envidat.email.send_email import send_email_async
+from envidat.email.utils import get_publish_email_subject_template, get_user_name_email
 
 import logging
-
-from envidat.email.send_email import send_email_async
-from envidat.email.utils import get_publish_email_subject_template
-
 log = logging.getLogger(__name__)
 
 
@@ -79,30 +77,35 @@ def publish_record_to_datacite(name: str, response: Response):
 
 # TODO rename function, handle specific use cases and general ones
 # TODO make a email sender function that uses background tasks
-# TODO try to find correspoding template and match (otherwise send error),
+# TODO try to find corresponding template and match (otherwise send error),
 #  then send email
-# TODO find recipient email by calling CKAN and using user ID
+# TODO find user_email by calling CKAN and using user ID
 # TODO check if templates should be HTML or plain text
 # TODO add user's organization admins to recipients by calling CKAN and using user's
 #  organizations' id
+# TODO change return value
+# TODO possibly implement async/await for CKAN API calls
 # TODO implement try/exception error handling
 @router.get('/email/{publish_action}')
 async def send_email_publish_async(publish_action: PublishAction,
-                                   user_email: EmailStr,
+                                   user_id: str,
                                    package_name: str,
                                    admin_email: str = 'envidat@wsl.ch',
                                    subtype: MessageType = MessageType.plain):
 
-    # Assign recipients
-    recipients = [user_email, admin_email]
-
-    # Get subject and template_name
+    # TODO START DEV at get_user_name_email(user_id)
+    user_name, user_email = get_user_name_email(user_id)
     subject, template_name = get_publish_email_subject_template(publish_action)
+
+    # TODO handle if user_name, user_email, subject, or template_name are None
 
     # TODO check if package_name should be validated,
     #  (hyphens between names and no white space)
     # TODO review formatting of subject (i.e. including colon)
     subject = f"{subject}: {package_name}"
+
+    # TODO possibly use EmailStr annotation to help validate email addresses
+    recipients = [user_email, admin_email]
 
     # Load template
     templates = Jinja2Templates(directory="templates")
@@ -111,6 +114,7 @@ async def send_email_publish_async(publish_action: PublishAction,
     # Use template to get message body
     template_variables = {
         "admin_email": admin_email,
+        "user_name": user_name,
         "user_email": user_email,
         "package": package_name
     }

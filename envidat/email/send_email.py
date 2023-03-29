@@ -8,7 +8,6 @@ import ssl
 
 # TODO review setup of logging
 from logging import getLogger
-
 log = getLogger(__name__)
 
 
@@ -18,6 +17,7 @@ log = getLogger(__name__)
 # TODO write docstring
 # Return ConnectionConfig class extracted from mail environment variables
 def get_email_config():
+
     # Load config from environment vairables
     config = dotenv_values(".env")
 

@@ -1,7 +1,53 @@
+import json
+
+import requests
+from dotenv import dotenv_values
 from envidat.email.constants import PublishAction, PublishSubject, PublishTemplateName
+
+from logging import getLogger
+log = getLogger(__name__)
+
+
+# TODO possibly implement async/await for CKAN API call
+# TODO write docstring
+def get_user_name_email(user_id: str):
+
+    # Load config from environment vairables
+    config = dotenv_values(".env")
+
+    # Extract environment variables from config needed to call CKAN
+    try:
+        API_HOST = config["API_HOST"]
+        API_USER_SHOW = config["API_USER_SHOW"]
+        API_KEY = config["API_KEY"]
+    except KeyError as e:
+        log.error(f'KeyError: {e} does not exist in config')
+        return None, None
+    except AttributeError as e:
+        log.error(e)
+        return None, None
+
+    # TODO implement try/except handling, if failed return None, None
+    # Request user's account from CKAN
+    api_url = f"{API_HOST}{API_USER_SHOW}{user_id}"
+    headers = {"Authorization": API_KEY}
+    response = requests.get(api_url, headers=headers)
+
+    # TODO handle response.status_code != 200
+
+    if response:
+
+        data = response.json()
+        user_account = data["result"]
+
+        fullname = user_account["fullname"].strip()
+        user_email = user_account["email"]
+
+        return fullname, user_email
 
 
 # TODO implement templates for all publish_action cases
+# TODO write docstring
 # Get subject and template that corresponds to publication_action
 def get_publish_email_subject_template(publish_action):
 

@@ -110,7 +110,7 @@ def get_url(url: str) -> requests.Response:
 
 
 # TODO refactor this or get_url() as they have similar functionality
-def get_package_url(url: str) -> requests.Response:
+def get_url_response(url: str) -> requests.Response:
     """Get a URL with additional error handling.
 
     Args:
