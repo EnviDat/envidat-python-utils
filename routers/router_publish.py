@@ -9,8 +9,8 @@ from envidat.email.send_email import send_email_async
 from envidat.email.utils import get_publish_email_subject_template, get_user_name_email
 
 import logging
-log = logging.getLogger(__name__)
 
+log = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/publish",
@@ -26,7 +26,6 @@ router = APIRouter(
 # TODO test triggering all errors
 @router.get("/datacite", tags=["publish"])
 def publish_record_to_datacite(name: str, response: Response):
-
     # Get EnviDat record from CKAN API call
     try:
         record = get_envidat_record(name)
@@ -75,7 +74,6 @@ def publish_record_to_datacite(name: str, response: Response):
             "error": "Failed to publish EnviDat record to DataCite, check logs"}
 
 
-# TODO rename function, handle specific use cases and general ones
 # TODO make a email sender function that uses background tasks
 # TODO try to find corresponding template and match (otherwise send error),
 #  then send email
@@ -84,7 +82,6 @@ def publish_record_to_datacite(name: str, response: Response):
 # TODO add user's organization admins to recipients by calling CKAN and using user's
 #  organizations' id
 # TODO change return value
-# TODO possibly implement async/await for CKAN API calls
 # TODO implement try/exception error handling
 @router.get('/email/{publish_action}')
 async def send_email_publish_async(publish_action: PublishAction,
@@ -92,26 +89,43 @@ async def send_email_publish_async(publish_action: PublishAction,
                                    package_name: str,
                                    admin_email: str = 'envidat@wsl.ch',
                                    subtype: MessageType = MessageType.plain):
-
-    # TODO START DEV at get_user_name_email(user_id)
-    user_name, user_email = get_user_name_email(user_id)
+    # Get arguments needed to send email
     subject, template_name = get_publish_email_subject_template(publish_action)
 
-    # TODO handle if user_name, user_email, subject, or template_name are None
+    user_name, user_email = get_user_name_email(user_id)
+
+    # TODO START DEV here
+    # TODO extract validation to helper function
+    # Validate arguments used to send email are not None,
+    # return None if at least one email argument is None
+    args_valid = True
+
+    # TODO pack and unpack into kwargs for helper function
+    args = {"subject": subject,
+            "template_name": template_name,
+            "user_name": user_name,
+            "user_email": user_email}
+
+    for key, val in args.items():
+        if val is None:
+            log.error(f"ERROR: email argument '{key}' is None, check logs")
+            args_valid = False
+
+    if not args_valid:
+        return None
 
     # TODO check if package_name should be validated,
     #  (hyphens between names and no white space)
     # TODO review formatting of subject (i.e. including colon)
+    # Format agruments
     subject = f"{subject}: {package_name}"
 
     # TODO possibly use EmailStr annotation to help validate email addresses
     recipients = [user_email, admin_email]
 
-    # Load template
+    # Load and render template used for email body
     templates = Jinja2Templates(directory="templates")
     template = templates.get_template(template_name)
-
-    # Use template to get message body
     template_variables = {
         "admin_email": admin_email,
         "user_name": user_name,
