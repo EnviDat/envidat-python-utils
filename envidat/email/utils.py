@@ -8,7 +8,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-# TODO possibly implement async/await for CKAN API call
+# TODO improve exception handling with more specific exceptions
 # TODO write docstring
 def get_user_name_email(user_id: str):
 
@@ -27,23 +27,37 @@ def get_user_name_email(user_id: str):
         log.error(e)
         return None, None
 
-    # TODO implement try/except handling, if failed return None, None
-    # Request user's account from CKAN
-    api_url = f"{API_HOST}{API_USER_SHOW}{user_id}"
-    headers = {"Authorization": API_KEY}
-    response = requests.get(api_url, headers=headers)
+    # Extract and return user's name and email from user account data
+    # returned from CKAN API call
+    try:
+        # Request user's account from CKAN
+        api_url = f"{API_HOST}{API_USER_SHOW}{user_id}"
+        headers = {"Authorization": API_KEY}
+        response = requests.get(api_url, headers=headers)
 
-    # TODO handle response.status_code != 200
+        # Handle unexpected response status_code
+        # Expected successful response status_code: 200
+        if response.status_code != 200:
+            log.error(
+                f"ERROR: Call to CKAN returned unexpected response status_code "
+                f"{response.status_code}")
+            return None, None
 
-    if response:
+        # Return user's name and email address
+        if response:
+            data = response.json()
+            user_account = data["result"]
+            user_name = user_account["fullname"].strip()
+            user_email = user_account["email"]
+            return user_name, user_email
 
-        data = response.json()
-        user_account = data["result"]
+    except ConnectionError as e:
+        log.error(e)
+        return None, None
 
-        fullname = user_account["fullname"].strip()
-        user_email = user_account["email"]
-
-        return fullname, user_email
+    except Exception as e:
+        log.error(e)
+        return None, None
 
 
 # TODO implement templates for all publish_action cases
