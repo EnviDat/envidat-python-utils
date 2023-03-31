@@ -39,8 +39,9 @@ def get_user_name_email(user_id: str):
         # Expected successful response status_code: 200
         if response.status_code != 200:
             log.error(
-                f"ERROR: Call to CKAN returned unexpected response status_code "
+                f"ERROR call to CKAN returned unexpected response status_code: "
                 f"{response.status_code}")
+            log.error(f"ERROR message from CKAN: {response.json()}")
             return None, None
 
         # Return user's name and email address
