@@ -89,3 +89,16 @@ def get_publish_email_subject_template(publish_action):
             return None, None
 
     return subject, template_name
+
+
+# TODO write docstring
+def has_none_kwarg(**kwargs):
+
+    has_none = False
+
+    for key, val in kwargs.items():
+        if val is None:
+            log.error(f"ERROR: email argument '{key}' is None, check logs")
+            has_none = True
+
+    return has_none

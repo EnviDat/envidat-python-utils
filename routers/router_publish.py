@@ -6,7 +6,9 @@ from fastapi_mail import MessageType
 # from pydantic import EmailStr
 from envidat.email.constants import PublishAction
 from envidat.email.send_email import send_email_async
-from envidat.email.utils import get_publish_email_subject_template, get_user_name_email
+from envidat.email.utils import get_publish_email_subject_template, \
+    get_user_name_email, \
+    has_none_kwarg
 
 import logging
 
@@ -77,10 +79,7 @@ def publish_record_to_datacite(name: str, response: Response):
 # TODO make a email sender function that uses background tasks
 # TODO try to find corresponding template and match (otherwise send error),
 #  then send email
-# TODO find user_email by calling CKAN and using user ID
 # TODO check if templates should be HTML or plain text
-# TODO add user's organization admins to recipients by calling CKAN and using user's
-#  organizations' id
 # TODO change return value
 # TODO implement try/exception error handling
 @router.get('/email/{publish_action}')
@@ -94,24 +93,16 @@ async def send_email_publish_async(publish_action: PublishAction,
 
     user_name, user_email = get_user_name_email(user_id)
 
-    # TODO START DEV here
-    # TODO extract validation to helper function
-    # Validate arguments used to send email are not None,
-    # return None if at least one email argument is None
-    args_valid = True
+    # Validate arguments used to send email are not None
+    email_kwargs = {"subject": subject,
+                    "template_name": template_name,
+                    "user_name": user_name,
+                    "user_email": user_email}
 
-    # TODO pack and unpack into kwargs for helper function
-    args = {"subject": subject,
-            "template_name": template_name,
-            "user_name": user_name,
-            "user_email": user_email}
+    has_none = has_none_kwarg(**email_kwargs)
 
-    for key, val in args.items():
-        if val is None:
-            log.error(f"ERROR: email argument '{key}' is None, check logs")
-            args_valid = False
-
-    if not args_valid:
+    # Return None if at least one email argument is None
+    if has_none:
         return None
 
     # TODO check if package_name should be validated,
