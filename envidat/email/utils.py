@@ -10,7 +10,7 @@ log = getLogger(__name__)
 
 # TODO improve exception handling with more specific exceptions
 # TODO write docstring
-def get_user_name_email(user_id: str):
+def get_user_show(user_id: str) -> dict | None:
 
     # Load config from environment vairables
     config = dotenv_values(".env")
@@ -22,10 +22,10 @@ def get_user_name_email(user_id: str):
         API_KEY = config["API_KEY"]
     except KeyError as e:
         log.error(f'KeyError: {e} does not exist in config')
-        return None, None
+        return None
     except AttributeError as e:
         log.error(e)
-        return None, None
+        return None
 
     # Extract and return user's name and email from user account data
     # returned from CKAN API call
@@ -42,23 +42,34 @@ def get_user_name_email(user_id: str):
                 f"ERROR call to CKAN returned unexpected response status_code: "
                 f"{response.status_code}")
             log.error(f"ERROR message from CKAN: {response.json()}")
-            return None, None
+            return None
 
-        # Return user's name and email address
+        # Return user's account information
         if response:
             data = response.json()
-            user_account = data["result"]
-            user_name = user_account["fullname"].strip()
-            user_email = user_account["email"]
-            return user_name, user_email
+            return data["result"]
 
     except ConnectionError as e:
         log.error(e)
-        return None, None
+        return None
 
     except Exception as e:
         log.error(e)
-        return None, None
+        return None
+
+
+# TODO write docstring
+def get_dict_value(input_dict: dict, key: str):
+    """Returns value from input dictionary.
+       Default value is None.
+       String values are stripped of whitespace.
+    """
+    value = input_dict.get(key, None)
+
+    if type(value) == 'str':
+        return value.strip()
+
+    return value
 
 
 # TODO implement templates for all publish_action cases

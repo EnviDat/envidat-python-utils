@@ -7,8 +7,7 @@ from fastapi_mail import MessageType
 from envidat.email.constants import PublishAction
 from envidat.email.send_email import send_email_async
 from envidat.email.utils import get_publish_email_subject_template, \
-    get_user_name_email, \
-    has_none_kwarg
+    has_none_kwarg, get_user_show, get_dict_value
 
 import logging
 
@@ -76,7 +75,7 @@ def publish_record_to_datacite(name: str, response: Response):
             "error": "Failed to publish EnviDat record to DataCite, check logs"}
 
 
-# TODO make a email sender function that uses background tasks
+# TODO make an email sender function that uses background tasks
 # TODO try to find corresponding template and match (otherwise send error),
 #  then send email
 # TODO check if templates should be HTML or plain text
@@ -88,10 +87,23 @@ async def send_email_publish_async(publish_action: PublishAction,
                                    package_name: str,
                                    admin_email: str = 'envidat@wsl.ch',
                                    subtype: MessageType = MessageType.plain):
-    # Get arguments needed to send email
+
+    # Get subject and template_name needed to send email
     subject, template_name = get_publish_email_subject_template(publish_action)
 
-    user_name, user_email = get_user_name_email(user_id)
+    # Get user's account from CKAN API
+    user_account = get_user_show(user_id)
+
+    # Check if user_account is truthy
+    if not user_account:
+        return None
+
+    # Get arguments needed to send email from user's account
+    user_name = get_dict_value(user_account, "fullname")
+    user_email = get_dict_value(user_account, "email")
+
+    # TODO get maintainer_email
+    # TODO START DEV here
 
     # Validate arguments used to send email are not None
     email_kwargs = {"subject": subject,
@@ -112,6 +124,8 @@ async def send_email_publish_async(publish_action: PublishAction,
     subject = f"{subject}: {package_name}"
 
     # TODO possibly use EmailStr annotation to help validate email addresses
+    # TODO make sure there are no duplicate email addresses in recipients list
+    # TODO START DEV here
     recipients = [user_email, admin_email]
 
     # Load and render template used for email body
