@@ -1,10 +1,11 @@
-import json
 
-import requests
 from dotenv import dotenv_values
+import requests
+import urllib.parse
 from envidat.email.constants import PublishAction, PublishSubject, PublishTemplateName
 
 from logging import getLogger
+
 log = getLogger(__name__)
 
 
@@ -58,6 +59,74 @@ def get_user_show(user_id: str) -> dict | None:
         return None
 
 
+# TODO use this function to replace get_user_show()
+#  in router_publish.send_email_publish_async()
+# TODO improve exception handling with more specific exceptions
+# TODO write docstring
+def get_response_json(api_host: str,
+                      api_path: str,
+                      query: dict | None = None,
+                      api_key: str | None = None,
+                      status_code: int = 200
+                      ) -> dict | None:
+
+    # Load config from environment vairables
+    config = dotenv_values(".env")
+
+    # Assign key to None default value
+    key = None
+
+    # Extract environment variables from config needed to call API URL
+    try:
+        host = config[api_host]
+        path = config[api_path]
+        if api_key:
+            key = config[api_key]
+    except KeyError as e:
+        log.error(f'KeyError: {e} does not exist in config')
+        return None
+    except AttributeError as e:
+        log.error(e)
+        return None
+
+    # Call API and return JSON response
+    try:
+        # Call API with query params if they are truthy
+        if query:
+            params = urllib.parse.urlencode(query)
+            api_url = f"{host}{path}?{params}"
+        else:
+            api_url = f"{host}{path}"
+
+        # Add headers to request if key truthy
+        if key:
+            headers = {"Authorization": key}
+            response = requests.get(api_url, headers=headers)
+        else:
+            response = requests.get(api_url)
+
+        # Handle unexpected response status_code
+        # Default expected response status_code is 200
+        if response.status_code != status_code:
+            log.error(
+                f"ERROR call to API returned unexpected response status_code: "
+                f"{response.status_code}")
+            log.error(f"ERROR message from API: {response.json()}")
+            return None
+
+        # Return JSON response
+        if response:
+            return response.json()
+
+    except ConnectionError as e:
+        log.error(e)
+        return None
+
+    except Exception as e:
+        log.error(e)
+        return None
+
+
 # TODO write docstring
 def get_dict_value(input_dict: dict, key: str):
     """Returns value from input dictionary.
@@ -76,7 +145,6 @@ def get_dict_value(input_dict: dict, key: str):
 # TODO write docstring
 # Get subject and template that corresponds to publication_action
 def get_publish_email_subject_template(publish_action):
-
     match publish_action:
 
         case PublishAction.REQUEST:
@@ -105,7 +173,6 @@ def get_publish_email_subject_template(publish_action):
 
 # TODO write docstring
 def has_none_kwarg(**kwargs):
-
     has_none = False
 
     for key, val in kwargs.items():

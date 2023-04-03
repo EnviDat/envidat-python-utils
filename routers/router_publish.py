@@ -75,6 +75,8 @@ def publish_record_to_datacite(name: str, response: Response):
             "error": "Failed to publish EnviDat record to DataCite, check logs"}
 
 
+# TODO change package_name argument to package_id (test using package name as well) as
+#  this will be used to get package name and maintainer email
 # TODO make an email sender function that uses background tasks
 # TODO try to find corresponding template and match (otherwise send error),
 #  then send email
@@ -91,6 +93,8 @@ async def send_email_publish_async(publish_action: PublishAction,
     # Get subject and template_name needed to send email
     subject, template_name = get_publish_email_subject_template(publish_action)
 
+    # TODO replace with get_response_json(), extract "result" key from returned value
+    # TODO start dev here
     # Get user's account from CKAN API
     user_account = get_user_show(user_id)
 
@@ -103,6 +107,8 @@ async def send_email_publish_async(publish_action: PublishAction,
     user_email = get_dict_value(user_account, "email")
 
     # TODO get maintainer_email
+    # TODO call package_show
+    # TODO get package name
     # TODO START DEV here
 
     # Validate arguments used to send email are not None
@@ -120,7 +126,7 @@ async def send_email_publish_async(publish_action: PublishAction,
     # TODO check if package_name should be validated,
     #  (hyphens between names and no white space)
     # TODO review formatting of subject (i.e. including colon)
-    # Format agruments
+    # Format subject
     subject = f"{subject}: {package_name}"
 
     # TODO possibly use EmailStr annotation to help validate email addresses
