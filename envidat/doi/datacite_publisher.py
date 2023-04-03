@@ -9,6 +9,8 @@ from envidat.converters.datacite_converter import convert_datacite
 # TODO review setup of logging
 from logging import getLogger
 
+from envidat.utils import get_response_json
+
 log = getLogger(__name__)
 
 
@@ -221,8 +223,10 @@ def xml_to_base64(xml: str) -> str:
 
 
 # TODO write docstring
-def get_envidat_dois(num_records: int = 10000) -> list[str] | None:
-    """Return a list of EnviDat DOIs in DataCite.
+def get_dois(num_records: int = 10000) -> list[str] | None:
+    """Return a list of DOIs in DataCite.
+
+       "DOI_PREFIX" in config is set to prefix assigned to EnviDat in DataCite.
 
        For DataCite API documentation of endpoint to get list of DOIs see:
        https://support.datacite.org/docs/api-get-lists
@@ -266,4 +270,39 @@ def get_envidat_dois(num_records: int = 10000) -> list[str] | None:
         return None
 
 
+# TODO implement error handling (try/excpet)
+# TODO write docstring
+def get_published_record_names_with_dois(query: dict | None = None) -> list[str] | None:
+    """
+    """
 
+    err_message = "Failed to get names of published records with DOIs."
+
+    # Get JSON response from call to CKAN API current
+    # package list with resources endpoint
+    response_json = get_response_json(api_host="API_HOST",
+                                      api_path=
+                                      "API_CURRENT_PACKAGE_LIST_WITH_RESOURCES",
+                                      query=query)
+
+    # Extract and return record names from records that have a DOI and are published
+    if response_json:
+
+        records = response_json["result"]
+        if records:
+            record_names = []
+
+            for record in records:
+                # TODO review condition
+                if record.get("doi") and record.get("publication_state") == "published":
+                    record_names.append(record.get("name"))
+
+            return record_names
+
+        else:
+            log.error(err_message)
+            return None
+
+    else:
+        log.error(err_message)
+        return None
