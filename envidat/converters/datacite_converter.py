@@ -462,12 +462,13 @@ def datacite_convert_dataset(dataset: dict, config: dict):
             award_uri = funder.get(config[dc_funding_ref_tag][dc_award_uri_tag], "")
 
             # Assign awardNumber and awardURI if they exist
+            # and if awardURI is a valid URL
             # NOTE: For reverse converter be sure to parse default value for
             # awardNumber, ":unav"
             # DataCite documentation for unknown information: p. 74
             # https://schema.datacite.org/meta/kernel-4.4/doc/DataCite
             # -MetadataKernel_v4.4.pdf
-            if award_uri:
+            if award_uri and validators.url(award_uri):
                 if award_number:
                     award = {f"@{dc_award_uri_tag}": award_uri,
                              "#text": award_number.strip()}
