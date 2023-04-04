@@ -4,12 +4,14 @@ from dotenv import dotenv_values
 import requests
 import base64
 
+from envidat.api.v1 import get_envidat_record
 from envidat.converters.datacite_converter import convert_datacite
 
 # TODO review setup of logging
 from logging import getLogger
 
 from envidat.utils import get_response_json
+# from routers.router_publish import publish_record_to_datacite
 
 log = getLogger(__name__)
 
@@ -184,7 +186,9 @@ def publish_datacite(metadata_record: dict, is_update=False) -> dict | None:
                           data=payload_json)
 
     # Return DOI if successful, else return error message
-    if r.status_code == 201:
+    # Status code 201 indicates a new DOI was created
+    # Status code 200 indicates an existing DOI was updated
+    if r.status_code == 201 or r.status_code == 200:
         published_doi = r.json().get('data').get('id')
         if published_doi:
             return {
@@ -220,89 +224,3 @@ def xml_to_base64(xml: str) -> str:
         xml_encoded = base64.b64encode(xml_bytes)
         xml_str = xml_encoded.decode()
         return xml_str
-
-
-# TODO write docstring
-def get_dois(num_records: int = 10000) -> list[str] | None:
-    """Return a list of DOIs in DataCite.
-
-       "DOI_PREFIX" in config is set to prefix assigned to EnviDat in DataCite.
-
-       For DataCite API documentation of endpoint to get list of DOIs see:
-       https://support.datacite.org/docs/api-get-lists
-    """
-
-    # Load config from environment vairables
-    config = dotenv_values(".env")
-
-    # Extract variables from config needed to call DataCite API
-    try:
-        api_url = config["DATACITE_API_URL"]
-        prefix = config["DOI_PREFIX"]
-    except KeyError as e:
-        log.error(f'KeyError: {e} does not exist in config')
-        return None
-
-    # Add prefix query param to url
-    # Add page[size] param retrieve up to 10000 (default) records on the page
-    api_url = f"{api_url}?prefix={prefix}&page[size]={num_records}"
-
-    # Call api
-    r = requests.get(api_url)
-
-    # Return DOIs is successful
-    if r.status_code == 200:
-
-        # Get DOIs stored in record "id" values
-        data = r.json().get('data')
-        dois = [record.get("id") for record in data]
-
-        # Return DOIs
-        if dois:
-            return dois
-        else:
-            log.error(f"Failed to get DOIs")
-            return None
-
-    # Else log error message and return none
-    else:
-        log.error(f"Failed to get DOIs")
-        return None
-
-
-# TODO implement error handling (try/excpet)
-# TODO write docstring
-def get_published_record_names_with_dois(query: dict | None = None) -> list[str] | None:
-    """
-    """
-
-    err_message = "Failed to get names of published records with DOIs."
-
-    # Get JSON response from call to CKAN API current
-    # package list with resources endpoint
-    response_json = get_response_json(api_host="API_HOST",
-                                      api_path=
-                                      "API_CURRENT_PACKAGE_LIST_WITH_RESOURCES",
-                                      query=query)
-
-    # Extract and return record names from records that have a DOI and are published
-    if response_json:
-
-        records = response_json["result"]
-        if records:
-            record_names = []
-
-            for record in records:
-                # TODO review condition
-                if record.get("doi") and record.get("publication_state") == "published":
-                    record_names.append(record.get("name"))
-
-            return record_names
-
-        else:
-            log.error(err_message)
-            return None
-
-    else:
-        log.error(err_message)
-        return None
