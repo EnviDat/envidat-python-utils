@@ -60,10 +60,16 @@ def datacite_create_and_update_all_records():
 
         # Add package name to dc_reponse
         dc_response["name"] = record.get("name")
-        log.info(dc_response)
+
+        # Log response for updated and created records
+        if dc_response["status_code"] in [200, 201]:
+            log.info(dc_response)
+        # Else log response for unexpected DataCite response status codes
+        else:
+            log.error(dc_response)
 
         # counter += 1
-        # if counter > 19:
+        # if counter > 25:
         #     break
 
     return
