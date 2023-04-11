@@ -16,6 +16,7 @@ log.setLevel(level=logging.INFO)
 logFileFormatter = logging.Formatter(
     fmt=f"%(levelname)s %(asctime)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S")
+# TODO implement name of log file as command line argument
 fileHandler = logging.FileHandler(filename='datacite_importer.log')
 fileHandler.setFormatter(logFileFormatter)
 fileHandler.setLevel(level=logging.INFO)
@@ -32,7 +33,15 @@ def datacite_create_and_update_all_records():
 
        Function converts all EnviDat records to DataCite Metadata Schema 4.4, for
        documentation see https://schema.datacite.org/meta/kernel-4.4/
+
+       For documentation of DataCite API see https://support.datacite.org/docs/api
+
+       For DataCite API reference see
+       https://support.datacite.org/reference/introduction
     """
+
+    # Remove
+    # log.info("NEW IMPORT")
 
     # Get EnviDat DOIs on DataCite
     dc_dois = get_dc_dois()
@@ -41,9 +50,19 @@ def datacite_create_and_update_all_records():
     published_records = get_published_record_names_with_dois()
 
     # TODO remove counter code after testing
-    # counter = 0
+    # counter = 1
     # Update or create new DOIs in DataCite for all EnviDat records
     for record in published_records:
+
+        # counter += 1
+        #
+        # # if counter < 39:
+        # if counter < 336:
+        #     continue
+
+        # if counter > 41:
+        # if counter > 355:
+        #     break
 
         # Get EnviDat record from CKAN API
         envidat_record = get_envidat_record(record.get("name"))
@@ -68,10 +87,6 @@ def datacite_create_and_update_all_records():
         else:
             log.error(dc_response)
 
-        # counter += 1
-        # if counter > 25:
-        #     break
-
     return
 
 
@@ -89,8 +104,9 @@ def get_dc_dois(num_records: int = 10000) -> list[str] | None:
     config = dotenv_values(".env")
 
     # Extract variables from config needed to call DataCite API
+    # NOTE: List of DOIs should not be obtained from DataCite "test" API
     try:
-        api_url = config["DATACITE_API_URL"]
+        api_url = config["DOI_API_URL"]
         prefix = config["DOI_PREFIX"]
     except KeyError as e:
         log.error(f'KeyError: {e} does not exist in config')
