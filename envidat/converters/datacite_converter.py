@@ -831,9 +831,6 @@ def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag):
     return dc_descriptions
 
 
-# TODO review if all potential geolocation types in our database are handled,
-#  such as "GeometryCollection"
-# TODO discuss this with Sam
 def get_dc_geolocations(spatial: dict):
     """Returns spatial information in DataCite "geoLocations" format
 
@@ -870,6 +867,10 @@ def get_dc_geolocations(spatial: dict):
                 dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = \
                     coordinates_pair[1]
                 dc_geolocations += [dc_geolocation]
+
+        # TODO handle "geometrycollection" type
+        elif spatial.get("type", "").lower() == "geometrycollection":
+            pass
 
         else:
             dc_geolocation = collections.OrderedDict()
