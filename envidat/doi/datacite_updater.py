@@ -9,6 +9,7 @@ from envidat.utils import get_response_json
 
 # Setup logging
 from logging import getLogger
+
 log = getLogger(__name__)
 log.setLevel(level=logging.INFO)
 
@@ -25,43 +26,52 @@ log.addHandler(fileHandler)
 
 # TODO write documentation for this importer
 
-# TODO write logic to handle None values returned from helpers
 # TODO implement try/except error handling
 # TODO write docstring
-def datacite_create_and_update_all_records():
-    """Creates new DOIs and updates existing DOIs for EnviDat records on DataCite.
+def datacite_update_all_records():
+    """Updates existing DOIs for all EnviDat records on DataCite.
 
        Function converts all EnviDat records to DataCite Metadata Schema 4.4, for
-       documentation see https://schema.datacite.org/meta/kernel-4.4/
+       documentation: https://schema.datacite.org/meta/kernel-4.4/
 
-       For documentation of DataCite API see https://support.datacite.org/docs/api
+       For documentation of DataCite API: ;=https://support.datacite.org/docs/api
 
-       For DataCite API reference see
+       For DataCite API reference:
        https://support.datacite.org/reference/introduction
-    """
 
-    # Remove
-    # log.info("NEW IMPORT")
+       For documentation of DataCite API endpoint that updates DOIs:
+       https://support.datacite.org/reference/put_dois-id
+    """
 
     # Get EnviDat DOIs on DataCite
     dc_dois = get_dc_dois()
 
+    # Handle if dc_dois are None
+    if not dc_dois:
+        log.error("Failed to get DataCite DOIs")
+        return None
+
     # Get EnviDat record objects for record that are published and have DOIs
     published_records = get_published_record_names_with_dois()
 
+    # Handle if published_records are None
+    if not published_records:
+        log.error("Failed to get EnviDat published records names that have DOIs")
+
     # TODO remove counter code after testing
-    # counter = 1
+    counter = 1
+
     # Update or create new DOIs in DataCite for all EnviDat records
     for record in published_records:
 
-        # counter += 1
+        counter += 1
         #
         # # if counter < 39:
         # if counter < 336:
         #     continue
 
         # if counter > 41:
-        # if counter > 355:
+        # if counter > 10:
         #     break
 
         # Get EnviDat record from CKAN API
@@ -70,24 +80,21 @@ def datacite_create_and_update_all_records():
         # Extract package from record result
         package = envidat_record.get("result")
 
-        # Update existing DOIs already existing in DataCite
-        if record["doi"] in dc_dois:
+        # Update records with DOIs already existing in DataCite
+        if record.get("doi") in dc_dois:
             dc_response = publish_datacite(package, is_update=True)
-        # Else create new DOIs in DataCite
-        else:
-            dc_response = publish_datacite(package, is_update=False)
 
-        # Add package name to dc_reponse
-        dc_response["name"] = record.get("name")
+            # Add package name to dc_reponse
+            dc_response["name"] = record.get("name")
 
-        # Log response for updated and created records
-        if dc_response["status_code"] in [200, 201]:
-            log.info(dc_response)
-        # Else log response for unexpected DataCite response status codes
-        else:
-            log.error(dc_response)
+            # Log response for updated record, expecting a status code of 200
+            if dc_response.get("status_code") == 200:
+                log.info(dc_response)
+            # Else log response for unexpected DataCite response status codes
+            else:
+                log.error(dc_response)
 
-    return
+    return 'Successfully updated EnviDat records on DataCite'
 
 
 # TODO write docstring
@@ -116,7 +123,7 @@ def get_dc_dois(num_records: int = 10000) -> list[str] | None:
     # Add page[size] param retrieve up to 10000 (default) records on the page
     api_url = f"{api_url}?prefix={prefix}&page[size]={num_records}"
 
-    # Call api
+    # Call API
     r = requests.get(api_url)
 
     # Return DOIs is successful
@@ -168,6 +175,21 @@ def get_published_record_names_with_dois() -> list[dict] | None:
                         "name": record.get("name"),
                         "doi": record.get("doi")
                     })
+
+                # Log records that have a value for the "doi" key
+                # and a "reserved" value for the "publication_state" value
+                # but are not in dc_dois
+                elif record.get("doi") and record.get(
+                        "publication_state") == "reserved":
+                    log.warning(
+                        f"Record '{record.get('name')}'with DOI {record['doi']}"
+                        f" has a 'publication_state' value of"
+                        f" '{record['publication_state']}' and is not published on "
+                        f"DataCite")
+
+                # Log warning for records that have a "doi" value of empty string ""
+                elif record.get("doi") == "":
+                    log.warning(f"Record does not have a DOI:'{record.get('name')}'")
 
             return published_records
 

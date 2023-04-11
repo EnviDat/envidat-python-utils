@@ -869,6 +869,7 @@ def get_dc_geolocations(spatial: dict):
                 dc_geolocations += [dc_geolocation]
 
         # TODO handle "geometrycollection" type
+        # TODO revert to pass block for importing until testing finalized of this block
         elif spatial.get("type", "").lower() == "geometrycollection":
             pass
 
