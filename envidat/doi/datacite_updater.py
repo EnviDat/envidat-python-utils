@@ -58,21 +58,8 @@ def datacite_update_all_records():
     if not published_records:
         log.error("Failed to get EnviDat published records names that have DOIs")
 
-    # TODO remove counter code after testing
-    counter = 1
-
     # Update or create new DOIs in DataCite for all EnviDat records
     for record in published_records:
-
-        counter += 1
-        #
-        # # if counter < 39:
-        # if counter < 336:
-        #     continue
-
-        # if counter > 41:
-        # if counter > 10:
-        #     break
 
         # Get EnviDat record from CKAN API
         envidat_record = get_envidat_record(record.get("name"))
@@ -182,7 +169,7 @@ def get_published_record_names_with_dois() -> list[dict] | None:
                 elif record.get("doi") and record.get(
                         "publication_state") == "reserved":
                     log.warning(
-                        f"Record '{record.get('name')}'with DOI {record['doi']}"
+                        f"Record '{record.get('name')}' with DOI {record['doi']}"
                         f" has a 'publication_state' value of"
                         f" '{record['publication_state']}' and is not published on "
                         f"DataCite")
