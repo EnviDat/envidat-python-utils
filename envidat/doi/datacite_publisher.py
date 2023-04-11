@@ -204,7 +204,7 @@ def publish_datacite(metadata_record: dict, is_update=False) -> dict | None:
     else:
         return {
             "status_code": r.status_code,
-            "result": f"Failed publishing DOI on DataCite:  {r.json()}"
+            "result": f"Failed publishing DOI {doi} on DataCite:  {r.json()}"
         }
 
 
