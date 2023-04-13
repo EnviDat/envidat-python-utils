@@ -9,7 +9,7 @@ from envidat.doi.datacite_updater import datacite_update_all_records
 print("Starting datacite_importer.py....")
 start_time = time.time()
 
-# Create and update all EnviDat records on DataCite
+# Update all EnviDat records on DataCite
 print("See 'datacite_importer.log' for log of individual record updates")
 datacite_update_all_records()
 
