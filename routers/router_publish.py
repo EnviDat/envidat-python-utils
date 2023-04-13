@@ -26,8 +26,10 @@ router = APIRouter(
 # TODO write doc string
 # TODO test triggering all errors
 @router.get("/datacite", tags=["publish"])
-def publish_record_to_datacite(name: str, response: Response, cookie=None):
-
+def publish_record_to_datacite(name: str,
+                               response: Response,
+                               is_update: bool = False,
+                               cookie=None):
     # Get EnviDat record from CKAN API call, pass cookie if it is truthy
     try:
         if cookie:
@@ -52,8 +54,11 @@ def publish_record_to_datacite(name: str, response: Response, cookie=None):
         # Extract package from record result
         package = record.get("result")
 
-        # Publish package to DataCite
-        if package:
+        # If package and is_update is True then update existing DataCite record
+        if package and is_update:
+            dc_response = publish_datacite(package, is_update=is_update)
+        # Else if package then publish package to DataCite
+        elif package:
             dc_response = publish_datacite(package)
         else:
             response.status_code = 500
@@ -99,7 +104,6 @@ async def send_email_publish_async(publish_action: PublishAction,
                                    package_name: str,
                                    admin_email: str = 'envidat@wsl.ch',
                                    subtype: MessageType = MessageType.plain):
-
     # Get subject and template_name needed to send email
     subject, template_name = get_publish_email_subject_template(publish_action)
 
