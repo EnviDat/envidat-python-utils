@@ -55,6 +55,12 @@ def publish_record_to_datacite(name: str, response: Response):
             response.status_code = 500
             return {"error": "Failed to extract 'result' from record"}
 
+        # Handle dc_response not truthy
+        if not dc_response:
+            response.status_code = 500
+            return {"error": "Failed to publish EnviDat record to DataCite, "
+                             "check logs for errors"}
+
         # Assign response status_code (default status_code is 500)
         # Expected successful response status_code: 201
         dc_status_code = dc_response.get("status_code", 500)
@@ -71,8 +77,8 @@ def publish_record_to_datacite(name: str, response: Response):
     except AttributeError as e:
         log.error(e)
         response.status_code = 500
-        return {
-            "error": "Failed to publish EnviDat record to DataCite, check logs"}
+        return {"error": "Failed to publish EnviDat record to DataCite, "
+                         "check logs for errors"}
 
 
 # TODO change package_name argument to package_id (test using package name as well) as
