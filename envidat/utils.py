@@ -180,15 +180,26 @@ def get_url(url: str) -> requests.Response:
 
 
 # TODO refactor this or get_url() as they have similar functionality
-def get_url_response(url: str) -> requests.Response:
+def get_url_response(url: str, cookie: str | None = None) -> requests.Response:
     """Get a URL with additional error handling.
 
     Args:
         url (str): The URL to GET.
+        cookie (str | None): Cookie passed to API call in header,
+                             default value is None as this argument is not always used
     """
     try:
         log.debug(f"Attempting to get {url}")
-        r = requests.get(url)
+
+        # Call API with cookie in header if it exists
+        if cookie:
+            headers = {"Cookie": cookie}
+            r = requests.get(url, headers=headers)
+        # Else call API (without header)
+        else:
+            r = requests.get(url)
+
+        # Raise HTTP error it if occured
         r.raise_for_status()
     except requests.exceptions.ConnectionError as e:
         log.error(f"Could not connect to internet on get: {r.request.url}")

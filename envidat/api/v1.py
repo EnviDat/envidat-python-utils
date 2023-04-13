@@ -114,6 +114,7 @@ def get_envidat_record(
         package_name: str,
         host: str = "https://www.envidat.ch",
         path: str = "/api/action/package_show?id=",
+        cookie: str | None = None
 ) -> dict | None:
     """Get individual EnviDat record (metadata entry) as dictionary from API.
 
@@ -123,6 +124,8 @@ def get_envidat_record(
             Defaults to "https://www.envidat.ch"
         path (str): API host path. Attempts to get from environment if omitted.
             Defaults to "api/action/package_show?id="
+        cookie (str | None): Cookie passed to API call in header,
+                             default value is None as this argument is not always used
 
     Returns:
         dict: Dictionary of package (metadata entry).
@@ -132,10 +135,12 @@ def get_envidat_record(
         host = os.getenv("API_HOST")
         path = os.getenv("API_PACKAGE_SHOW")
 
-    log.info(f"Getting package from {host}.")
     try:
-        # Extract result dictionary from API call
-        response = get_url_response(f"{host}{path}{package_name}")
+        # Extract result dictionary from API call, pass cookie if is truthy
+        if cookie:
+            response = get_url_response(f"{host}{path}{package_name}", cookie=cookie)
+        else:
+            response = get_url_response(f"{host}{path}{package_name}")
 
         # TODO improve error handling
         # Handle HTTPError from API call

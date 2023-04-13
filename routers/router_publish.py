@@ -26,10 +26,14 @@ router = APIRouter(
 # TODO write doc string
 # TODO test triggering all errors
 @router.get("/datacite", tags=["publish"])
-def publish_record_to_datacite(name: str, response: Response):
-    # Get EnviDat record from CKAN API call
+def publish_record_to_datacite(name: str, response: Response, cookie=None):
+
+    # Get EnviDat record from CKAN API call, pass cookie if it is truthy
     try:
-        record = get_envidat_record(name)
+        if cookie:
+            record = get_envidat_record(name, cookie=cookie)
+        else:
+            record = get_envidat_record(name)
 
         # Handle HTTP errors from CKAN API call (default status_code is 500)
         status_code = record.get("status_code", 500)
