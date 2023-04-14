@@ -11,6 +11,7 @@ import jsonschema
 import validators
 from datetime import date
 from xmltodict import unparse
+from dotenv import dotenv_values
 
 from envidat.utils import get_url
 
@@ -811,12 +812,12 @@ def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag):
     if notes:
         description_text = (
             notes.replace("\r", "")
-                .replace(">", "-")
-                .replace("<", "-")
-                .replace("__", "")
-                .replace("#", "")
-                .replace("\n\n", "\n")
-                .replace("\n\n", "\n")
+            .replace(">", "-")
+            .replace("<", "-")
+            .replace("__", "")
+            .replace("#", "")
+            .replace("\n\n", "\n")
+            .replace("\n\n", "\n")
         )
 
         datacite_description = {
@@ -1002,7 +1003,7 @@ def get_doi(word: str):
     return doi
 
 
-def get_dora_doi(dora_pid: str, host: str = "https://envidat.ch", path: str = "/dora"):
+def get_dora_doi(dora_pid: str, dora_api_url: str = "https://envidat.ch/dora"):
     """Get DOI string from WSL DORA API using DORA PID
 
     DORA API documentation:
@@ -1012,19 +1013,20 @@ def get_dora_doi(dora_pid: str, host: str = "https://envidat.ch", path: str = "/
 
     Args:
         dora_pid (str): DORA PID (permanent identification)
-        host (str): API host url. Attempts to get from environment if omitted.
-            Defaults to "https://www.envidat.ch"
-        path (str): API host path. Attempts to get from environment if omitted.
-            Defaults to "/dora"
+        dora_api_url (str): API host url. Attempts to get from environment if omitted.
+            Defaults to "https://envidat.ch/dora"
 
     Returns:
         str: String of DOI
         None: If DOI could not be found
     """
-    if "API_HOST" in os.environ and "API_ENVIDAT_DORA" in os.environ:
-        log.debug("Getting API host and path from environment variables.")
-        host = os.getenv("API_HOST")
-        path = os.getenv("API_ENVIDAT_DORA")
+
+    # Load config from environment vairables
+    config = dotenv_values(".env")
+
+    # Extract "DORA_API_URL" from config if it exists, else use default value
+    if "DORA_API_URL" in config:
+        dora_api_url = config["DORA_API_URL"]
 
     # Replace '%3A' ASCII II code with semicolon ':'
     dora_pid = re.sub("%3A", ":", dora_pid)
@@ -1033,7 +1035,7 @@ def get_dora_doi(dora_pid: str, host: str = "https://envidat.ch", path: str = "/
     dora_pid = re.sub("\*", "", dora_pid)
 
     # Assemble url used to call DORA API
-    dora_url = f"{host}{path}/{dora_pid}"
+    dora_url = f"{dora_api_url}/{dora_pid}"
 
     try:
         data = get_url(dora_url).json()
