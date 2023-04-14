@@ -714,7 +714,10 @@ def get_dc_related_identifiers(related_identifiers, resources):
 
                 # Remove any characters that may exist after DORA PID
                 dora_end_index = dora_pid.find('/')
-                dora_pid = dora_pid[:dora_end_index]
+
+                # Modify dora_pid if dora_end_index found in dora_pid
+                if dora_end_index != -1:
+                    dora_pid = dora_pid[:dora_end_index]
 
                 # Call DORA API and get DOI if it listed in citation
                 doi_dora = get_dora_doi(dora_pid)
