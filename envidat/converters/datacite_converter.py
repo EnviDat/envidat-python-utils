@@ -2,8 +2,8 @@
 
 import collections
 import json
-import os
 import re
+from itertools import chain
 from json import JSONDecodeError
 from logging import getLogger
 from typing import Union
@@ -326,11 +326,14 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         "alternateIdentifier": alternate_identifiers
     }
 
+    # Related identifiers (from "resources", "related_publications",
+    # and "related_datasets" values)
+
     # Get "resources" from EnviDat package,
     # used for DataCite "relatedIdentifiers" and "formats" tags
     resources = dataset.get("resources", [])
+    resources_related_ids = get_dc_related_identifiers_resources(resources)
 
-    # Related identifier
     # Combine "related_publications" and "related_datasets" values
     # Note: EnviDat keys hard-coded because DataCite "relatedIdentifier" tags
     # combines two EnviDat fields
@@ -338,8 +341,26 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     related_datasets = dataset.get("related_datasets", "")
     related_identifiers = f"${related_publications} {related_datasets}"
 
-    dc_related_identifiers = get_dc_related_identifiers(related_identifiers, resources)
-    if len(dc_related_identifiers["relatedIdentifier"]) > 0:
+    # TODO separate "related_publications" and "related_datasets"
+    dc_related_identifiers_test = get_dc_related_identifiers(related_identifiers)
+
+    # print(resources_related_ids)
+    # print(dc_related_identifiers_test)
+
+    # Combine related identifiers from different sources
+    related_id_sources = [resources_related_ids, dc_related_identifiers_test]
+    related_ids = []
+    for source in related_id_sources:
+        if source:
+            related_ids += source
+
+    # print(related_ids)
+
+    # Assign related_identifier tag(s) to dc
+    dc_related_identifiers = collections.OrderedDict()
+    if related_ids:
+        dc_related_identifiers["relatedIdentifier"] = related_ids
+        # print(dc_related_identifiers)
         dc["resource"]["relatedIdentifiers"] = dc_related_identifiers
 
     # Formats (from resources)
@@ -678,16 +699,17 @@ def get_dc_research_group(organization_title):
     return dc_contributor
 
 
-def get_dc_related_identifiers(related_identifiers, resources):
-    """Return related datasets, related publications and URLs from resources in
+# TODO separate "related_datasets" and "related_publications"
+#  for "relationType" assignments
+def get_dc_related_identifiers(related_identifiers):
+    """Return related datasets, related publications in
     DataCite "relatedIdentifiers" tag format
 
     "relatedIdentiferType" and "relationType" are required attributes
     for each "relatedIdentifer" (values are assigned)
     """
 
-    dc_related_identifiers = collections.OrderedDict()
-    dc_related_identifiers["relatedIdentifier"] = []
+    dc_related_identifiers = []
 
     # Validate related_identifiers
     if len(related_identifiers) > 0:
@@ -727,7 +749,7 @@ def get_dc_related_identifiers(related_identifiers, resources):
 
             if doi and "/" in doi and doi not in related_ids:
                 related_ids.append(doi)
-                dc_related_identifiers["relatedIdentifier"] += [
+                dc_related_identifiers += [
                     {
                         "#text": doi,
                         "@relatedIdentifierType": "DOI",
@@ -748,7 +770,7 @@ def get_dc_related_identifiers(related_identifiers, resources):
                                 "https://envidat.ch/#/metadata/",
                                 "https://envidat.ch/dataset/")
                 ):
-                    dc_related_identifiers["relatedIdentifier"] += [
+                    dc_related_identifiers += [
                         {
                             "#text": word,
                             "@relatedIdentifierType": "URL",
@@ -757,7 +779,7 @@ def get_dc_related_identifiers(related_identifiers, resources):
                     ]
                 else:
                     # All other URLs are assigned a relationType of "IsSupplementTo"
-                    dc_related_identifiers["relatedIdentifier"] += [
+                    dc_related_identifiers += [
                         {
                             "#text": word,
                             "@relatedIdentifierType": "URL",
@@ -765,11 +787,22 @@ def get_dc_related_identifiers(related_identifiers, resources):
                         }
                     ]
 
-    # Add URLs from resources
+    return dc_related_identifiers
+
+
+def get_dc_related_identifiers_resources(resources):
+    """Return URLs from resources in DataCite "relatedIdentifier" tag format
+
+    "relatedIdentiferType" and "relationType" are required attributes
+    for each "relatedIdentifer" (values are assigned)
+    """
+
+    dc_related_identifier = []
+
     for resource in resources:
         resource_url = resource.get("url", "")
         if resource_url:
-            dc_related_identifiers["relatedIdentifier"] += [
+            dc_related_identifier += [
                 {
                     "#text": resource_url,
                     "@relatedIdentifierType": "URL",
@@ -777,7 +810,7 @@ def get_dc_related_identifiers(related_identifiers, resources):
                 }
             ]
 
-    return dc_related_identifiers
+    return dc_related_identifier
 
 
 def get_dc_formats(resources):
