@@ -995,9 +995,17 @@ def get_doi(word: str):
     doi = None
 
     # Apply search criteria to find DOIs
-    if "doi" in word:
+    search_strings = ["doi", "10."]
+    if any(search_str in word for search_str in search_strings):
+
+        # Assign doi if "10." in word
         doi_start_index = word.find("10.")
-        doi = word[doi_start_index:]
+        if doi_start_index != -1:
+            doi = word[doi_start_index:]
+
+            # Remove a trailing "." period character if it exists
+            if doi[-1] == ".":
+                doi = doi[:-1]
 
     # Return DOI if it exists, else return None
     return doi
