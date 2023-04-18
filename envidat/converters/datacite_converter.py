@@ -89,6 +89,8 @@ def get_config_datacite_converter(
 # TODO finish refactoring Datacite converter
 # TODO keep in mind that a reverse converter will
 #  also need to be written (DataCite to EnviDat)
+# TODO refactor to pass env config to all helper functions instead
+#  of loading config in helper functions
 def datacite_convert_dataset(dataset: dict, config: dict):
     """Convert EnviDat metadata package from CKAN to DataCite XML.
 
@@ -342,18 +344,15 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     related_identifiers = f"${related_publications} {related_datasets}"
 
     # TODO separate "related_publications" and "related_datasets"
-    dc_related_identifiers_test = get_dc_related_identifiers(related_identifiers)
-
-    # print(resources_related_ids)
-    # print(dc_related_identifiers_test)
+    dc_related_identifiers = get_dc_related_identifiers(related_identifiers)
 
     # Combine related identifiers from different sources
-    related_id_sources = [resources_related_ids, dc_related_identifiers_test]
     related_ids = []
+    related_id_sources = [resources_related_ids,
+                          dc_related_identifiers]
     for source in related_id_sources:
         if source:
             related_ids += source
-
     # print(related_ids)
 
     # Assign related_identifier tag(s) to dc
@@ -701,18 +700,36 @@ def get_dc_research_group(organization_title):
 
 # TODO separate "related_datasets" and "related_publications"
 #  for "relationType" assignments
-def get_dc_related_identifiers(related_identifiers):
-    """Return related datasets, related publications in
+def get_dc_related_identifiers(related_identifiers: str, has_related_datasets=False):
+    """Return EnviDat records "related_datasets" or "related_publications" values in
     DataCite "relatedIdentifiers" tag format
 
-    "relatedIdentiferType" and "relationType" are required attributes
-    for each "relatedIdentifer" (values are assigned)
+    Note: "relatedIdentiferType" and "relationType" are required attributes
+    for each "relatedIdentifer"
+
+    Args:
+       related_identifiers (str): Input related idetifiers, expected input is from
+                                  "related_datasets" or "related_publications" keys.
+
+       has_related_datasets (bool): If true then input is assumed to be from
+             "related_datasets" key. Default value is false and is assumed to
+             correspond to "related_publications" key.
     """
 
+    # Assign relation_type
+    if has_related_datasets:
+        # Corresponds to "related_datasets" key
+        relation_type = "Cites"
+    else:
+        # Corresponds to "related_publications" key
+        relation_type = "IsSupplementTo"
+
+    # Assign empty list to contain related identifiers
     dc_related_identifiers = []
 
     # Validate related_identifiers
-    if len(related_identifiers) > 0:
+    if related_identifiers:
+
         # Remove special characters "\r", "\n" and
         # remove Markdown link syntax using brackets and parentheses
         # and replace with one space " "
@@ -722,33 +739,24 @@ def get_dc_related_identifiers(related_identifiers):
         # duplicates
         related_ids = []
 
+        # Extract DOIs
         for word in related_identifiers.split(" "):
 
             # Apply search function to find DOIs
             doi = get_doi(word)
 
-            # Apply search criteria to find DOIs from DORA API
-            # DORA API documentation:
-            # https://www.wiki.lib4ri.ch/display/HEL/Technical+details+of+DORA
-            dora_str = "dora.lib4ri.ch/wsl/islandora/object/"
-            if dora_str in word:
-                dora_start_index = word.find(dora_str)
-                dora_pid = word[(dora_start_index + len(dora_str)):]
+            # If not doi then apply DORA API DOI search function
+            if not doi:
+                doi = get_dora_doi(word)
 
-                # Remove any characters that may exist after DORA PID
-                dora_end_index = dora_pid.find('/')
+            # If not doi then apply EnviDat CKAN API DOI search function
+            if not doi:
+                doi = get_envidat_doi(word)
 
-                # Modify dora_pid if dora_end_index found in dora_pid
-                if dora_end_index != -1:
-                    dora_pid = dora_pid[:dora_end_index]
-
-                # Call DORA API and get DOI if it listed in citation
-                doi_dora = get_dora_doi(dora_pid)
-                if doi_dora:
-                    doi = doi_dora
-
+            # Add doi to dc_related_identifiers if it meets conditions
             if doi and "/" in doi and doi not in related_ids:
                 related_ids.append(doi)
+                # TODO start refactoring here
                 dc_related_identifiers += [
                     {
                         "#text": doi,
@@ -761,14 +769,18 @@ def get_dc_related_identifiers(related_identifiers):
             # Apply URL validator to find other URLs (that are not DOIs)
             is_url = validators.url(word)
 
-            if all([is_url, word not in related_ids, "doi" not in word]):
+            if all([is_url,
+                    word not in related_ids,
+                    "doi" not in word,
+                    "dora.lib4ri.ch/wsl/islandora/object/" not in word]):
+
                 related_ids.append(word)
 
                 # EnviDat datasets are assigned a relationType of "Cites"
                 if word.startswith(
                         (
-                                "https://envidat.ch/#/metadata/",
-                                "https://envidat.ch/dataset/")
+                                "https://www.envidat.ch/#/metadata/",
+                                "https://www.envidat.ch/dataset/")
                 ):
                     dc_related_identifiers += [
                         {
@@ -793,8 +805,8 @@ def get_dc_related_identifiers(related_identifiers):
 def get_dc_related_identifiers_resources(resources):
     """Return URLs from resources in DataCite "relatedIdentifier" tag format
 
-    "relatedIdentiferType" and "relationType" are required attributes
-    for each "relatedIdentifer" (values are assigned)
+    Note: "relatedIdentiferType" and "relationType" are required attributes
+    for each "relatedIdentifer"
     """
 
     dc_related_identifier = []
@@ -1011,10 +1023,10 @@ def value_to_datacite_cv(value: str, datacite_tag: str, default: str = "") -> di
     return match_cv
 
 
-def get_doi(word: str):
+def get_doi(word: str) -> str | None:
     """Get DOI string from input word string, if DOI not found then returns None
 
-    For example: an input of "https://doi.org/10.1525/cse.2022.1561651" would return
+    Example: an input of "https://doi.org/10.1525/cse.2022.1561651" would return
         "10.1525/cse.2022.1561651" as output
 
     Args:
@@ -1036,15 +1048,121 @@ def get_doi(word: str):
         if doi_start_index != -1:
             doi = word[doi_start_index:]
 
-            # Remove a trailing "." period character if it exists
-            if doi[-1] == ".":
+            # Remove unwanted trailing period characters if they exist
+            unwanted_chars = [".", ","]
+            if any(doi[-1] == char for char in unwanted_chars):
                 doi = doi[:-1]
 
     # Return DOI if it exists, else return None
     return doi
 
 
-def get_dora_doi(dora_pid: str, dora_api_url: str = "https://envidat.ch/dora"):
+# TODO possibly pass env config as argument
+def get_envidat_doi(word: str,
+                    api_host="https://envidat.ch",
+                    api_package_show="/api/action/package_show?id=") -> str | None:
+    """Get DOI string from input work by calling EnviDat API,
+         if DOI not found then returns None.
+
+    Example: an input of
+    "https://www.envidat.ch/#/metadata/amphibian-and-landscape-data-swiss-lowlands"
+    would return ""10.16904/envidat.267" as output
+
+    Args:
+        word (str): Input string to test if it contains a DOI retrieved from
+                    EnviDat CKAN API
+        api_host (str): API host URL. Attempts to get from environment.
+            Default value is "https://envidat.ch".
+        api_package_show (str): API host path to show package. Attempts to get from
+             environment. Default value is "/api/action/package_show?id="
+
+     Returns:
+        str: String of DOI
+        None: If DOI could not be found
+    """
+
+    doi = None
+
+    # Check if word meets search criteria to be an EnviDat package URL
+    if word.startswith(
+            ("https://www.envidat.ch/#/metadata/", "https://www.envidat.ch/dataset/")) \
+            and "/resource/" not in word:
+
+        # Extract package_name from package URL
+        last_slash_index = word.rfind("/")
+        if last_slash_index != -1:
+            package_name = word[(last_slash_index + 1):]
+
+            # Load config from environment variables
+            config = dotenv_values(".env")
+
+            # Extract environment variables from config, else use default values
+            if "API_HOST" in config:
+                api_host = config["API_HOST"]
+            if "API_PACKAGE_SHOW" in config:
+                api_package_show = config["API_PACKAGE_SHOW"]
+
+            # Assemble URL used to call EnviDat CKAN API
+            api_url = f"{api_host}{api_package_show}{package_name}"
+
+            # Call API and try to return doi
+            try:
+                data = get_url(api_url).json()
+                if data:
+                    doi = data.get("result").get("doi")
+                    if doi:
+                        return doi
+            except Exception as e:
+                log.error(f"ERROR: Failed to retrieve'{api_url}' and extract DOI")
+                log.error(e)
+                return None
+
+    return doi
+
+
+def get_dora_doi(word: str) -> str | None:
+    """Get DOI string from input word string by calling DORA API,
+         if DOI not found then returns None.
+
+    Example: an input of "https://www.dora.lib4ri.ch/wsl/islandora/object/wsl%3A3213"
+      would return "10.5194/tc-10-1075-2016" as output
+
+    Args:
+        word (str): Input string to test if it contains a DOI retrieved from DORA API
+
+    Returns:
+        str: String of DOI
+        None: If DOI could not be found
+    """
+
+    doi = None
+
+    # Apply search criteria to find DOIs from DORA API
+    # DORA API documentation:
+    # https://www.wiki.lib4ri.ch/display/HEL/Technical+details+of+DORA
+    dora_str = "dora.lib4ri.ch/wsl/islandora/object/"
+    if dora_str in word:
+        dora_start_index = word.find(dora_str)
+        dora_pid = word[(dora_start_index + len(dora_str)):]
+
+        # Remove any characters that may exist after DORA PID
+        dora_end_index = dora_pid.find('/')
+
+        # Modify dora_pid if dora_end_index found in dora_pid
+        if dora_end_index != -1:
+            dora_pid = dora_pid[:dora_end_index]
+
+        # Call DORA API and get DOI if it listed in citation
+        doi_dora = get_dora_doi_string(dora_pid)
+        if doi_dora:
+            doi = doi_dora
+
+    return doi
+
+
+# TODO possibly pass env config as argument
+def get_dora_doi_string(
+        dora_pid: str, dora_api_url: str = "https://envidat.ch/dora") -> str | None:
     """Get DOI string from WSL DORA API using DORA PID
 
     DORA API documentation:
@@ -1054,7 +1172,7 @@ def get_dora_doi(dora_pid: str, dora_api_url: str = "https://envidat.ch/dora"):
 
     Args:
         dora_pid (str): DORA PID (permanent identification)
-        dora_api_url (str): API host url. Attempts to get from environment if omitted.
+        dora_api_url (str): API host url. Attempts to get from environment.
             Defaults to "https://envidat.ch/dora"
 
     Returns:
@@ -1062,7 +1180,7 @@ def get_dora_doi(dora_pid: str, dora_api_url: str = "https://envidat.ch/dora"):
         None: If DOI could not be found
     """
 
-    # Load config from environment vairables
+    # Load config from environment variables
     config = dotenv_values(".env")
 
     # Extract "DORA_API_URL" from config if it exists, else use default value
