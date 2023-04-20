@@ -284,9 +284,9 @@ def datacite_convert_dataset(dataset: dict, config: dict):
 
         date_type = (dte.get(config[dc_date_type_tag]))
         if date_type not in ["created", "Created", "collected", "Collected"]:
-            date_type = "Valid"
             log.warning(f"WARNING {config[dc_date_type_tag]} value '{date_type}' "
                         f"not a valid DataCite {dc_date_type_tag} ")
+            date_type = "Valid"
 
         dc_date = {
             "#text": dte.get(config[dc_date_tag], ""),

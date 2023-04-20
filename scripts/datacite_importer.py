@@ -10,7 +10,7 @@ print("Starting datacite_importer.py....")
 start_time = time.time()
 
 # Update all EnviDat records on DataCite
-print("See 'datacite_importer.log' for log of individual record updates")
+print("See log for individual record updates")
 datacite_update_all_records()
 
 # Assign and format timer, print execution time
