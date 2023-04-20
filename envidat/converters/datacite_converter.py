@@ -328,38 +328,39 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         "alternateIdentifier": alternate_identifiers
     }
 
-    # Related identifiers (from "resources", "related_publications",
-    # and "related_datasets" values)
+    # Related identifiers (from "related_datasets", "related_publications",
+    # and "resources" values)
 
-    # Get "resources" from EnviDat package,
+    # Get "related_datasets" from Envidat record
+    related_datasets = dataset.get("related_datasets", "")
+    dc_related_datasets = get_dc_related_identifiers(related_datasets,
+                                                     has_related_datasets=True)
+
+    # Get "related_publications" from EnviDat record
+    related_publications = dataset.get("related_publications", "")
+    dc_related_publications = get_dc_related_identifiers(related_publications)
+
+    # Get "resources" from EnviDat record,
     # used for DataCite "relatedIdentifiers" and "formats" tags
     resources = dataset.get("resources", [])
-    resources_related_ids = get_dc_related_identifiers_resources(resources)
-
-    # Combine "related_publications" and "related_datasets" values
-    # Note: EnviDat keys hard-coded because DataCite "relatedIdentifier" tags
-    # combines two EnviDat fields
-    related_publications = dataset.get("related_publications", "")
-    related_datasets = dataset.get("related_datasets", "")
-    related_identifiers = f"${related_publications} {related_datasets}"
-
-    # TODO separate "related_publications" and "related_datasets"
-    dc_related_identifiers = get_dc_related_identifiers(related_identifiers)
+    dc_resources = get_dc_related_identifiers_resources(resources)
 
     # Combine related identifiers from different sources
     related_ids = []
-    related_id_sources = [resources_related_ids,
-                          dc_related_identifiers]
+    related_id_sources = [
+        dc_related_datasets,
+        dc_related_publications,
+        dc_resources]
+
+    # Assign related_ids to sources that are truthy (not empty list)
     for source in related_id_sources:
         if source:
             related_ids += source
-    # print(related_ids)
 
     # Assign related_identifier tag(s) to dc
     dc_related_identifiers = collections.OrderedDict()
     if related_ids:
         dc_related_identifiers["relatedIdentifier"] = related_ids
-        # print(dc_related_identifiers)
         dc["resource"]["relatedIdentifiers"] = dc_related_identifiers
 
     # Formats (from resources)
@@ -698,9 +699,8 @@ def get_dc_research_group(organization_title):
     return dc_contributor
 
 
-# TODO separate "related_datasets" and "related_publications"
-#  for "relationType" assignments
-def get_dc_related_identifiers(related_identifiers: str, has_related_datasets=False):
+def get_dc_related_identifiers(related_identifiers: str,
+                               has_related_datasets=False) -> list[dict]:
     """Return EnviDat records "related_datasets" or "related_publications" values in
     DataCite "relatedIdentifiers" tag format
 
@@ -710,10 +710,10 @@ def get_dc_related_identifiers(related_identifiers: str, has_related_datasets=Fa
     Args:
        related_identifiers (str): Input related idetifiers, expected input is from
                                   "related_datasets" or "related_publications" keys.
-
        has_related_datasets (bool): If true then input is assumed to be from
-             "related_datasets" key. Default value is false and is assumed to
-             correspond to "related_publications" key.
+             "related_datasets" value in EnviDat record.
+             Default value is false and is assumed to correspond to
+             "related_publications" value in EnviDat record.
     """
 
     # Assign relation_type
@@ -748,56 +748,46 @@ def get_dc_related_identifiers(related_identifiers: str, has_related_datasets=Fa
             # If not doi then apply DORA API DOI search function
             if not doi:
                 doi = get_dora_doi(word)
+                # TODO remove log statement
+                log.info(f"FOUND DORA DOI:  {doi}")
 
             # If not doi then apply EnviDat CKAN API DOI search function
             if not doi:
                 doi = get_envidat_doi(word)
+                # TODO remove log statement
+                log.info(f"FOUND EnviDat DOI:  {doi}")
 
             # Add doi to dc_related_identifiers if it meets conditions
             if doi and "/" in doi and doi not in related_ids:
                 related_ids.append(doi)
-                # TODO start refactoring here
+
                 dc_related_identifiers += [
                     {
                         "#text": doi,
                         "@relatedIdentifierType": "DOI",
-                        "@relationType": "IsSupplementTo",
+                        "@relationType": relation_type,
                     }
                 ]
+
                 continue
 
-            # Apply URL validator to find other URLs (that are not DOIs)
+            # Apply URL validator to find other URLs (that are not DORA or EnviDat DOIs)
             is_url = validators.url(word)
 
+            # Add URL to dc_related_identifiers if it meets conditions
             if all([is_url,
                     word not in related_ids,
                     "doi" not in word,
                     "dora.lib4ri.ch/wsl/islandora/object/" not in word]):
-
                 related_ids.append(word)
 
-                # EnviDat datasets are assigned a relationType of "Cites"
-                if word.startswith(
-                        (
-                                "https://www.envidat.ch/#/metadata/",
-                                "https://www.envidat.ch/dataset/")
-                ):
-                    dc_related_identifiers += [
-                        {
-                            "#text": word,
-                            "@relatedIdentifierType": "URL",
-                            "@relationType": "Cites",
-                        }
-                    ]
-                else:
-                    # All other URLs are assigned a relationType of "IsSupplementTo"
-                    dc_related_identifiers += [
-                        {
-                            "#text": word,
-                            "@relatedIdentifierType": "URL",
-                            "@relationType": "IsSupplementTo",
-                        }
-                    ]
+                dc_related_identifiers += [
+                    {
+                        "#text": word,
+                        "@relatedIdentifierType": "URL",
+                        "@relationType": relation_type,
+                    }
+                ]
 
     return dc_related_identifiers
 
