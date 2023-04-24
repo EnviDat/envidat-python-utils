@@ -864,8 +864,9 @@ def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag) -> list
     return dc_descriptions
 
 
+# TODO check refactored function
 def get_dc_geolocations(spatial: dict):
-    """Returns spatial information in DataCite "geoLocations" format
+    """Returns spatial data in DataCite "geoLocations" format
 
     For list of required attributes for each type of GeoLocation
     see DataCite documentation.
@@ -873,49 +874,151 @@ def get_dc_geolocations(spatial: dict):
 
     dc_geolocations = []
 
-    if spatial.get("type", "").lower() == "polygon":
-        dc_geolocation = collections.OrderedDict()
-        dc_gelocation_polygon_tag = "geoLocationPolygon"
-        dc_geolocation[dc_gelocation_polygon_tag] = {"polygonPoint": []}
+    print(spatial)
 
-        for coordinates_pair in spatial.get("coordinates", "[[]]")[0]:
+    spatial_type = spatial.get("type", "").lower()
+
+    # TODO check if default case needed
+    match spatial_type:
+
+        # TODO refactor handling of "point
+        # TODO START refactoring here
+        case "point":
+            dc_geolocation_point_tag = "geoLocationPoint"
+            dc_geolocation = collections.OrderedDict()
+            dc_geolocation[dc_geolocation_point_tag] = collections.OrderedDict()
+
+            # TODO check flatten() call here
+            coordinates = flatten(spatial.get("coordinates", "[]"), reverse=True)
+            if len(coordinates) == 2:
+                dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = coordinates[1]
+                dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = coordinates[0]
+                dc_geolocations += [dc_geolocation]
+
+        case "polygon":
+            dc_geolocation = get_dc_gelocation_polygon(spatial)
+            if dc_geolocation:
+                dc_geolocations += [dc_geolocation]
+
+        case "multipoint":
+            for coordinates_pair in spatial.get("coordinates", "[]"):
+                dc_gelocation = get_dc_geolocation_point(coordinates_pair)
+                if dc_gelocation:
+                    dc_geolocations += [dc_gelocation]
+
+        # TODO handle "geometrycollection" type
+        case "geometrycollection":
+            pass
+
+    print(dc_geolocations)
+    return dc_geolocations
+
+
+def get_dc_gelocation_polygon(spatial: dict):
+    """Returns spatial data in DataCite "geoLocationPolygon" format"""
+    dc_geolocation = collections.OrderedDict()
+    dc_gelocation_polygon_tag = "geoLocationPolygon"
+    dc_geolocation[dc_gelocation_polygon_tag] = {"polygonPoint": []}
+
+    # TODO check that polygon spatial data are in "[[]]" double list
+    for coordinates_pair in spatial.get("coordinates", "[[]]")[0]:
+        if len(coordinates_pair) == 2:
             geolocation_point = collections.OrderedDict()
             geolocation_point["pointLongitude"] = coordinates_pair[0]
             geolocation_point["pointLatitude"] = coordinates_pair[1]
             dc_geolocation[dc_gelocation_polygon_tag]["polygonPoint"] += [
                 geolocation_point]
 
-        dc_geolocations += [dc_geolocation]
+    return dc_geolocation
 
-    else:
+
+def get_dc_geolocation_point(coordinates_pair: list[float]):
+    """Returns spatial data in DataCite's "geoLocationPoint" format.
+
+    If coordinates_pair list does not havea length of two then returns None.
+    """
+    if len(coordinates_pair) == 2:
+        dc_geolocation = collections.OrderedDict()
         dc_geolocation_point_tag = "geoLocationPoint"
+        dc_geolocation[dc_geolocation_point_tag] = collections.OrderedDict()
 
-        if spatial.get("type", "").lower() == "multipoint":
+        dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = coordinates_pair[0]
+        dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = coordinates_pair[1]
 
-            for coordinates_pair in spatial.get("coordinates", "[]"):
-                dc_geolocation = collections.OrderedDict()
-                dc_geolocation[dc_geolocation_point_tag] = collections.OrderedDict()
-                dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = \
-                    coordinates_pair[0]
-                dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = \
-                    coordinates_pair[1]
-                dc_geolocations += [dc_geolocation]
+        return dc_geolocation
 
-        # TODO handle "geometrycollection" type
-        # TODO revert to pass block for importing until testing finalized of this block
-        elif spatial.get("type", "").lower() == "geometrycollection":
-            pass
+    return None
 
-        else:
-            dc_geolocation = collections.OrderedDict()
-            dc_geolocation[dc_geolocation_point_tag] = collections.OrderedDict()
 
-            coordinates = flatten(spatial.get("coordinates", "[]"), reverse=True)
-            dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = coordinates[1]
-            dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = coordinates[0]
-            dc_geolocations += [dc_geolocation]
-
-    return dc_geolocations
+# TODO remove legacy get_dc_geolocations() function
+# def get_dc_geolocations(spatial: dict):
+#     """Returns spatial data in DataCite "geoLocations" format
+#
+#     For list of required attributes for each type of GeoLocation
+#     see DataCite documentation.
+#     """
+#
+#     dc_geolocations = []
+#
+#     if spatial.get("type", "").lower() == "polygon":
+#         dc_geolocation = collections.OrderedDict()
+#         dc_gelocation_polygon_tag = "geoLocationPolygon"
+#         dc_geolocation[dc_gelocation_polygon_tag] = {"polygonPoint": []}
+#
+#         for coordinates_pair in spatial.get("coordinates", "[[]]")[0]:
+#             geolocation_point = collections.OrderedDict()
+#             geolocation_point["pointLongitude"] = coordinates_pair[0]
+#             geolocation_point["pointLatitude"] = coordinates_pair[1]
+#             dc_geolocation[dc_gelocation_polygon_tag]["polygonPoint"] += [
+#                 geolocation_point]
+#
+#         dc_geolocations += [dc_geolocation]
+#
+#     else:
+#         dc_geolocation_point_tag = "geoLocationPoint"
+#
+#         if spatial.get("type", "").lower() == "multipoint":
+#
+#             for coordinates_pair in spatial.get("coordinates", "[]"):
+#                 dc_geolocation = collections.OrderedDict()
+#                 dc_geolocation[dc_geolocation_point_tag] = collections.OrderedDict()
+#                 dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = \
+#                     coordinates_pair[0]
+#                 dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = \
+#                     coordinates_pair[1]
+#                 dc_geolocations += [dc_geolocation]
+#
+#         # TODO handle "geometrycollection" type
+#         # TODO revert to pass block for importing until testing finalized of this block
+#         elif spatial.get("type", "").lower() == "geometrycollection":
+#             pass
+#         # elif spatial.get("type", "").lower() == "geometrycollection":
+#         #
+#         #     for geometry in spatial.get("geometries"):
+#         #
+#         #         if geometry.get("type", "").lower() == "point":
+#         #             coordinates = geometry.get("coordinates")
+#         #
+#         #             dc_geolocation = collections.OrderedDict()
+#         #             dc_geolocation[dc_geolocation_point_tag] =
+#         #             collections.OrderedDict()
+#         #
+#         #             dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = \
+#         #                 coordinates[0]
+#         #             dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = \
+#         #                 coordinates[1]
+#         #             dc_geolocations += [dc_geolocation]
+#
+#         else:
+#             dc_geolocation = collections.OrderedDict()
+#             dc_geolocation[dc_geolocation_point_tag] = collections.OrderedDict()
+#
+#             coordinates = flatten(spatial.get("coordinates", "[]"), reverse=True)
+#             dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = coordinates[1]
+#             dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = coordinates[0]
+#             dc_geolocations += [dc_geolocation]
+#
+#     return dc_geolocations
 
 
 def flatten(inp: list, reverse: bool = False) -> list:
