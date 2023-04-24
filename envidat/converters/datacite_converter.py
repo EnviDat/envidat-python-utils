@@ -3,10 +3,8 @@
 import collections
 import json
 import re
-from itertools import chain
 from json import JSONDecodeError
 from logging import getLogger
-from typing import Union
 import jsonschema
 import validators
 from datetime import date
@@ -20,7 +18,7 @@ log = getLogger(__name__)
 
 # TODO add return type hints to functions
 
-def convert_datacite(metadata_record: dict) -> Union[str, None]:
+def convert_datacite(metadata_record: dict) -> str | None:
     """Generate XML formatted string in DataCite format.
 
     Note:
@@ -56,7 +54,7 @@ def convert_datacite(metadata_record: dict) -> Union[str, None]:
 
 def get_config_datacite_converter(
         config_path: str = "envidat/config/config_converters.json"
-) -> Union[dict, None]:
+) -> dict | None:
     """Return validated datacite converter JSON config as Python dictionary.
 
     Dictionary maps Datacite XML schema tags (keys) to EnviDat schema fields (values).
@@ -626,7 +624,7 @@ def get_dc_contributor(maintainer: dict, config: dict):
     return dc_contributor
 
 
-def affiliation_to_dc(affiliation, config):
+def affiliation_to_dc(affiliation, config) -> dict[str, str]:
     """Returns affiliation in DataCite "affiliation" tag format.
 
        Uses config to map commonly used affiliations in EnviDat packages
@@ -700,7 +698,7 @@ def get_dc_research_group(organization_title):
 
 
 def get_dc_related_identifiers(related_identifiers: str,
-                               has_related_datasets=False) -> list[dict]:
+                               has_related_datasets=False) -> list[dict[str, str]]:
     """Return EnviDat records "related_datasets" or "related_publications" values in
     DataCite "relatedIdentifiers" tag format
 
@@ -748,14 +746,10 @@ def get_dc_related_identifiers(related_identifiers: str,
             # If not doi then apply DORA API DOI search function
             if not doi:
                 doi = get_dora_doi(word)
-                # TODO remove log statement
-                log.info(f"FOUND DORA DOI:  {doi}")
 
             # If not doi then apply EnviDat CKAN API DOI search function
             if not doi:
                 doi = get_envidat_doi(word)
-                # TODO remove log statement
-                log.info(f"FOUND EnviDat DOI:  {doi}")
 
             # Add doi to dc_related_identifiers if it meets conditions
             if doi and "/" in doi and doi not in related_ids:
@@ -792,7 +786,7 @@ def get_dc_related_identifiers(related_identifiers: str,
     return dc_related_identifiers
 
 
-def get_dc_related_identifiers_resources(resources):
+def get_dc_related_identifiers_resources(resources) -> list[dict[str, str]]:
     """Return URLs from resources in DataCite "relatedIdentifier" tag format
 
     Note: "relatedIdentiferType" and "relationType" are required attributes
@@ -815,7 +809,7 @@ def get_dc_related_identifiers_resources(resources):
     return dc_related_identifier
 
 
-def get_dc_formats(resources):
+def get_dc_formats(resources) -> list[dict[str, str]]:
     """Returns resources formats in DataCite "formats" tag format"""
     dc_formats = []
 
@@ -834,7 +828,7 @@ def get_dc_formats(resources):
     return dc_formats
 
 
-def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag):
+def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag) -> list[str]:
     """Returns notes in DataCite "descriptions" tag format
 
     "descriptionType" is a REQUIRED DataCite attribute for each "description",
