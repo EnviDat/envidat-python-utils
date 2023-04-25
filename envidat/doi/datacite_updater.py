@@ -84,6 +84,56 @@ def datacite_update_all_records():
     return 'Successfully updated EnviDat records on DataCite'
 
 
+# TODO implement try/except error handling
+# TODO write docstring
+# TODO test function
+def datacite_update_records(record_names: list[str]):
+    """
+    Updates existing DOIs for EnviDat records on DataCite.
+
+    ASSUMPTION: Record alreadys exists on DataCite and should be updated.
+
+    Function converts all EnviDat records to DataCite Metadata Schema 4.4, for
+    documentation: https://schema.datacite.org/meta/kernel-4.4/
+
+    For documentation of DataCite API: ;=https://support.datacite.org/docs/api
+
+    For DataCite API reference:
+    https://support.datacite.org/reference/introduction
+
+    For documentation of DataCite API endpoint that updates DOIs:
+    https://support.datacite.org/reference/put_dois-id
+
+    Args:
+    records (list[str]): List of EnviDat records names that should be updated.
+        Example: ["mountland-jura", "envidat-lwf-51"]
+    """
+
+    # Update DOIs in DataCite for EnviDat record_names
+    for name in record_names:
+
+        # Get EnviDat record from CKAN API
+        envidat_record = get_envidat_record(name)
+
+        # Extract package from record result
+        package = envidat_record.get("result")
+
+        # Update records existing DOIs in DataCite
+        dc_response = publish_datacite(package, is_update=True)
+
+        # Add package name to dc_reponse
+        dc_response["name"] = name
+
+        # Log response for updated record, expecting a status code of 200
+        if dc_response.get("status_code") == 200:
+            log.info(dc_response)
+        # Else log response for unexpected DataCite response status codes
+        else:
+            log.error(dc_response)
+
+    return 'Successfully updated EnviDat record(s) on DataCite'
+
+
 # TODO write docstring
 def get_dc_dois(num_records: int = 10000) -> list[str] | None:
     """Return a list of DOIs in DataCite.
