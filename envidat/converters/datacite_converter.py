@@ -437,7 +437,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
 
         if spatial and spatial_type:
             if spatial_type == "geometrycollection":
-                dc_geolocations = geometrycollection_to_dc_gelocations(spatial)
+                dc_geolocations = geometrycollection_to_dc_geolocations(spatial)
             else:
                 dc_geolocations = get_dc_geolocations(spatial, spatial_type)
     except JSONDecodeError:
@@ -869,7 +869,7 @@ def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag) -> list
     return dc_descriptions
 
 
-def geometrycollection_to_dc_gelocations(spatial: dict):
+def geometrycollection_to_dc_geolocations(spatial: dict):
     """Returns spatial data in DataCite "geoLocations" format.
 
     Assumption: input spatial dictionary has a "type" value of "geometrycollection".
