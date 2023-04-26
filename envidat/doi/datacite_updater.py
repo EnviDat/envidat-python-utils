@@ -67,6 +67,8 @@ def datacite_update_all_records():
         # Extract package from record result
         package = envidat_record.get("result")
 
+        # TODO implement error handling to check if expected response recieved from call to CKAN API
+
         # Update records with DOIs already existing in DataCite
         if record.get("doi") in dc_dois:
             dc_response = publish_datacite(package, is_update=True)
@@ -85,7 +87,6 @@ def datacite_update_all_records():
 
 
 # TODO implement try/except error handling
-# TODO write docstring
 # TODO test function
 def datacite_update_records(record_names: list[str]):
     """
@@ -115,23 +116,26 @@ def datacite_update_records(record_names: list[str]):
         # Get EnviDat record from CKAN API
         envidat_record = get_envidat_record(name)
 
-        # Extract package from record result
-        package = envidat_record.get("result")
+        # Extract result from record
+        result = envidat_record.get("result")
+
+        # Check status code of response from call to CKAN API
+        if envidat_record.get("status_code") != 200:
+            log.error(f"Failed to get EnviDat record for package with name '{name}', error:  {result}")
+            continue
 
         # Update records existing DOIs in DataCite
-        dc_response = publish_datacite(package, is_update=True)
-
-        # Add package name to dc_reponse
-        dc_response["name"] = name
+        dc_response = publish_datacite(result, is_update=True)
 
         # Log response for updated record, expecting a status code of 200
         if dc_response.get("status_code") == 200:
+            dc_response["name"] = name  # Add package name to dc_reponse
             log.info(dc_response)
         # Else log response for unexpected DataCite response status codes
         else:
-            log.error(dc_response)
+            log.error(f"Failed to update record in DataCite for package with name '{name}', error:  {dc_response}")
 
-    return 'Successfully updated EnviDat record(s) on DataCite'
+    return
 
 
 # TODO write docstring
