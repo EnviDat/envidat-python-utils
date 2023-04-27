@@ -216,21 +216,29 @@ def get_dc_dois(num_records: int = 10000) -> list[str] | None:
 
 
 # TODO implement error handling (try/excpet)
-# TODO write docstring
 def get_published_record_names_with_dois() -> list[dict] | None:
-    """
+    """Return EnviDat record names that have a DOI and a "publication_state"
+    value of "published".
+
+    Logs records that do not have a DOI or have a DOI but a
+    "publication_state" value of "reserved".
+
+    Returns: list[dict]/None: List of record name dictionaries with "name"
+              and "doi" keys. Returns None if failed to obtain list.
     """
 
     err_message = "Failed to get names of published records with DOIs."
 
     # Get JSON response from call to CKAN
     # "API_CURRENT_PACKAGE_LIST_WITH_RESOURCES" endpoint
-    response_json = get_response_json(api_host="API_HOST",
-                                      api_path=
-                                      "API_CURRENT_PACKAGE_LIST_WITH_RESOURCES",
-                                      query={"limit": 100000})
+    response_json = get_response_json(
+        api_host="API_HOST",
+        api_path=
+        "API_CURRENT_PACKAGE_LIST_WITH_RESOURCES",
+        query={"limit": 100000})
 
-    # Extract and return record names from records that have a DOI and are published
+    # Extract and return record names from records that have a DOI and are
+    # published
     if response_json:
 
         records = response_json["result"]
@@ -239,7 +247,8 @@ def get_published_record_names_with_dois() -> list[dict] | None:
 
             for record in records:
                 # TODO review condition
-                if record.get("doi") and record.get("publication_state") == "published":
+                if record.get("doi") and \
+                        record.get("publication_state") == "published":
                     published_records.append({
                         "name": record.get("name"),
                         "doi": record.get("doi")
@@ -251,14 +260,18 @@ def get_published_record_names_with_dois() -> list[dict] | None:
                 elif record.get("doi") and record.get(
                         "publication_state") == "reserved":
                     log.warning(
-                        f"Record '{record.get('name')}' with DOI {record['doi']}"
+                        f"Record '{record.get('name')}' "
+                        f"with DOI {record['doi']} "
                         f" has a 'publication_state' value of"
-                        f" '{record['publication_state']}' and is not published on "
+                        f" '{record['publication_state']}' and is not "
+                        f"published on "
                         f"DataCite")
 
-                # Log warning for records that have a "doi" value of empty string ""
+                # Log warning for records that have a "doi" value of empty
+                # string ""
                 elif record.get("doi") == "":
-                    log.warning(f"Record does not have a DOI:'{record.get('name')}'")
+                    log.warning(
+                        f"Record does not have a DOI:'{record.get('name')}'")
 
             return published_records
 
