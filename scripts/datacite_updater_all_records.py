@@ -1,5 +1,5 @@
 # Script to update ALL Envidat records on datacite.
-# Command to run script:   python -m scripts.datacite_importer_all_records
+# Command to run script:   python -m scripts.datacite_updater_all_records
 
 import time
 from envidat.doi.datacite_updater import datacite_update_all_records
@@ -17,7 +17,7 @@ datacite_update_all_records()
 end_time = time.time()
 timer = end_time - start_time
 print(f"Ending datacite_updater_all_records.py, "
-      f"that took {round(timer, 3)} seconds")
+      f"that took {round(timer, 0)} seconds")
 
 
 
