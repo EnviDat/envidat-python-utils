@@ -16,7 +16,8 @@ datacite_update_all_records()
 # Assign and format timer, print execution time
 end_time = time.time()
 timer = end_time - start_time
-print(f"Ending datacite_updater_all_records.py, that took {round(timer, 3)} seconds")
+print(f"Ending datacite_updater_all_records.py, "
+      f"that took {round(timer, 3)} seconds")
 
 
 
