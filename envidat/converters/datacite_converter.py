@@ -48,7 +48,8 @@ def convert_datacite(metadata_record: dict) -> str | None:
             return None
 
     except TypeError as err:
-        log.error(f"ERROR failed to convert record to DataCite format, error: {err}")
+        log.error(f"ERROR failed to convert record to DataCite format, "
+                  f"error: {err}")
         return None
 
 
@@ -57,11 +58,12 @@ def get_config_datacite_converter(
 ) -> dict | None:
     """Return validated datacite converter JSON config as Python dictionary.
 
-    Dictionary maps Datacite XML schema tags (keys) to EnviDat schema fields (values).
+    Dictionary maps Datacite XML schema tags (keys) to EnviDat schema fields
+    (values).
 
     Args:
         config_path (str): Path to JSON config file,
-                           default path is "envidat/config/config_converters.json"
+                        default path is "envidat/config/config_converters.json"
 
     Returns:
         dict: datacite converter JSON config as Python dictionary
@@ -73,7 +75,8 @@ def get_config_datacite_converter(
         config: dict = json.load(config_json)
         datacite_config: dict = config["datacite_converter"]
 
-        # Validate DataCite config has keys REQUIRED by DataCite Metadata Schema 4.4,
+        # Validate DataCite config has keys REQUIRED by DataCite Metadata
+        # Schema 4.4,
         # for documentation see https://schema.datacite.org/meta/kernel-4.4/
         try:
             validate_dc_config(datacite_config)
