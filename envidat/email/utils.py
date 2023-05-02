@@ -1,7 +1,8 @@
 
 from dotenv import dotenv_values
 import requests
-from envidat.email.constants import PublishAction, PublishSubject, PublishTemplateName
+from envidat.email.constants import PublishAction, PublishSubject, \
+    PublishTemplateName
 
 from logging import getLogger
 
@@ -19,7 +20,7 @@ def get_user_show(user_id: str) -> dict | None:
     try:
         API_HOST = config["API_HOST"]
         API_USER_SHOW = config["API_USER_SHOW"]
-        API_KEY = config["API_KEY"]
+        API_TOKEN = config["API_TOKEN"]
     except KeyError as e:
         log.error(f'KeyError: {e} does not exist in config')
         return None
@@ -32,7 +33,7 @@ def get_user_show(user_id: str) -> dict | None:
     try:
         # Request user's account from CKAN
         api_url = f"{API_HOST}{API_USER_SHOW}{user_id}"
-        headers = {"Authorization": API_KEY}
+        headers = {"Authorization": API_TOKEN}
         response = requests.get(api_url, headers=headers)
 
         # Handle unexpected response status_code
