@@ -7,6 +7,7 @@ import logging
 import os
 
 from envidat.utils import get_url, get_url_response
+from dotenv import dotenv_values
 
 log = logging.getLogger(__name__)
 
@@ -109,7 +110,8 @@ def get_package(
     return package
 
 
-# TODO refactor this or get_package() as they have similar functionality
+# TODO refactor this or get_package() as they have similar functionality,
+#  check usage of functions in project
 def get_envidat_record(
         package_name: str,
         host: str = "https://www.envidat.ch",
@@ -125,20 +127,36 @@ def get_envidat_record(
         path (str): API host path. Attempts to get from environment if omitted.
             Defaults to "api/action/package_show?id="
         cookie (str | None): Cookie passed to API call in header,
-                             default value is None as this argument is not always used
+                             default value is None as this argument is not
+                             always used
 
     Returns:
         dict: Dictionary of package (metadata entry).
     """
-    if "API_HOST" in os.environ and "API_PACKAGE_SHOW" in os.environ:
-        log.debug("Getting API host and path from environment variables.")
-        host = os.getenv("API_HOST")
-        path = os.getenv("API_PACKAGE_SHOW")
+
+    # Load config from environment vairables
+    config = dotenv_values(".env")
+
+    # Extract environment variables from config needed to call CKAN
+    # If environment variables cannot be extracted then use default values
+    # for host and path
+    try:
+        host = config["API_HOST"]
+        path = config["API_PACKAGE_SHOW"]
+    except KeyError as e:
+        log.error(f'KeyError: {e} does not exist in config')
+        host = host
+        path = path
+    except AttributeError as e:
+        log.error(e)
+        host = host
+        path = path
 
     try:
         # Extract result dictionary from API call, pass cookie if is truthy
         if cookie:
-            response = get_url_response(f"{host}{path}{package_name}", cookie=cookie)
+            response = get_url_response(
+                f"{host}{path}{package_name}", cookie=cookie)
         else:
             response = get_url_response(f"{host}{path}{package_name}")
 
