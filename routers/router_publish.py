@@ -42,12 +42,15 @@ def publish_record_to_datacite(name: str,
         if status_code != 200:
             response.status_code = status_code
             return {"error": record.get("result",
-                                        "Failed to extract record as JSON from CKAN "
+                                        "Failed to extract record as JSON "
+                                        "from CKAN "
                                         "API, check logs")}
     except AttributeError as e:
         log.error(e)
         response.status_code = 500
-        return {"error": "Failed to extract record as JSON from CKAN API, check logs"}
+        return {
+            "error": "Failed to extract record as JSON from CKAN API, "
+                     "check logs"}
 
     # Publish package to DataCite and return DOI
     try:
@@ -77,7 +80,8 @@ def publish_record_to_datacite(name: str,
 
         # Handle HTTP errors from publishing to DataCite
         if dc_status_code != 201:
-            return {"error": dc_response.get("result", "Internal Server Error")}
+            return {
+                "error": dc_response.get("result", "Internal Server Error")}
 
         # TODO implement notification email
         # Else send notification email and return published DOI
@@ -90,7 +94,8 @@ def publish_record_to_datacite(name: str,
                          "check logs for errors"}
 
 
-# TODO change package_name argument to package_id (test using package name as well) as
+# TODO change package_name argument to package_id
+#  (test using package name as well) as
 #  this will be used to get package name and maintainer email
 # TODO make an email sender function that uses background tasks
 # TODO try to find corresponding template and match (otherwise send error),
@@ -98,6 +103,7 @@ def publish_record_to_datacite(name: str,
 # TODO check if templates should be HTML or plain text
 # TODO change return value
 # TODO implement try/exception error handling
+# TODO write docstring
 @router.get('/email/{publish_action}')
 async def send_email_publish_async(publish_action: PublishAction,
                                    user_id: str,
@@ -107,23 +113,36 @@ async def send_email_publish_async(publish_action: PublishAction,
     # Get subject and template_name needed to send email
     subject, template_name = get_publish_email_subject_template(publish_action)
 
-    # TODO replace with get_response_json(), extract "result" key from returned value
+    # TODO replace with get_response_json(), extract "result" key
+    #  from returned value
     # TODO start dev here
-    # Get user's account from CKAN API
-    user_account = get_user_show(user_id)
+    # Get user's account information from CKAN API
+    user = get_user_show(user_id)
 
-    # Check if user_account is truthy
-    if not user_account:
+    # Check if user is truthy
+    if not user:
         return None
 
     # Get arguments needed to send email from user's account
-    user_name = get_dict_value(user_account, "fullname")
-    user_email = get_dict_value(user_account, "email")
+    user_name = get_dict_value(user, "fullname")
+    user_email = get_dict_value(user, "email")
 
     # TODO get maintainer_email
-    # TODO call package_show
-    # TODO get package name
+    # TODO check if maintainer_email should be validated
+    # TODO check if package_name should be validated,
+    #  (hyphens between names and no white space)
     # TODO START DEV here
+    # Get EnviDat record from CKAN API
+    record = get_envidat_record(package_name)
+
+    # Handle HTTP errors from CKAN API call (default status_code is 500)
+    status_code = record.get("status_code", 500)
+    if status_code != 200:
+        return None
+
+    # Extract package from record result
+    package = record.get("result")
+    # return package
 
     # Validate arguments used to send email are not None
     email_kwargs = {"subject": subject,
@@ -137,8 +156,6 @@ async def send_email_publish_async(publish_action: PublishAction,
     if has_none:
         return None
 
-    # TODO check if package_name should be validated,
-    #  (hyphens between names and no white space)
     # TODO review formatting of subject (i.e. including colon)
     # Format subject
     subject = f"{subject}: {package_name}"
