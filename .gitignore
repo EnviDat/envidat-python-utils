@@ -8,5 +8,12 @@
 # Build
 dist
 .pdm.toml
-__pypackages__/
 /.env
+
+# PDM
+__pypackages__
+.pdm.toml
+pdm.lock
+
+# Logs
+**/logs
