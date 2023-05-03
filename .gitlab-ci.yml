@@ -15,13 +15,10 @@ run-tests:
   stage: test
   image: python:3.10
   before_script:
-    - pip install pdm pytest
-    - pdm config python.use_venv false
-    - VERSION=$(echo "$PYTHON_VERSION" | grep -Eo '[0-9]\.[0-9]+')
-    - export PYTHONPATH="/usr/local/lib/python$VERSION/site-packages/pdm/pep582"
+    - pip install pdm>=2.5.3
     - pdm install -G test
   script:
-    - pytest --verbose
+    - pdm run pytest --verbose
 
 pip-package:
   stage: deploy
@@ -29,24 +26,21 @@ pip-package:
   rules:
     - if: $CI_COMMIT_TAG
   before_script:
-    - pip install pdm twine
-    - pdm config python.use_venv false
+    - pip install pdm>=2.5.3
   script:
-    - pdm build
-    - >
-      twine upload
-      -u "__token__"
-      -p "$PYPI_API_TOKEN"
-      dist/* --verbose --skip-existing
+    - pdm config repository.pypi.username "__token__"
+    - pdm config repository.pypi.password "${PYPI_API_TOKEN}"
+    - pdm publish
 
 pages:
   stage: deploy
   image: python:3.10
   before_script:
-    - pip install mkdocs-material
-    - cd docs
+    - pip install pdm>=2.5.3
+    - pdm install -G docs
   script:
-    - mkdocs build --site-dir public
+    - cd docs
+    - pdm run mkdocs build --site-dir public
     - mv public ../public
   artifacts:
     paths:
