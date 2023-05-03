@@ -45,7 +45,7 @@ class Record:
         Only one argument should be passed for data format.
 
         Args:
-            input_data [str, dict]: Data input, in JSON or dict form.
+            input_data ([str, dict]): Data input, in JSON or dict form.
                 Can also accept a package name to extract a record from the API.
             convert (str):
                 Options: Convert the content immediately to specified type.
@@ -107,12 +107,14 @@ class Record:
             "creator_user_id",
             "date",
             "doi",
+            # "extras", NOT ALWAYS PRESENT
             "funding",
             "id",
             "isopen",
             # "language", NOT ALWAYS PRESENT
             "license_id",
             "license_title",
+            # "license_url", NOT ALWAYS PRESENT
             "maintainer",
             "maintainer_email",
             "metadata_created",
@@ -154,7 +156,8 @@ class Record:
         if missing_keys:
             log.error(f"Metadata entry is missing fields: {missing_keys}")
             raise ValueError(
-                "Content does not have all required fields for a metadata entry."
+                "Content does not have all required fields for a metadata entry. "
+                f"Missing: {missing_keys}"
             )
 
         return True

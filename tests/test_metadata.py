@@ -24,9 +24,7 @@ def test_record_init_from_dict(example_ckan_dict, metadata_keys):
 
 def test_record_init_from_api(example_ckan_json, metadata_keys):
     """Test init using call to API."""
-    record_from_api = Record(
-        "ecological-properties-of-urban-ecosystems-biodiversity-dataset-of-zurich"
-    )
+    record_from_api = Record("gem2")
 
     assert Counter(list(record_from_api.content.keys())) == Counter(metadata_keys)
 
