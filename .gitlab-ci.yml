@@ -15,7 +15,7 @@ run-tests:
   stage: test
   image: python:3.10
   before_script:
-    - pip install pdm>=2.5.3
+    - pip install pdm>=2.5.3 requests==2.29.0
     - pdm install -G test
   script:
     - pdm run pytest --verbose
@@ -26,7 +26,7 @@ pip-package:
   rules:
     - if: $CI_COMMIT_TAG
   before_script:
-    - pip install pdm>=2.5.3
+    - pip install pdm>=2.5.3 requests==2.29.0
   script:
     - pdm config repository.pypi.username "__token__"
     - pdm config repository.pypi.password "${PYPI_API_TOKEN}"
@@ -36,7 +36,7 @@ pages:
   stage: deploy
   image: python:3.10
   before_script:
-    - pip install pdm>=2.5.3
+    - pip install pdm>=2.5.3 requests==2.29.0
     - pdm install -G docs
   script:
     - cd docs
