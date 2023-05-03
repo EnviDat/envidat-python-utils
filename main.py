@@ -1,10 +1,11 @@
-from enum import Enum
-
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
-from envidat.email.send_email import send_email_background, send_email_background_test
 from routers import router_publish
+
+# TODO improve API documentation
+
+# Command to run dev server: uvicorn main:app --reload
 
 # Declare app instance of FastAPI()
 app = FastAPI()
@@ -29,24 +30,3 @@ def home():
     </html>
     """
     return HTMLResponse(content=html_content, status_code=200)
-
-
-# TODO test endpoint
-# @app.get('/send-email/backgroundtasks')
-# def send_email_backgroundtasks(background_tasks: BackgroundTasks):
-#     send_email_background_test(background_tasks, 'Hello World', 'test@test.com',
-#                                # {'title': 'Hello World', 'name': 'Whaley'}
-#                                )
-#
-#     # return 'Success'
-
-
-# TODO test endpoint
-# @app.get('/send-email/asynchronous')
-# async def send_email_asynchronous(recipient: EmailStr):
-#     # TODO include package name in email title
-#     await send_email_async(recipient,
-#                            # {'title': 'Hello World', 'name': 'Whaley'}
-#                            )
-#
-#     return 'Success'
