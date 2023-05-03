@@ -29,11 +29,11 @@ def reserve_draft_doi_datacite(metadata_record: dict) -> str | None:
        For DataCite documentation of this process see:
        https://support.datacite.org/docs/api-create-dois#create-an-identifier-in-draft-state
 
-    Args: metadata_record (dict): Individual EnviDat metadata entry record
-    dictionary.
+    Args:
+        metadata_record (dict): Individual EnviDat metadata entry record dictionary.
 
     Returns:
-        str/None: DOI reserved in DataCite or None if DOI reservation failed
+        str|None: DOI reserved in DataCite or None if DOI reservation failed
     """
     # Load config from environment vairables
     config = dotenv_values(".env")

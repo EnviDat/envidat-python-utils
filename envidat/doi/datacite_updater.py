@@ -86,8 +86,7 @@ def datacite_update_records(record_names: list[str]):
 
     Args:
         record_names (list[str]): List of EnviDat records names that should be
-            updated.
-            Example: ["mountland-jura", "envidat-lwf-51"]
+            updated. Example: ["mountland-jura", "envidat-lwf-51"]
     """
     # Update DOIs in DataCite for EnviDat record_names
     for name in record_names:
@@ -210,8 +209,8 @@ def get_dc_dois(num_records: int = 10000) -> list[str] | None:
     https://support.datacite.org/docs/api-get-lists
 
     Args:
-     num_records (int): Number of records to retrieve from DORA API.
-     Default value is 10000.
+        num_records (int): Number of records to retrieve from DORA API.
+        Default value is 10000.
     """
     # Load config from environment vairables
     config = dotenv_values(".env")

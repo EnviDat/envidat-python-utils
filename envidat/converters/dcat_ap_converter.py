@@ -329,7 +329,8 @@ def wrap_packages_dcat_ap_xml(dcat_xml_packages: list) -> str:
         dcat_xml_packages (list[str,dict]): All DCAT-AP formatted packages to include.
             In string XML or dictionary format.
 
-    Note: this is a required final step for producing a DCAT-AP CH format XML.
+    Note:
+        This is a required final step for producing a DCAT-AP CH format XML.
     """
     catalog_dict = OrderedDict()
 

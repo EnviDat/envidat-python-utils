@@ -3,13 +3,14 @@
 import collections
 import json
 import re
+from datetime import date
 from json import JSONDecodeError
 from logging import getLogger
+
 import jsonschema
 import validators
-from datetime import date
-from xmltodict import unparse
 from dotenv import dotenv_values
+from xmltodict import unparse
 
 from envidat.utils import get_url
 
@@ -43,8 +44,8 @@ def convert_datacite(metadata_record: dict) -> str | None:
         if converted_package:
             return unparse(converted_package, pretty=True)
         else:
-            log.error(f"ERROR failed to convert record to DataCite format, "
-                      f"check log for error causes")
+            log.error("ERROR failed to convert record to DataCite format, "
+                      "check log for error causes")
             return None
 
     except TypeError as err:
@@ -95,18 +96,17 @@ def get_config_datacite_converter(
 def datacite_convert_dataset(dataset: dict, config: dict):
     """Convert EnviDat metadata package from CKAN to DataCite XML.
 
-       Notes: This converter is compatible with DataCite Metadata Schema 4.4, for
-       documentation see https://schema.datacite.org/meta/kernel-4.4/
+    Notes: This converter is compatible with DataCite Metadata Schema 4.4, for
+    documentation see https://schema.datacite.org/meta/kernel-4.4/
 
-       Args:
-           dataset (dict): EnviDat metadata entry record dictionary.
-           config (dict): datacite converter config dervied from JSON config
+    Args:
+    dataset (dict): EnviDat metadata entry record dictionary.
+    config (dict): datacite converter config dervied from JSON config
 
-        Returns:
-            collections.orderedDict: ordered dictionary with input record converted to
-            DataCite format
+    Returns:
+    collections.orderedDict: ordered dictionary with input record converted to
+    DataCite format
     """
-
     # Initialize ordered dictionary that will contain
     # dataset content converted to DataCite format
     dc = collections.OrderedDict()
@@ -517,8 +517,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
 
 
 def get_dc_creator(author: dict, config: dict):
-    """Returns author information in DataCite "creator" tag format"""
-
+    """Returns author information in DataCite "creator" tag format."""
     dc_creator_tag = "creator"
     dc_creator = collections.OrderedDict()
 
@@ -569,7 +568,7 @@ def get_dc_creator(author: dict, config: dict):
 
 def get_dc_contributor(maintainer: dict, config: dict):
     """Returns maintainer in DataCite "contributor" tag format with a
-    contributorType of "ContactPerson"
+    contributorType of "ContactPerson".
 
     REQUIRED DataCite attribute for each "contributor": "contributorType",
                                       (value assigned is "Contact Person")
@@ -579,7 +578,6 @@ def get_dc_contributor(maintainer: dict, config: dict):
     REQUIRED DataCite property for each "nameIdentifier" property:
                                        "nameIdentifierScheme" (default value is "ORCID")
     """
-
     dc_contributor = collections.OrderedDict()
     dc_contributor_tag = "contributor"
 
@@ -635,11 +633,10 @@ def get_dc_contributor(maintainer: dict, config: dict):
 def affiliation_to_dc(affiliation, config) -> dict[str, str]:
     """Returns affiliation in DataCite "affiliation" tag format.
 
-       Uses config to map commonly used affiliations in EnviDat packages
-       (i.e. "WSL", "SLF") with long names of instiutions
-       and ROR identifiers when available.
+    Uses config to map commonly used affiliations in EnviDat packages
+    (i.e. "WSL", "SLF") with long names of instiutions
+    and ROR identifiers when available.
     """
-
     # Get key from config that corresponds to affiliation
     aff_keys = {
         "WSL": "wsl",
@@ -691,8 +688,8 @@ def affiliation_to_dc(affiliation, config) -> dict[str, str]:
 
 def get_dc_research_group(organization_title):
     """Returns organization title in DataCite "contributor" format with a
-    contributorType of "ResearchGroup" """
-
+    contributorType of "ResearchGroup".
+    """
     dc_contributor = collections.OrderedDict()
 
     dc_contributor["@contributorType"] = "ResearchGroup"
@@ -708,20 +705,20 @@ def get_dc_research_group(organization_title):
 def get_dc_related_identifiers(related_identifiers: str,
                                has_related_datasets=False) -> list[dict[str, str]]:
     """Return EnviDat records "related_datasets" or "related_publications" values in
-    DataCite "relatedIdentifiers" tag format
+    DataCite "relatedIdentifiers" tag format.
 
-    Note: "relatedIdentiferType" and "relationType" are required attributes
-    for each "relatedIdentifer"
+    Note:
+        "relatedIdentiferType" and "relationType" are required attributes
+        for each "relatedIdentifer"
 
     Args:
-       related_identifiers (str): Input related idetifiers, expected input is from
-                                  "related_datasets" or "related_publications" keys.
-       has_related_datasets (bool): If true then input is assumed to be from
-             "related_datasets" value in EnviDat record.
-             Default value is false and is assumed to correspond to
-             "related_publications" value in EnviDat record.
+        related_identifiers (str): Input related idetifiers, expected input is from
+            "related_datasets" or "related_publications" keys.
+        has_related_datasets (bool): If true then input is assumed to be from
+            "related_datasets" value in EnviDat record.
+            Default value is false and is assumed to correspond to
+            "related_publications" value in EnviDat record.
     """
-
     # Assign relation_type
     if has_related_datasets:
         # Corresponds to "related_datasets" key
@@ -795,12 +792,12 @@ def get_dc_related_identifiers(related_identifiers: str,
 
 
 def get_dc_related_identifiers_resources(resources) -> list[dict[str, str]]:
-    """Return URLs from resources in DataCite "relatedIdentifier" tag format
+    """Return URLs from resources in DataCite "relatedIdentifier" tag format.
 
-    Note: "relatedIdentiferType" and "relationType" are required attributes
-    for each "relatedIdentifer"
+    Note:
+        "relatedIdentiferType" and "relationType" are required attributes
+        for each "relatedIdentifer"
     """
-
     dc_related_identifier = []
 
     for resource in resources:
@@ -818,7 +815,7 @@ def get_dc_related_identifiers_resources(resources) -> list[dict[str, str]]:
 
 
 def get_dc_formats(resources) -> list[dict[str, str]]:
-    """Returns resources formats in DataCite "formats" tag format"""
+    """Returns resources formats in DataCite "formats" tag format."""
     dc_formats = []
 
     for resource in resources:
@@ -837,7 +834,7 @@ def get_dc_formats(resources) -> list[dict[str, str]]:
 
 
 def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag) -> list[str]:
-    """Returns notes in DataCite "descriptions" tag format
+    """Returns notes in DataCite "descriptions" tag format.
 
     "descriptionType" is a REQUIRED DataCite attribute for each "description",
          (value assigned to "Abstract")
@@ -900,7 +897,6 @@ def get_dc_geolocations(spatial: dict, spatial_type: str = ""):
 
     For list of required attributes for each type of GeoLocation see DataCite documentation.
     """
-
     dc_geolocations = []
 
     spatial_type = spatial_type.lower()
@@ -937,7 +933,6 @@ def get_dc_geolocation_polygon(coordinates: list):
     Limitation: Only can process first list in coordinates list from parsed geojson.
                 This means that polygons with "holes" are not supported.
     """
-
     # Log warning if coordinates has more than one element (i.e. polygon with "hole")
     if len(coordinates) > 1:
         log.warning(f"Input 'spatial' data polygon has more than one list in coodinates from parsed geojson. "
@@ -1150,9 +1145,10 @@ def value_to_datacite_cv(value: str, datacite_tag: str, default: str = "") -> di
 
 
 def get_doi(word: str) -> str | None:
-    """Get DOI string from input word string, if DOI not found then returns None
+    """Get DOI string from input word string, if DOI not found then returns None.
 
-    Example: an input of "https://doi.org/10.1525/cse.2022.1561651" would return
+    Example:
+        an input of "https://doi.org/10.1525/cse.2022.1561651" would return
         "10.1525/cse.2022.1561651" as output
 
     Args:
@@ -1162,7 +1158,6 @@ def get_doi(word: str) -> str | None:
         str: String of DOI
         None: If DOI could not be found
     """
-
     doi = None
 
     # Apply search criteria to find DOIs
@@ -1190,9 +1185,10 @@ def get_envidat_doi(word: str,
     """Get DOI string from input work by calling EnviDat API,
          if DOI not found then returns None.
 
-    Example: an input of
-    "https://www.envidat.ch/#/metadata/amphibian-and-landscape-data-swiss-lowlands"
-    would return ""10.16904/envidat.267" as output
+    Example:
+        An input of
+        "https://www.envidat.ch/#/metadata/amphibian-and-landscape-data-swiss-lowlands"
+        would return ""10.16904/envidat.267" as output
 
     Args:
         word (str): Input string to test if it contains a DOI retrieved from
@@ -1202,11 +1198,10 @@ def get_envidat_doi(word: str,
         api_package_show (str): API host path to show package. Attempts to get from
              environment. Default value is "/api/action/package_show?id="
 
-     Returns:
+    Returns:
         str: String of DOI
         None: If DOI could not be found
     """
-
     doi = None
 
     # Check if word meets search criteria to be an EnviDat package URL
@@ -1250,8 +1245,9 @@ def get_dora_doi(word: str) -> str | None:
     """Get DOI string from input word string by calling DORA API,
          if DOI not found then returns None.
 
-    Example: an input of "https://www.dora.lib4ri.ch/wsl/islandora/object/wsl%3A3213"
-      would return "10.5194/tc-10-1075-2016" as output
+    Example:
+        an input of "https://www.dora.lib4ri.ch/wsl/islandora/object/wsl%3A3213"
+        would return "10.5194/tc-10-1075-2016" as output.
 
     Args:
         word (str): Input string to test if it contains a DOI retrieved from DORA API
@@ -1260,7 +1256,6 @@ def get_dora_doi(word: str) -> str | None:
         str: String of DOI
         None: If DOI could not be found
     """
-
     doi = None
 
     # Apply search criteria to find DOIs from DORA API
@@ -1289,7 +1284,7 @@ def get_dora_doi(word: str) -> str | None:
 # TODO possibly pass env config as argument
 def get_dora_doi_string(
         dora_pid: str, dora_api_url: str = "https://envidat.ch/dora") -> str | None:
-    """Get DOI string from WSL DORA API using DORA PID
+    """Get DOI string from WSL DORA API using DORA PID.
 
     DORA API documentation:
     https://www.wiki.lib4ri.ch/display/HEL/Technical+details+of+DORA
@@ -1305,7 +1300,6 @@ def get_dora_doi_string(
         str: String of DOI
         None: If DOI could not be found
     """
-
     # Load config from environment variables
     config = dotenv_values(".env")
 
@@ -1364,8 +1358,9 @@ def log_falsy_value(key: str):
 def validate_dc_config(datacite_config: dict):
     """Validate DataCite config has DataCite required keys using jsonschema.
 
-    Note: There are other DataCite required properties not included in this schema that
-          are handled differently in the converter (such as using default values).
+    Note:
+        There are other DataCite required properties not included in this schema that
+        are handled differently in the converter (such as using default values).
 
     Returns jsonschema.exceptions.ValidationError if input config invalid with schema.
 
