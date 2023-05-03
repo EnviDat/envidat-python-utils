@@ -29,6 +29,9 @@ def load_dotenv_if_in_debug_mode(env_file: Union[Path, str]) -> NoReturn:
         env_file (Union[Path, str]): String or Path like object pointer to
             secret dot env file to read.
     """
+    if not _debugger_is_active():
+        return
+
     try:
         from dotenv import load_dotenv
     except ImportError as e:
@@ -40,28 +43,27 @@ def load_dotenv_if_in_debug_mode(env_file: Union[Path, str]) -> NoReturn:
             """
         )
         log.error(e)
-        raise ImportError(
+        raise ImportError from e(
             """
             Unable to import dotenv, is python-dotenv installed?
             Try installing this package using pip install envidat[dotenv].
             """
         )
 
-    if _debugger_is_active():
-        secret_env = Path(env_file)
-        if not secret_env.is_file():
-            log.error(
-                """
-                Attempted to import dotenv, but the file does not exist.
-                Note: The logger should be invoked after reading the dotenv file
-                so that the debug level is by the environment.
-                """
-            )
-            raise FileNotFoundError(
-                f"Attempted to import dotenv, but the file does not exist: {env_file}"
-            )
-        else:
-            load_dotenv(secret_env)
+    secret_env = Path(env_file)
+    if not secret_env.is_file():
+        log.error(
+            """
+            Attempted to import dotenv, but the file does not exist.
+            Note: The logger should be invoked after reading the dotenv file
+            so that the debug level is by the environment.
+            """
+        )
+        raise FileNotFoundError from None(
+            f"Attempted to import dotenv, but the file does not exist: {env_file}"
+        )
+    else:
+        load_dotenv(secret_env)
 
 
 def get_logger() -> logging.basicConfig:
@@ -93,7 +95,7 @@ def get_response_json(
     api_key: str | None = None,
     status_code: int = 200,
 ) -> dict | None:
-
+    """Get response JSON from EnviDat."""
     load_dotenv_if_in_debug_mode(".env")
 
     key = None
