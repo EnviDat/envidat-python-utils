@@ -25,8 +25,7 @@ if "DEBUG_BOTO" not in os.environ:
 
 
 class MetaBucket:
-    """
-    Parent class of Bucket, to include classmethods in docs.
+    """Parent class of Bucket, to include classmethods in docs.
 
     Note:
         This class should not be used & instead methods should b
@@ -36,8 +35,7 @@ class MetaBucket:
     def config(
         cls, access_key: str, secret_key: str, endpoint: str = None, region: str = ""
     ) -> NoReturn:
-        """
-        Config the bucket connection parameters before init.
+        """Config the bucket connection parameters before init.
 
         Args:
             access_key (str): AWS_ACCESS_KEY_ID.
@@ -58,8 +56,7 @@ class MetaBucket:
         cls._AWS_REGION = region
 
     def get_boto3_resource() -> NoReturn:
-        """
-        Get boto3 resource object directly, for further use.
+        """Get boto3 resource object directly, for further use.
 
         Note:
             Usage: Bucket.get_boto3_resource()
@@ -75,8 +72,7 @@ class MetaBucket:
         )
 
     def get_boto3_client() -> NoReturn:
-        """
-        Get boto3 client object directly, for further use.
+        """Get boto3 client object directly, for further use.
 
         Note:
             Usage: Bucket.get_boto3_client()
@@ -92,8 +88,7 @@ class MetaBucket:
         )
 
     def list_buckets(cls) -> list[str]:
-        """
-        Get a list of all buckets from endpoint.
+        """Get a list of all buckets from endpoint.
 
         Note:
             Usage: Bucket.list_buckets()
@@ -603,8 +598,7 @@ class Bucket:
         local_dir: Union[str, Path],
         file_type: str = "",
     ) -> bool:
-        """
-        Download an entire S3 path, including subpaths, to a local directory.
+        """Download an entire S3 path, including subpaths, to a local directory.
 
         Args:
             s3_path (str): The path within the bucket to download.
@@ -638,8 +632,7 @@ class Bucket:
         local_dir: Union[str, Path],
         file_type: str = "",
     ) -> bool:
-        """
-        Download an entire S3 bucket, including subpaths, to a local directory.
+        """Download an entire S3 bucket, including subpaths, to a local directory.
 
         Args:
             local_dir (Union[str, Path]): Directory to download files into.
@@ -660,8 +653,7 @@ class Bucket:
         file_type: str = "",
         contents_only: bool = False,
     ) -> bool:
-        """
-        Upload the content of a local directory to a bucket path.
+        """Upload the content of a local directory to a bucket path.
 
         Args:
             local_dir (Union[str, Path]): Directory to upload files from.
@@ -708,8 +700,7 @@ class Bucket:
         s3_path: str,
         file_type: str = "",
     ) -> bool:
-        """
-        Delete an entire S3 path, including subpaths.
+        """Delete an entire S3 path, including subpaths.
 
         USE WITH CAUTION!
 
@@ -804,8 +795,7 @@ class Bucket:
             self._handle_boto3_client_error(e, key=key)
 
     def clean_multiparts(self) -> bool:
-        """
-        Clean up failed multipart uploads in a bucket.
+        """Clean up failed multipart uploads in a bucket.
 
         Returns:
             dict: key:value pair of s3_multipart_key:clean_status.
@@ -856,8 +846,7 @@ class Bucket:
             self._handle_boto3_client_error(e)
 
     def size(self, items_per_page: int = 1000) -> int:
-        """
-        Return the total size of a bucket, in bytes.
+        """Return the total size of a bucket, in bytes.
 
         Uses a paginator to get around 1000 file limit for listing.
 

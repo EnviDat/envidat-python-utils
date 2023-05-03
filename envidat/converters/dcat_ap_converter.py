@@ -12,8 +12,7 @@ log = logging.getLogger(__name__)
 
 
 def convert_dcat_ap(metadata_records: Union[dict, list[dict]]) -> str:
-    """
-    Generate output string in DCAT-AP format.
+    """Generate output string in DCAT-AP format.
 
     Accepts a single metadata entry, or list of entries.
 
@@ -324,8 +323,7 @@ def get_distribution_list(metadata_record: dict, package_name: str) -> list:
 
 
 def wrap_packages_dcat_ap_xml(dcat_xml_packages: list) -> str:
-    """
-    Add required DCAT-AP catalog XML tags for full DCAT-AP XML.
+    """Add required DCAT-AP catalog XML tags for full DCAT-AP XML.
 
     Args:
         dcat_xml_packages (list[str,dict]): All DCAT-AP formatted packages to include.

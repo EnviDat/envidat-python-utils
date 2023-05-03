@@ -11,8 +11,7 @@ log = logging.getLogger(__name__)
 
 
 def convert_xml(package: dict) -> str:
-    """
-    Convert EnviDat record to XML format.
+    """Convert EnviDat record to XML format.
 
     Args:
         package (dict): Package JSON from API.
@@ -34,8 +33,7 @@ def convert_xml(package: dict) -> str:
 
 
 def convert_xml_all_resources() -> str:
-    """
-    Convert EnviDat JSON records to XML format.
+    """Convert EnviDat JSON records to XML format.
 
     Returns:
         str: XML formatted string.

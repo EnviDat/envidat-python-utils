@@ -1,11 +1,11 @@
-import json
-from dotenv import dotenv_values
-import requests
 import base64
+import json
+from logging import getLogger
+
+import requests
+from dotenv import dotenv_values
 
 from envidat.converters.datacite_converter import convert_datacite
-
-from logging import getLogger
 
 log = getLogger(__name__)
 
@@ -35,7 +35,6 @@ def reserve_draft_doi_datacite(metadata_record: dict) -> str | None:
     Returns:
         str/None: DOI reserved in DataCite or None if DOI reservation failed
     """
-
     # Load config from environment vairables
     config = dotenv_values(".env")
 
@@ -46,50 +45,41 @@ def reserve_draft_doi_datacite(metadata_record: dict) -> str | None:
         password = config["DATACITE_PASSWORD"]
         doi_prefix = config["DOI_PREFIX"]
     except KeyError as e:
-        log.error(f'KeyError: {e} does not exist in config')
+        log.error(f"KeyError: {e} does not exist in config")
         return None
 
-    payload = {
-        "data": {
-            "type": "dois"
-        }
-    }
+    payload = {"data": {"type": "dois"}}
 
     # If DOI already exists then include it in payload
     doi = metadata_record.get("doi")
     if doi:
-        payload["data"]["attributes"] = {
-            "doi": doi
-        }
+        payload["data"]["attributes"] = {"doi": doi}
     # Else instruct DataCite API to auto-generate DOI by only adding
     # "prefix" attribute to payload, this auto-generates a random DOI suffix
     else:
-        payload["data"]["attributes"] = {
-            "prefix": doi_prefix
-        }
+        payload["data"]["attributes"] = {"prefix": doi_prefix}
 
     # Convert payload to JSON and then send POST request to DataCite API
     payload_json = json.dumps(payload)
     headers = {"Content-Type": "application/vnd.api+json"}
 
-    r = requests.post(api_url,
-                      headers=headers,
-                      auth=(client_id, password),
-                      data=payload_json)
+    r = requests.post(
+        api_url, headers=headers, auth=(client_id, password), data=payload_json
+    )
 
     # Return DOI
     if r.status_code == 201 or r.status_code == 200:
-        reserved_doi = r.json().get('data').get('id')
+        reserved_doi = r.json().get("data").get("id")
         if reserved_doi:
             return reserved_doi
         else:
             log.error(
                 f"Error cannot parse reserved DOI from DataCite response: "
-                f"{r.json()}")
+                f"{r.json()}"
+            )
             return None
     else:
-        log.error(f"Error reserving DOI on DataCite:  "
-                  f"HTTP Code {r.status_code}")
+        log.error(f"Error reserving DOI on DataCite:  " f"HTTP Code {r.status_code}")
         log.error(f"Error:{r.json()}")
         return None
 
@@ -116,7 +106,6 @@ def publish_datacite(metadata_record: dict, is_update=False) -> dict | None:
     Returns:
         str/None: DOI reserved in DataCite or None if DOI reservation failed
     """
-
     # Load config from environment vairables
     config = dotenv_values(".env")
 
@@ -127,7 +116,7 @@ def publish_datacite(metadata_record: dict, is_update=False) -> dict | None:
         password = config["DATACITE_PASSWORD"]
         site_url = config["SITE_DATASET_URL"]
     except KeyError as e:
-        log.error(f'KeyError: {e} does not exist in config')
+        log.error(f"KeyError: {e} does not exist in config")
         return None
 
     # Get DOI
@@ -158,8 +147,8 @@ def publish_datacite(metadata_record: dict, is_update=False) -> dict | None:
                 "event": "publish",
                 "doi": doi,
                 "url": url,
-                "xml": xml_encoded
-            }
+                "xml": xml_encoded,
+            },
         }
     }
 
@@ -170,16 +159,14 @@ def publish_datacite(metadata_record: dict, is_update=False) -> dict | None:
     # If is_update is True update DOI that is already registered
     if is_update:
         api_url = f"{api_url}/{doi}"
-        r = requests.put(api_url,
-                         headers=headers,
-                         auth=(client_id, password),
-                         data=payload_json)
+        r = requests.put(
+            api_url, headers=headers, auth=(client_id, password), data=payload_json
+        )
     # Else create new DOI
     else:
-        r = requests.post(api_url,
-                          headers=headers,
-                          auth=(client_id, password),
-                          data=payload_json)
+        r = requests.post(
+            api_url, headers=headers, auth=(client_id, password), data=payload_json
+        )
 
     # Return DOI if successful, else return error message
     # Status code 201 indicates a new DOI was created
@@ -187,22 +174,19 @@ def publish_datacite(metadata_record: dict, is_update=False) -> dict | None:
     # TODO implement try/except error handling
     # TODO use get() method on status_code
     if r.status_code == 201 or r.status_code == 200:
-        published_doi = r.json().get('data').get('id')
+        published_doi = r.json().get("data").get("id")
         if published_doi:
-            return {
-                "status_code": r.status_code,
-                "result": published_doi
-            }
+            return {"status_code": r.status_code, "result": published_doi}
         else:
             return {
                 "status_code": 500,
                 "result": f"Failed to parse published DOI from DataCite "
-                          f"response: {r.json()}"
+                f"response: {r.json()}",
             }
     else:
         return {
             "status_code": r.status_code,
-            "result": f"Failed publishing DOI {doi} on DataCite:  {r.json()}"
+            "result": f"Failed publishing DOI {doi} on DataCite:  {r.json()}",
         }
 
 
@@ -218,7 +202,7 @@ def xml_to_base64(xml: str) -> str:
         str: base64 formatted string conversion of input xml_str
     """
     if isinstance(xml, str):
-        xml_bytes = xml.encode('utf-8')
+        xml_bytes = xml.encode("utf-8")
         xml_encoded = base64.b64encode(xml_bytes)
         xml_str = xml_encoded.decode()
         return xml_str

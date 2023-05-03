@@ -166,7 +166,7 @@ def test_get_bucket_size(bucket, create_tempfile):
 
     with create_tempfile("txt") as temp1:
         with open(temp1.name, "w") as w:
-            for n in range(0, 57):
+            for _n in range(0, 57):
                 w.write(str(1))
                 w.write(",")
 
@@ -191,7 +191,7 @@ def test_get_bucket_many_page(bucket, create_tempfile):
 
     with create_tempfile("txt") as temp1:
         with open(temp1.name, "w") as w:
-            for n in range(0, 20):
+            for _n in range(0, 20):
                 w.write(str(1))
                 w.write(",")
 

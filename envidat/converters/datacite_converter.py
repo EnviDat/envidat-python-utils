@@ -69,7 +69,7 @@ def get_config_datacite_converter(
         dict: datacite converter JSON config as Python dictionary
         None: if config failed validation
     """
-    with open(config_path, encoding='utf-8') as config_json:
+    with open(config_path, encoding="utf-8") as config_json:
 
         # Load config
         config: dict = json.load(config_json)
@@ -1272,7 +1272,7 @@ def get_dora_doi(word: str) -> str | None:
         dora_pid = word[(dora_start_index + len(dora_str)):]
 
         # Remove any characters that may exist after DORA PID
-        dora_end_index = dora_pid.find('/')
+        dora_end_index = dora_pid.find("/")
 
         # Modify dora_pid if dora_end_index found in dora_pid
         if dora_end_index != -1:
@@ -1317,7 +1317,7 @@ def get_dora_doi_string(
     dora_pid = re.sub("%3A", ":", dora_pid)
 
     # Replace literal asterisk "\*" with empty string ""
-    dora_pid = re.sub("\*", "", dora_pid)
+    dora_pid = re.sub("\\*", "", dora_pid)
 
     # Assemble url used to call DORA API
     dora_url = f"{dora_api_url}/{dora_pid}"

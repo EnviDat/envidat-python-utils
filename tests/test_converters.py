@@ -134,8 +134,7 @@ def get_datacite_converters_one_package(
 def get_datacite_converters_all_packages(
     convert_dataset, get_name_doi, file_format, extension
 ) -> tuple[list, list]:
-    """
-    Get DacaCite formatted CKAN output and DataCite converter output for all packages.
+    """Get DacaCite formatted CKAN output and DataCite converter output for all packages.
 
     Args:
         convert_dataset (function): Function used to convert dataset.
@@ -169,8 +168,7 @@ def get_datacite_converters_all_packages(
 
 
 def convert_datacite_related_identifier(ckan_output) -> str:
-    """
-    Correct typo in EnviDat API Datacite output.
+    """Correct typo in EnviDat API Datacite output.
 
     To make the DataCite converters tests pass it was necessary to simulate
     correcting the typo in the CKAN DataCite converter variable
@@ -242,8 +240,7 @@ def get_related_identifier(related_url) -> list:
 
 
 def convert_dif_values(ckan_output):
-    """
-    Correct typo in EnviDat API DIF output.
+    """Correct typo in EnviDat API DIF output.
 
     To make the DIF converter tests pass it was necessary to simulate correcting the
     typo in the CKAN DIF converter 'Use_Constraints' value:
@@ -279,8 +276,7 @@ def get_dcat_ap_converters_all_packages(
     file_format,
     extension,
 ) -> tuple[str, str]:
-    """
-    DCAT-AP CKAN and corresponding converter XML formatted strings for all packages.
+    """DCAT-AP CKAN and corresponding converter XML formatted strings for all packages.
 
     Note: As of October 14, 2022, the expected CKAN string should be
             'https://www.envidat.ch/opendata/export/dcat-ap-ch.xml'

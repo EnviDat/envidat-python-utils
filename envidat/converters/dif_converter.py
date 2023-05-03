@@ -652,8 +652,7 @@ def get_resource_restrictions(dataset_dict):
 
 
 def get_dif_language_code(code):
-    """
-    Translate codes to language full word.
+    """Translate codes to language full word.
 
     https://gcmd.nasa.gov/DocumentBuilder/defaultDif10/guide/data_set_language.html
 

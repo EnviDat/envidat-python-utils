@@ -3,12 +3,12 @@
 import logging
 import os
 import sys
+import urllib.parse
 from pathlib import Path
 from typing import NoReturn, Union
-import urllib.parse
-from dotenv import dotenv_values
 
 import requests
+from dotenv import dotenv_values
 
 log = logging.getLogger(__name__)
 
@@ -87,12 +87,13 @@ def get_logger() -> logging.basicConfig:
 #  in router_publish.send_email_publish_async()
 # TODO improve exception handling with more specific exceptions
 # TODO write docstring
-def get_response_json(api_host: str,
-                      api_path: str,
-                      query: dict | None = None,
-                      api_key: str | None = None,
-                      status_code: int = 200
-                      ) -> dict | None:
+def get_response_json(
+    api_host: str,
+    api_path: str,
+    query: dict | None = None,
+    api_key: str | None = None,
+    status_code: int = 200,
+) -> dict | None:
 
     # Load config from environment vairables
     config = dotenv_values(".env")
@@ -107,7 +108,7 @@ def get_response_json(api_host: str,
         if api_key:
             key = config[api_key]
     except KeyError as e:
-        log.error(f'KeyError: {e} does not exist in config')
+        log.error(f"KeyError: {e} does not exist in config")
         return None
     except AttributeError as e:
         log.error(e)
@@ -134,7 +135,8 @@ def get_response_json(api_host: str,
         if response.status_code != status_code:
             log.error(
                 f"ERROR call to API returned unexpected response status_code: "
-                f"{response.status_code}")
+                f"{response.status_code}"
+            )
             log.error(f"ERROR message from API: {response.json()}")
             return None
 
@@ -215,6 +217,3 @@ def get_url_response(url: str, cookie: str | None = None) -> requests.Response:
         log.error(f"Unhandled exception occurred on get: {r.request.url}")
 
     return r
-
-
-

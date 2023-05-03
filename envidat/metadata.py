@@ -6,7 +6,6 @@ from typing import Literal, NoReturn, Union
 
 from envidat.api.v1 import (
     get_metadata_list_with_resources,
-    get_metadata_name_doi,
     get_package,
 )
 from envidat.converters.bibtex_converter import convert_bibtex
@@ -41,8 +40,7 @@ class Record:
             "str", "xml", "iso", "bibtex", "dif", "datacite", "ris", "dcat-ap"
         ] = None,
     ) -> NoReturn:
-        """
-        Init the Record object.
+        """Init the Record object.
 
         Only one argument should be passed for data format.
 
@@ -90,8 +88,7 @@ class Record:
             self.content = mapping[convert]()
 
     def get_content(self):
-        """
-        Get current content of Record.
+        """Get current content of Record.
 
         Returns:
             str: Metadata record, default dict format, else converted (JSON, XML, etc).
@@ -99,8 +96,7 @@ class Record:
         return self.content
 
     def validate(self) -> bool:
-        """
-        Validate metadata record.
+        """Validate metadata record.
 
         Returns:
             bool: True if valid, raises error if not.
@@ -164,8 +160,7 @@ class Record:
         return True
 
     def to_json(self) -> str:
-        """
-        Convert content to JSON string.
+        """Convert content to JSON string.
 
         Returns:
             str: JSON string of metadata record.
@@ -173,8 +168,7 @@ class Record:
         return json.loads(self.content)
 
     def to_xml(self) -> str:
-        """
-        Convert content to XML format.
+        """Convert content to XML format.
 
         Returns:
             str: XML formatted string of metadata record.
@@ -182,8 +176,7 @@ class Record:
         return convert_xml(self.content)
 
     def to_iso(self) -> str:
-        """
-        Convert content to ISO format.
+        """Convert content to ISO format.
 
         Returns:
             str: ISO formatted string of metadata record.
@@ -191,8 +184,7 @@ class Record:
         return convert_iso(self.content)
 
     def to_ris(self) -> str:
-        """
-        Convert content to RIS format.
+        """Convert content to RIS format.
 
         Returns:
             str: RIS formatted string of metadata record.
@@ -200,8 +192,7 @@ class Record:
         return convert_ris(self.content)
 
     def to_bibtex(self) -> str:
-        """
-        Convert content to BibTeX format.
+        """Convert content to BibTeX format.
 
         Returns:
             str: BibTeX formatted string of metadata record.
@@ -209,8 +200,7 @@ class Record:
         return convert_bibtex(self.content)
 
     def to_dif(self) -> str:
-        """
-        Convert content to GCMD DIF 10.2 format.
+        """Convert content to GCMD DIF 10.2 format.
 
         Returns:
             str: GCMD DIF 10.2 formatted string of metadata record.
@@ -218,8 +208,7 @@ class Record:
         return convert_dif(self.content)
 
     def to_datacite(self) -> str:
-        """
-        Convert content to DataCite format.
+        """Convert content to DataCite format.
 
         Returns:
             str: DataCite formatted string of metadata record.
@@ -227,8 +216,7 @@ class Record:
         return convert_datacite(self.content)
 
     def to_dcat_ap(self) -> str:
-        """
-        Convert content to DCAT-AP CH format.
+        """Convert content to DCAT-AP CH format.
 
         Returns:
             str: DCAT-AP CH formatted string of metadata record.
@@ -243,8 +231,7 @@ def get_all_metadata_record_list(
     ] = None,
     content_only: bool = False,
 ) -> Union[list, str]:
-    """
-    Return all EnviDat metadata entries as Record objects.
+    """Return all EnviDat metadata entries as Record objects.
 
     Defaults to standard Record, content in json format.
 

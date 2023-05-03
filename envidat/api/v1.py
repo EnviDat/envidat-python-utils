@@ -6,14 +6,15 @@
 import logging
 import os
 
-from envidat.utils import get_url, get_url_response
 from dotenv import dotenv_values
+
+from envidat.utils import get_url, get_url_response
 
 log = logging.getLogger(__name__)
 
 
 def get_metadata_list(
-        host: str = "https://www.envidat.ch", sort_result: bool = None
+    host: str = "https://www.envidat.ch", sort_result: bool = None
 ) -> list:
     """Get package/metadata list from API.
 
@@ -53,7 +54,7 @@ def get_metadata_list(
 
 
 def get_protocol_and_domain(
-        protocol: str = "https", domain: str = "www.envidat.ch"
+    protocol: str = "https", domain: str = "www.envidat.ch"
 ) -> tuple[str, str]:
     """Extract protocol string and domain string from API host.
 
@@ -76,9 +77,9 @@ def get_protocol_and_domain(
 
 
 def get_package(
-        package_name: str,
-        host: str = "https://www.envidat.ch",
-        path: str = "/api/action/package_show?id=",
+    package_name: str,
+    host: str = "https://www.envidat.ch",
+    path: str = "/api/action/package_show?id=",
 ) -> dict:
     """Get individual package (metadata entry) as dictionary from API.
 
@@ -113,10 +114,10 @@ def get_package(
 # TODO refactor this or get_package() as they have similar functionality,
 #  check usage of functions in project
 def get_envidat_record(
-        package_name: str,
-        host: str = "https://www.envidat.ch",
-        path: str = "/api/action/package_show?id=",
-        cookie: str | None = None
+    package_name: str,
+    host: str = "https://www.envidat.ch",
+    path: str = "/api/action/package_show?id=",
+    cookie: str | None = None,
 ) -> dict | None:
     """Get individual EnviDat record (metadata entry) as dictionary from API.
 
@@ -133,7 +134,6 @@ def get_envidat_record(
     Returns:
         dict: Dictionary of package (metadata entry).
     """
-
     # Load config from environment vairables
     config = dotenv_values(".env")
 
@@ -144,7 +144,7 @@ def get_envidat_record(
         host = config["API_HOST"]
         path = config["API_PACKAGE_SHOW"]
     except KeyError as e:
-        log.error(f'KeyError: {e} does not exist in config')
+        log.error(f"KeyError: {e} does not exist in config")
         host = host
         path = path
     except AttributeError as e:
@@ -155,27 +155,20 @@ def get_envidat_record(
     try:
         # Extract result dictionary from API call, pass cookie if is truthy
         if cookie:
-            response = get_url_response(
-                f"{host}{path}{package_name}", cookie=cookie)
+            response = get_url_response(f"{host}{path}{package_name}", cookie=cookie)
         else:
             response = get_url_response(f"{host}{path}{package_name}")
 
         # TODO improve error handling
         # Handle HTTPError from API call
         if response.status_code != 200:
-            return {
-                "status_code": response.status_code,
-                "result": response.content
-            }
+            return {"status_code": response.status_code, "result": response.content}
 
         # Return package (derived from "result" key in response)
         if response:
             data = response.json()
             package = data["result"]
-            return {
-                "status_code": response.status_code,
-                "result": package
-            }
+            return {"status_code": response.status_code, "result": package}
 
         # TODO handle if response is None
 
@@ -183,13 +176,13 @@ def get_envidat_record(
         log.error(e)
         return {
             "status_code": 500,
-            "result": "Failed to extract package as JSON from API, check logs"
+            "result": "Failed to extract package as JSON from API, check logs",
         }
 
 
 def get_metadata_json_with_resources(
-        host: str = "https://www.envidat.ch",
-        path: str = "/api/3/action/current_package_list_with_resources?limit=100000",
+    host: str = "https://www.envidat.ch",
+    path: str = "/api/3/action/current_package_list_with_resources?limit=100000",
 ) -> dict:
     """Get all current package/metadata as dictionary with associated resources from
     API.
@@ -207,8 +200,8 @@ def get_metadata_json_with_resources(
         dict:  Dictionary of packages, with nested resources.
     """
     if (
-            "API_HOST" in os.environ
-            and "API_PATH_CURRENT_PACKAGE_LIST_WITH_RESOURCES" in os.environ
+        "API_HOST" in os.environ
+        and "API_PATH_CURRENT_PACKAGE_LIST_WITH_RESOURCES" in os.environ
     ):
         log.debug("Getting API host and path from environment variables.")
         host = os.getenv("API_HOST")
@@ -226,8 +219,7 @@ def get_metadata_json_with_resources(
 
 
 def get_metadata_list_with_resources(sort_result: bool = None) -> list:
-    """
-    Get all current package/metadata as list of results with associated resources.
+    """Get all current package/metadata as list of results with associated resources.
 
     Args:
         sort_result (bool): Sort result alphabetically by metadata name.
@@ -258,8 +250,7 @@ def get_metadata_list_with_resources(sort_result: bool = None) -> list:
 
 
 def get_metadata_name_doi() -> dict:
-    """
-    Get all current package/metadata names and DOIs as a dictionary.
+    """Get all current package/metadata names and DOIs as a dictionary.
 
     Note:
         Packages that do not have DOIs are assigned a default value

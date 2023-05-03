@@ -520,8 +520,7 @@ def extras_as_dict(extras: list) -> dict:
 
 
 def get_iso_language_code(code: str) -> str:
-    """
-    Translate to language to 3-letter code.
+    """Translate to language to 3-letter code.
 
     http://www.loc.gov/standards/iso639-2/ISO-639-2_utf-8.txt
     """
@@ -558,8 +557,7 @@ def get_ignore_case(data_dict: dict, tag: str, ignore_blanks: bool = True) -> st
 
 
 def get_publication_date(data_dict: dict) -> str:
-    """
-    Take date of type available or the publication year.
+    """Take date of type available or the publication year.
 
     Returns:
         str: Publication date from dataset, in string format.
@@ -643,10 +641,10 @@ def get_online_resource(url: str, name: str, function: str = "download") -> dict
 
 
 def is_url(url_str):
-    """
-    Check if string is URL.
+    """Check if string is URL.
 
     Replicates functionality of CKAN method ckan.lib.helpers.is_url()
+
     Returns:
         bool: True if argument parses as a http, https or ftp URL,
               else returns False.
