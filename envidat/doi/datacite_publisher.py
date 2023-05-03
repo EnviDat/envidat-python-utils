@@ -3,11 +3,14 @@ import json
 from logging import getLogger
 
 import requests
-from dotenv import dotenv_values
 
 from envidat.converters.datacite_converter import convert_datacite
+from envidat.utils import load_dotenv_if_in_debug_mode
 
 log = getLogger(__name__)
+
+# Load config from environment variables
+load_dotenv_if_in_debug_mode(".env")
 
 
 # TODO review if DOIs should continue to be reserved in CKAN database!!!!
@@ -35,15 +38,12 @@ def reserve_draft_doi_datacite(metadata_record: dict) -> str | None:
     Returns:
         str|None: DOI reserved in DataCite or None if DOI reservation failed
     """
-    # Load config from environment vairables
-    config = dotenv_values(".env")
-
     # Extract variables from config needed to call DataCite API
     try:
-        api_url = config["DATACITE_API_URL"]
-        client_id = config["DATACITE_CLIENT_ID"]
-        password = config["DATACITE_PASSWORD"]
-        doi_prefix = config["DOI_PREFIX"]
+        api_url = os.environ("DATACITE_API_URL")
+        client_id = os.environ("DATACITE_CLIENT_ID")
+        password = os.envion("DATACITE_PASSWORD")
+        doi_prefix = os.environ("DOI_PREFIX")
     except KeyError as e:
         log.error(f"KeyError: {e} does not exist in config")
         return None
@@ -106,15 +106,12 @@ def publish_datacite(metadata_record: dict, is_update=False) -> dict | None:
     Returns:
         str/None: DOI reserved in DataCite or None if DOI reservation failed
     """
-    # Load config from environment vairables
-    config = dotenv_values(".env")
-
     # Extract variables from config needed to call DataCite API
     try:
-        api_url = config["DATACITE_API_URL"]
-        client_id = config["DATACITE_CLIENT_ID"]
-        password = config["DATACITE_PASSWORD"]
-        site_url = config["SITE_DATASET_URL"]
+        api_url = os.environ("DATACITE_API_URL")
+        client_id = os.enviro("DATACITE_CLIENT_ID")
+        password = os.environ("DATACITE_PASSWORD")
+        site_url = os.environ("SITE_DATASET_URL")
     except KeyError as e:
         log.error(f"KeyError: {e} does not exist in config")
         return None

@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import NoReturn, Union
 
 import requests
-from dotenv import dotenv_values
 
 log = logging.getLogger(__name__)
 
@@ -95,20 +94,17 @@ def get_response_json(
     status_code: int = 200,
 ) -> dict | None:
 
-    # Load config from environment vairables
-    config = dotenv_values(".env")
+    load_dotenv_if_in_debug_mode(".env")
 
-    # Assign key to None default value
     key = None
-
-    # Extract environment variables from config needed to call API URL
+    # Extract environment variables needed to call API URL
     try:
-        host = config[api_host]
-        path = config[api_path]
+        host = os.environ(api_host)
+        path = os.environ(api_path)
         if api_key:
-            key = config[api_key]
+            key = os.environ(api_key)
     except KeyError as e:
-        log.error(f"KeyError: {e} does not exist in config")
+        log.error(f"KeyError: {e} does not exist in environnment vars")
         return None
     except AttributeError as e:
         log.error(e)

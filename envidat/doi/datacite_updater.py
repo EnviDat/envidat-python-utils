@@ -4,7 +4,6 @@ import logging
 from logging import getLogger
 
 import requests
-from dotenv import dotenv_values
 
 from envidat.api.v1 import get_envidat_record
 from envidat.doi.datacite_publisher import publish_datacite
@@ -22,6 +21,9 @@ fileHandler = logging.FileHandler(filename="./logs/datacite_updater.log")
 fileHandler.setFormatter(logFileFormatter)
 fileHandler.setLevel(level=logging.INFO)
 log.addHandler(fileHandler)
+
+# Load config from environment variables
+load_dotenv_if_in_debug_mode(".env")
 
 
 def datacite_update_all_records():
@@ -212,14 +214,11 @@ def get_dc_dois(num_records: int = 10000) -> list[str] | None:
         num_records (int): Number of records to retrieve from DORA API.
         Default value is 10000.
     """
-    # Load config from environment vairables
-    config = dotenv_values(".env")
-
     # Extract variables from config needed to call DataCite API
     # NOTE: List of DOIs should not be obtained from DataCite "test" API
     try:
-        api_url = config["DOI_API_URL"]
-        prefix = config["DOI_PREFIX"]
+        api_url = os.environ("DOI_API_URL")
+        prefix = os.environ("DOI_PREFIX")
     except KeyError as e:
         log.error(f"KeyError: {e} does not exist in config")
         return None

@@ -2,6 +2,7 @@
 
 import collections
 import json
+import os
 import re
 from datetime import date
 from json import JSONDecodeError
@@ -9,13 +10,15 @@ from logging import getLogger
 
 import jsonschema
 import validators
-from dotenv import dotenv_values
 from xmltodict import unparse
 
-from envidat.utils import get_url
+from envidat.utils import get_url, load_dotenv_if_in_debug_mode
 
 log = getLogger(__name__)
 
+
+# Load config from environment variables
+load_dotenv_if_in_debug_mode(".env")
 
 # TODO add return type hints to functions
 
@@ -1214,14 +1217,9 @@ def get_envidat_doi(word: str,
         if last_slash_index != -1:
             package_name = word[(last_slash_index + 1):]
 
-            # Load config from environment variables
-            config = dotenv_values(".env")
-
             # Extract environment variables from config, else use default values
-            if "API_HOST" in config:
-                api_host = config["API_HOST"]
-            if "API_PACKAGE_SHOW" in config:
-                api_package_show = config["API_PACKAGE_SHOW"]
+            api_host = os.getenv("API_HOST", default=api_host)
+            api_package_show = os.getenv("API_PACKAGE_SHOW", default=api_package_show)
 
             # Assemble URL used to call EnviDat CKAN API
             api_url = f"{api_host}{api_package_show}{package_name}"
@@ -1300,12 +1298,8 @@ def get_dora_doi_string(
         str: String of DOI
         None: If DOI could not be found
     """
-    # Load config from environment variables
-    config = dotenv_values(".env")
-
-    # Extract "DORA_API_URL" from config if it exists, else use default value
-    if "DORA_API_URL" in config:
-        dora_api_url = config["DORA_API_URL"]
+    # Extract environment variables from config, else use default values
+    dora_api_url = os.getenv("DORA_API_URL", default=dora_api_url)
 
     # Replace '%3A' ASCII II code with semicolon ':'
     dora_pid = re.sub("%3A", ":", dora_pid)

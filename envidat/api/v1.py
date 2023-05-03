@@ -6,11 +6,12 @@
 import logging
 import os
 
-from dotenv import dotenv_values
-
-from envidat.utils import get_url, get_url_response
+from envidat.utils import get_url, get_url_response, load_dotenv_if_in_debug_mode
 
 log = logging.getLogger(__name__)
+
+# Load config from environment variables
+load_dotenv_if_in_debug_mode(".env")
 
 
 def get_metadata_list(
@@ -134,23 +135,16 @@ def get_envidat_record(
     Returns:
         dict: Dictionary of package (metadata entry).
     """
-    # Load config from environment vairables
-    config = dotenv_values(".env")
-
     # Extract environment variables from config needed to call CKAN
     # If environment variables cannot be extracted then use default values
     # for host and path
     try:
-        host = config["API_HOST"]
-        path = config["API_PACKAGE_SHOW"]
+        host = os.environ("API_HOST")
+        path = os.environ("API_PACKAGE_SHOW")
     except KeyError as e:
-        log.error(f"KeyError: {e} does not exist in config")
-        host = host
-        path = path
+        log.error(f"KeyError: {e} does not exist in environment vars")
     except AttributeError as e:
         log.error(e)
-        host = host
-        path = path
 
     try:
         # Extract result dictionary from API call, pass cookie if is truthy
