@@ -1067,7 +1067,6 @@ class Bucket:
                 "Owner": owner,
                 "Grants": grants,
             }
-            print(acl_policy)
             log.debug(f"New ACL: {acl_policy}")
 
             log.debug(f"Setting FULL_ACCESS permission to user {canonical_user_id}.")
