@@ -1,9 +1,9 @@
-from envidat.api.v1 import get_envidat_record
-from envidat.doi.datacite_publisher import publish_datacite
 from fastapi import APIRouter, Response
 from fastapi.templating import Jinja2Templates
 from fastapi_mail import MessageType
-# from pydantic import EmailStr
+
+from envidat.api.v1 import get_envidat_record
+from envidat.doi.datacite_publisher import publish_datacite
 from envidat.email.constants import PublishAction
 from envidat.email.send_email import send_email_async
 from envidat.email.utils import get_publish_email_subject_template, \
@@ -142,7 +142,6 @@ async def send_email_publish_async(publish_action: PublishAction,
 
     # Extract package from record result
     package = record.get("result")
-    # return package
 
     # Validate arguments used to send email are not None
     email_kwargs = {"subject": subject,
