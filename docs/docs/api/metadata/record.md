@@ -2,7 +2,7 @@
 
 ## Record
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L32)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L31)
 
 ```python
 Record(
@@ -19,7 +19,7 @@ Class manipulate an EnviDat record in various ways.
 
 ### .get_content
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L96)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L90)
 
 ```python
 .get_content()
@@ -35,7 +35,7 @@ Get current content of Record.
 
 ### .validate
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L105)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L98)
 
 ```python
 .validate()
@@ -51,7 +51,7 @@ Validate metadata record.
 
 ### .to_json
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L170)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L165)
 
 ```python
 .to_json()
@@ -67,7 +67,7 @@ Convert content to JSON string.
 
 ### .to_xml
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L179)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L173)
 
 ```python
 .to_xml()
@@ -83,7 +83,7 @@ Convert content to XML format.
 
 ### .to_iso
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L188)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L181)
 
 ```python
 .to_iso()
@@ -99,7 +99,7 @@ Convert content to ISO format.
 
 ### .to_ris
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L197)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L189)
 
 ```python
 .to_ris()
@@ -115,7 +115,7 @@ Convert content to RIS format.
 
 ### .to_bibtex
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L206)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L197)
 
 ```python
 .to_bibtex()
@@ -131,7 +131,7 @@ Convert content to BibTeX format.
 
 ### .to_dif
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L215)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L205)
 
 ```python
 .to_dif()
@@ -147,21 +147,15 @@ Convert content to GCMD DIF 10.2 format.
 
 ### .to_datacite
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L224)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L213)
 
 ```python
-.to_datacite(
-   name_doi_map: dict
-)
+.to_datacite()
 ```
 
 ---
 
 Convert content to DataCite format.
-
-**Args**
-
-- **name_doi_map** (dict) : Mapping of dataset name to DOI, format name:doi.
 
 **Returns**
 
@@ -169,7 +163,7 @@ Convert content to DataCite format.
 
 ### .to_dcat_ap
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L236)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L221)
 
 ```python
 .to_dcat_ap()
@@ -187,7 +181,7 @@ Convert content to DCAT-AP CH format.
 
 ### get_all_metadata_record_list
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L246)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/metadata.py/#L231)
 
 ```python
 .get_all_metadata_record_list(

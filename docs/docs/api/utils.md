@@ -2,7 +2,7 @@
 
 ### load_dotenv_if_in_debug_mode
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L24)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L26)
 
 ```python
 .load_dotenv_if_in_debug_mode(
@@ -23,7 +23,7 @@ Load secret .env variables from repo for debugging.
 
 ### get_logger
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L66)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L68)
 
 ```python
 .get_logger()
@@ -41,7 +41,7 @@ Defaults to DEBUG level, unless specified by LOG_LEVEL env var.
 
 ### get_url
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L84)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L156)
 
 ```python
 .get_url(
@@ -61,7 +61,7 @@ Get a URL with additional error handling.
 
 ### \_debugger_is_active
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L14)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/utils.py/#L16)
 
 ```python
 ._debugger_is_active()

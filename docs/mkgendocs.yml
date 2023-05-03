@@ -45,3 +45,87 @@ pages:
       - BucketAccessDenied
       - NoSuchCORSConfiguration
       - UnknownBucketException
+
+  - page: "converters/bibtex.md"
+    source: "../envidat/converters/bibtex_converter.py"
+    functions:
+      - convert_bibtex
+
+  - page: "converters/datacite.md"
+    source: "../envidat/converters/datacite_converter.py"
+    functions:
+      - convert_datacite
+      - get_config_datacite_converter
+      - get_dc_creator
+      - get_dc_contributor
+      - affiliation_to_dc
+      - get_dc_research_group
+      - get_dc_related_identifiers
+      - get_dc_related_identifiers_resources
+      - get_dc_formats
+      - get_dc_descriptions
+      - geometrycollection_to_dc_geolocations
+      - get_dc_geolocations
+      - get_doi
+      - get_envidat_doi
+      - get_dora_doi
+      - get_dora_doi_string
+      - validate_dc_config
+
+  - page: "converters/dcat_ap.md"
+    source: "../envidat/converters/dcat_ap_converter.py"
+    functions:
+      - convert_dcat_ap
+      - get_distribution_list
+      - wrap_packages_dcat_ap_xml
+
+  - page: "converters/dif.md"
+    source: "../envidat/converters/dif_converter.py"
+    functions:
+      - convert_dif
+      - get_keywords
+      - get_science_keywords
+      - get_ignore_case
+      - extras_as_dict
+      - get_resource_formats
+      - get_resource_restrictions
+      - get_dif_language_code
+      - get_bounding_rectangle
+      - get_bounding_rectangle_dict
+      - is_counter_clockwise
+
+  - page: "converters/iso.md"
+    source: "../envidat/converters/iso_converter.py"
+    functions:
+      - convert_iso
+      - get_iso_language_code
+      - get_or_missing
+      - get_publication_date
+      - get_online_resource
+      - is_url
+
+  - page: "converters/ris.md"
+    source: "../envidat/converters/ris_converter.py"
+    functions:
+      - convert_ris
+
+  - page: "converters/xml.md"
+    source: "../envidat/converters/xml_converter.py"
+    functions:
+      - convert_xml
+      - convert_xml_all_resources
+
+  - page: "doi/publisher.md"
+    source: "../envidat/doi/datacite_publisher.py"
+    functions:
+      - reserve_draft_doi_datacite
+      - publish_datacite
+
+  - page: "doi/updater.md"
+    source: "../envidat/doi/datacite_updater.py"
+    functions:
+      - datacite_update_all_records
+      - datacite_update_records
+      - datacite_update_one_record
+      - get_dc_dois
+      - get_published_record_names_with_dois
