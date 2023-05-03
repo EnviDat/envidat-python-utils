@@ -10,11 +10,8 @@ dependencies = [
     "requests>=2.27.1",
     "boto3>=1.22.12",
     "xmltodict>=0.13.0",
-    "lxml>=4.9.1",
     "validators>=0.20.0",
-    "python-dotenv>=1.0.0",
     "jsonschema>=4.17.3",
-    "fastapi[all]>=0.94.1",
 ]
 requires-python = ">=3.11"
 readme = "README.md"
@@ -34,7 +31,7 @@ repository = "https://gitlabext.wsl.ch/EnviDat/envidat-python-utils.git"
 
 [project.optional-dependencies]
 dotenv = [
-    "python-dotenv>=0.20.0",
+    "python-dotenv>=1.0.0",
 ]
 
 [tool.pdm]
@@ -49,7 +46,7 @@ verify_ssl = true
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "python-dotenv>=0.20.0",
+    "python-dotenv>=1.0.0",
 ]
 test = [
     "pytest",
@@ -73,13 +70,26 @@ version_files = [
     "envidat/__version__.py"
 ]
 
-[tool.isort]
-profile = "black"
-atomic = true
-known_first_party = ["envidat"]
-
 [tool.pytest.ini_options]
 addopts = "-ra -q"
 testpaths = [
     "tests",
 ]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+select = ["I", "E", "W", "D", "B", "F", "N", "Q"]
+ignore = ["N805", "B008"]
+exclude = [
+    ".git",
+    ".ruff_cache",
+    ".vscode",
+    "__pypackages__",
+    "build",
+    "dist",
+    "secret",
+    "envidat/__version__.py",
+]
+[tool.ruff.pydocstyle]
+convention = "google"
