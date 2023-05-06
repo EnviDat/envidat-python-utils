@@ -23,7 +23,7 @@ fileHandler.setLevel(level=logging.INFO)
 log.addHandler(fileHandler)
 
 # Load config from environment variables
-load_dotenv_if_in_debug_mode(".env")
+load_dotenv_if_in_debug_mode()
 
 
 def datacite_update_all_records():

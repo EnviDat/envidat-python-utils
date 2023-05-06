@@ -18,7 +18,7 @@ log = getLogger(__name__)
 
 
 # Load config from environment variables
-load_dotenv_if_in_debug_mode(".env")
+load_dotenv_if_in_debug_mode()
 
 # TODO add return type hints to functions
 

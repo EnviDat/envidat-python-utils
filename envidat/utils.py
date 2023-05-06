@@ -22,7 +22,24 @@ def _debugger_is_active() -> bool:
     return gettrace() is not None
 
 
-def load_dotenv_if_in_debug_mode(env_file: Union[Path, str]) -> NoReturn:
+def _is_docker() -> bool:
+    """Check to see if running in a docker container.
+
+    Returns:
+    -------
+        bool: if a docker related components present on filesystem.
+    """
+    path = "/proc/self/cgroup"
+    return (
+        os.path.exists("/.dockerenv")
+        or os.path.isfile(path)
+        and any("docker" in line for line in open(path))
+    )
+
+
+def load_dotenv_if_in_debug_mode(
+    env_file: Union[Path, str] = os.getenv("DOTENV_PATH", default=".env")
+) -> NoReturn:
     """Load secret .env variables from repo for debugging.
 
     Args:
@@ -30,6 +47,10 @@ def load_dotenv_if_in_debug_mode(env_file: Union[Path, str]) -> NoReturn:
             secret dot env file to read.
     """
     if not _debugger_is_active():
+        return
+
+    is_docker_from_env = os.getenv("IS_DOCKER", default=False)
+    if _is_docker() or is_docker_from_env:
         return
 
     try:
@@ -43,12 +64,6 @@ def load_dotenv_if_in_debug_mode(env_file: Union[Path, str]) -> NoReturn:
             """
         )
         log.error(e)
-        raise ImportError from e(
-            """
-            Unable to import dotenv, is python-dotenv installed?
-            Try installing this package using pip install envidat[dotenv].
-            """
-        )
 
     secret_env = Path(env_file)
     if not secret_env.is_file():
@@ -59,11 +74,12 @@ def load_dotenv_if_in_debug_mode(env_file: Union[Path, str]) -> NoReturn:
             so that the debug level is by the environment.
             """
         )
-        raise FileNotFoundError from None(
-            f"Attempted to import dotenv, but the file does not exist: {env_file}"
-        )
     else:
-        load_dotenv(secret_env)
+        try:
+            load_dotenv(secret_env)
+        except Exception as e:
+            log.error(e)
+            log.error(f"Failed to load dotenv file: {secret_env}")
 
 
 def get_logger() -> logging.basicConfig:
@@ -96,7 +112,7 @@ def get_response_json(
     status_code: int = 200,
 ) -> dict | None:
     """Get response JSON from EnviDat."""
-    load_dotenv_if_in_debug_mode(".env")
+    load_dotenv_if_in_debug_mode()
 
     key = None
     # Extract environment variables needed to call API URL

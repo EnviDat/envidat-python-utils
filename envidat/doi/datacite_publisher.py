@@ -10,7 +10,7 @@ from envidat.utils import load_dotenv_if_in_debug_mode
 log = getLogger(__name__)
 
 # Load config from environment variables
-load_dotenv_if_in_debug_mode(".env")
+load_dotenv_if_in_debug_mode()
 
 
 # TODO review if DOIs should continue to be reserved in CKAN database!!!!

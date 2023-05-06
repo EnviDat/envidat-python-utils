@@ -11,7 +11,7 @@ from envidat.utils import get_url, get_url_response, load_dotenv_if_in_debug_mod
 log = logging.getLogger(__name__)
 
 # Load config from environment variables
-load_dotenv_if_in_debug_mode(".env")
+load_dotenv_if_in_debug_mode()
 
 
 def get_metadata_list(
