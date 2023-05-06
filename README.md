@@ -48,3 +48,16 @@ from envidat.utils import get_logger
 from envidat.s3 import Bucket
 from envidat.api.v1 import get_package_list
 ```
+
+## Config
+
+Environment variables:
+
+- LOG_LEVEL: Logging level, default INFO
+- DOTENV_PATH: Path to dotenv file if in debug mode, default=.env.
+- API_URL: URL root for the API to call, default=https://www.envidat.ch
+- TEMP_DIR: Temporary path for S3 downloads, default=/tmp
+- AWS_ENDPOINT: For S3.
+- AWS_REGION: For S3.
+- AWS_ACCESS_KEY: For S3.
+- AWS_SECRET_KEY: For S3.
