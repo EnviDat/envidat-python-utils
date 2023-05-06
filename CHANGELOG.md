@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.4.1 (2023-05-06)
+
+### Fix
+
+- dotenv debug mode function graceful failure
+
 ## 1.4.0 (2023-05-03)
 
 ### Feat
