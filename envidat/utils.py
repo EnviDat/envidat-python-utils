@@ -38,20 +38,25 @@ def _is_docker() -> bool:
 
 
 def load_dotenv_if_in_debug_mode(
-    env_file: Union[Path, str] = os.getenv("DOTENV_PATH", default=".env")
+    env_file: Union[Path, str] = os.getenv("DOTENV_PATH", default=".env"),
+    ignore_docker_check: bool = False,
 ) -> NoReturn:
     """Load secret .env variables from repo for debugging.
 
     Args:
         env_file (Union[Path, str]): String or Path like object pointer to
             secret dot env file to read.
+        ignore_docker_check (bool): Skip checking if running via Docker.
     """
     if not _debugger_is_active():
         return
 
-    is_docker_from_env = os.getenv("IS_DOCKER", default=False)
-    if _is_docker() or is_docker_from_env:
-        return
+    if ignore_docker_check:
+        log.debug("Override ignore_docker_check, skipping docker test")
+    else:
+        is_docker_from_env = os.getenv("IS_DOCKER", default=False)
+        if _is_docker() or is_docker_from_env:
+            return
 
     try:
         from dotenv import load_dotenv
