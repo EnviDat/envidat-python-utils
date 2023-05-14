@@ -310,7 +310,7 @@ class Bucket:
         key: str,
         data: Union[str, bytes],
         content_type: str = None,
-        metadata: dict = {},
+        metadata: dict = None,
     ) -> dict:
         """Put an in memory object into the bucket.
 
@@ -329,6 +329,9 @@ class Bucket:
         """
         resource = Bucket.get_boto3_resource()
         s3_object = resource.Object(self.bucket_name, key.lstrip("/"))
+
+        if metadata is None:
+            metadata = {}
 
         try:
             log.info(
@@ -1197,7 +1200,11 @@ class Bucket:
                 {
                     "AllowedHeaders": ["*"]
                     if allow_all
-                    else ["Authorization", "Content-Type"],
+                    else [
+                        "Authorization",
+                        "Content-Type",
+                        "Access-Control-Allow-Origin",
+                    ],
                     "AllowedMethods": ["GET", "PUT"],
                     "AllowedOrigins": ["*"] if allow_all else origins,
                     "ExposeHeaders": ["ETag", "x-amz-request-id"],
