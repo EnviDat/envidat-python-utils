@@ -70,7 +70,7 @@ Defaults to utf-8 decode, unless specified.
 
 ```python
 .put(
-   key: str, data: Union[str, bytes], content_type: str = None, metadata: dict = {}
+   key: str, data: Union[str, bytes], content_type: str = None, metadata: dict = None
 )
 ```
 
@@ -95,7 +95,7 @@ Put an in memory object into the bucket.
 
 ### .delete_file
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L351)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L354)
 
 ```python
 .delete_file(
@@ -117,7 +117,7 @@ Delete specified object of a given key.
 
 ### .upload_file
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L370)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L373)
 
 ```python
 .upload_file(
@@ -142,7 +142,7 @@ Transparently manages multipart uploads.
 
 ### .download_file
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L408)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L411)
 
 ```python
 .download_file(
@@ -168,7 +168,7 @@ Transparently manages multipart downloads.
 
 ### .transfer
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L442)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L445)
 
 ```python
 .transfer(
@@ -196,7 +196,7 @@ operations that aws-cli uses to transfer.
 
 ### .list_all
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L492)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L495)
 
 ```python
 .list_all()
@@ -212,7 +212,7 @@ Get a list of all objects in the bucket.
 
 ### .list_dir
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L518)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L521)
 
 ```python
 .list_dir(
@@ -244,7 +244,7 @@ Returns up to a max of 1000 values.
 
 ### .download_dir
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L595)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L598)
 
 ```python
 .download_dir(
@@ -269,7 +269,7 @@ Download an entire S3 path, including subpaths, to a local directory.
 
 ### .download_all
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L630)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L633)
 
 ```python
 .download_all(
@@ -293,7 +293,7 @@ Download an entire S3 bucket, including subpaths, to a local directory.
 
 ### .upload_dir
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L649)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L652)
 
 ```python
 .upload_dir(
@@ -322,7 +322,7 @@ Upload the content of a local directory to a bucket path.
 
 ### .delete_dir
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L698)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L701)
 
 ```python
 .delete_dir(
@@ -348,7 +348,7 @@ USE WITH CAUTION!
 
 ### .check_file_exists
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L732)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L735)
 
 ```python
 .check_file_exists(
@@ -370,7 +370,7 @@ Check an object exists in the bucket.
 
 ### .rename_file
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L762)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L765)
 
 ```python
 .rename_file(
@@ -393,7 +393,7 @@ Rename a file in a bucket, i.e. move then delete source.
 
 ### .clean_multiparts
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L797)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L800)
 
 ```python
 .clean_multiparts()
@@ -410,7 +410,7 @@ Clean up failed multipart uploads in a bucket.
 
 ### .size
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L848)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L851)
 
 ```python
 .size(
@@ -435,7 +435,7 @@ Uses a paginator to get around 1000 file limit for listing.
 
 ### .configure_static_website
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L891)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L894)
 
 ```python
 .configure_static_website(
@@ -467,7 +467,7 @@ WARNING this will set all data to public read policy.
 
 ### .set_public_read
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L950)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L953)
 
 ```python
 .set_public_read()
@@ -483,7 +483,7 @@ Set public-read policy on all objects.
 
 ### .grant_user_full_access
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L983)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L986)
 
 ```python
 .grant_user_full_access(
@@ -511,7 +511,7 @@ I.e. must be bucket owner.
 
 ### .remove_user_full_access
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L1038)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L1041)
 
 ```python
 .remove_user_full_access(
@@ -539,7 +539,7 @@ I.e. must be bucket owner.
 
 ### .generate_index_html
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L1088)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L1091)
 
 ```python
 .generate_index_html(
@@ -564,7 +564,7 @@ Write index file to root of S3 bucket, with embedded S3 download links.
 
 ### .get_cors_config
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L1152)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L1155)
 
 ```python
 .get_cors_config()
@@ -580,7 +580,7 @@ Get the CORS config for a bucket.
 
 ### .set_cors_config
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L1176)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/s3/bucket.py/#L1179)
 
 ```python
 .set_cors_config(

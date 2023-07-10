@@ -2,7 +2,7 @@
 
 ### get_metadata_list
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/api/v1.py/#L16)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/api/v1.py/#L17)
 
 ```python
 .get_metadata_list(
@@ -31,7 +31,7 @@ Host url as a parameter or from environment.
 
 ### get_protocol_and_domain
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/api/v1.py/#L56)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/api/v1.py/#L57)
 
 ```python
 .get_protocol_and_domain(
@@ -58,7 +58,7 @@ Extract protocol string and domain string from API host.
 
 ### get_package
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/api/v1.py/#L79)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/api/v1.py/#L80)
 
 ```python
 .get_package(
@@ -87,7 +87,7 @@ Get individual package (metadata entry) as dictionary from API.
 
 ### get_metadata_json_with_resources
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/api/v1.py/#L183)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/api/v1.py/#L177)
 
 ```python
 .get_metadata_json_with_resources(
@@ -120,7 +120,7 @@ Limits results to 100000, otherwise returns only 10 results.
 
 ### get_metadata_list_with_resources
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/api/v1.py/#L221)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/api/v1.py/#L215)
 
 ```python
 .get_metadata_list_with_resources(
@@ -149,7 +149,7 @@ Limits results to 100000, otherwise returns only 10 results.
 
 ### get_metadata_name_doi
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/api/v1.py/#L252)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/api/v1.py/#L246)
 
 ```python
 .get_metadata_name_doi()

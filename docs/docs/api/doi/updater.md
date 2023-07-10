@@ -2,7 +2,7 @@
 
 ### datacite_update_all_records
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/doi/datacite_updater.py/#L27)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/doi/datacite_updater.py/#L29)
 
 ```python
 .datacite_update_all_records()
@@ -27,7 +27,7 @@ https://support.datacite.org/reference/put_dois-id
 
 ### datacite_update_records
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/doi/datacite_updater.py/#L71)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/doi/datacite_updater.py/#L73)
 
 ```python
 .datacite_update_records(
@@ -61,7 +61,7 @@ https://support.datacite.org/reference/put_dois-id
 
 ### datacite_update_one_record
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/doi/datacite_updater.py/#L106)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/doi/datacite_updater.py/#L108)
 
 ```python
 .datacite_update_one_record(
@@ -108,7 +108,7 @@ https://support.datacite.org/reference/put_dois-id
 
 ### get_dc_dois
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/doi/datacite_updater.py/#L203)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/doi/datacite_updater.py/#L205)
 
 ```python
 .get_dc_dois(
@@ -134,7 +134,7 @@ https://support.datacite.org/docs/api-get-lists
 
 ### get_published_record_names_with_dois
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/doi/datacite_updater.py/#L255)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/doi/datacite_updater.py/#L254)
 
 ```python
 .get_published_record_names_with_dois()

@@ -2,7 +2,7 @@
 
 ### reserve_draft_doi_datacite
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/doi/datacite_publisher.py/#L23)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/doi/datacite_publisher.py/#L26)
 
 ```python
 .reserve_draft_doi_datacite(

@@ -2,7 +2,7 @@
 
 ### convert_datacite
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L22)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L25)
 
 ```python
 .convert_datacite(
@@ -30,12 +30,10 @@ Converter is only valid for the metadata schema for EnviDat.
 
 ### get_config_datacite_converter
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L57)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L60)
 
 ```python
-.get_config_datacite_converter(
-   config_path: str = 'envidat/config/config_converters.json'
-)
+.get_config_datacite_converter()
 ```
 
 ---
@@ -44,11 +42,6 @@ Return validated datacite converter JSON config as Python dictionary.
 
 Dictionary maps Datacite XML schema tags (keys) to EnviDat schema fields
 (values).
-
-**Args**
-
-- **config_path** (str) : Path to JSON config file,
-  default path is "envidat/config/config_converters.json"
 
 **Returns**
 
@@ -59,7 +52,7 @@ Dictionary maps Datacite XML schema tags (keys) to EnviDat schema fields
 
 ### get_dc_creator
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L519)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L517)
 
 ```python
 .get_dc_creator(
@@ -75,7 +68,7 @@ Returns author information in DataCite "creator" tag format.
 
 ### get_dc_contributor
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L569)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L567)
 
 ```python
 .get_dc_contributor(
@@ -102,7 +95,7 @@ REQUIRED DataCite property for each "nameIdentifier" property:
 
 ### affiliation_to_dc
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L633)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L631)
 
 ```python
 .affiliation_to_dc(
@@ -122,7 +115,7 @@ and ROR identifiers when available.
 
 ### get_dc_research_group
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L689)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L687)
 
 ```python
 .get_dc_research_group(
@@ -139,7 +132,7 @@ contributorType of "ResearchGroup".
 
 ### get_dc_related_identifiers
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L705)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L703)
 
 ```python
 .get_dc_related_identifiers(
@@ -170,7 +163,7 @@ for each "relatedIdentifer"
 
 ### get_dc_related_identifiers_resources
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L794)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L792)
 
 ```python
 .get_dc_related_identifiers_resources(
@@ -191,7 +184,7 @@ for each "relatedIdentifer"
 
 ### get_dc_formats
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L817)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L815)
 
 ```python
 .get_dc_formats(
@@ -207,7 +200,7 @@ Returns resources formats in DataCite "formats" tag format.
 
 ### get_dc_descriptions
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L836)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L834)
 
 ```python
 .get_dc_descriptions(
@@ -230,7 +223,7 @@ Logs warning for a description that is less than 100 characters.
 
 ### geometrycollection_to_dc_geolocations
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L872)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L870)
 
 ```python
 .geometrycollection_to_dc_geolocations(
@@ -248,7 +241,7 @@ Assumption: input spatial dictionary has a "type" value of "geometrycollection".
 
 ### get_dc_geolocations
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L895)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L893)
 
 ```python
 .get_dc_geolocations(
@@ -266,7 +259,7 @@ For list of required attributes for each type of GeoLocation see DataCite docume
 
 ### get_doi
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L1147)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L1145)
 
 ```python
 .get_doi(
@@ -296,7 +289,7 @@ an input of "https://doi.org/10.1525/cse.2022.1561651" would return
 
 ### get_envidat_doi
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L1182)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L1180)
 
 ```python
 .get_envidat_doi(
@@ -334,7 +327,7 @@ would return ""10.16904/envidat.267" as output
 
 ### get_dora_doi
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L1244)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L1237)
 
 ```python
 .get_dora_doi(
@@ -365,7 +358,7 @@ would return "10.5194/tc-10-1075-2016" as output.
 
 ### get_dora_doi_string
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L1285)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L1278)
 
 ```python
 .get_dora_doi_string(
@@ -397,7 +390,7 @@ ASSUMPTION: Only one DOI exists in each DORA API record "citation" key
 
 ### validate_dc_config
 
-[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L1358)
+[source](https://github.com/EnviDat/envidat-python-utils/blob/main/../envidat/converters/datacite_converter.py/#L1347)
 
 ```python
 .validate_dc_config(
