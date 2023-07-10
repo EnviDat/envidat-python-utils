@@ -7,6 +7,7 @@ import re
 from datetime import date
 from json import JSONDecodeError
 from logging import getLogger
+from pathlib import Path
 
 import jsonschema
 import validators
