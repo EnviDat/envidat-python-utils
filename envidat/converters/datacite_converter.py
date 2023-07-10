@@ -57,22 +57,17 @@ def convert_datacite(metadata_record: dict) -> str | None:
         return None
 
 
-def get_config_datacite_converter(
-        config_path: str = "envidat/config/config_converters.json"
-) -> dict | None:
+def get_config_datacite_converter() -> dict | None:
     """Return validated datacite converter JSON config as Python dictionary.
 
     Dictionary maps Datacite XML schema tags (keys) to EnviDat schema fields
     (values).
 
-    Args:
-        config_path (str): Path to JSON config file,
-                        default path is "envidat/config/config_converters.json"
-
     Returns:
         dict: datacite converter JSON config as Python dictionary
         None: if config failed validation
     """
+    config_path = Path(__file__).resolve().parent.parent / "config" / "config_converters.json"
     with open(config_path, encoding="utf-8") as config_json:
 
         # Load config
