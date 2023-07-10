@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 1.4.2 (2023-07-10)
+
+### Fix
+
+- add pathlib import for datacite_converter
+- set datacite config yaml relative to .py file
+- add options to ignore docker check for loading dotenv
+- add Access-Control-Allow-Origin to headers for set_cors_config
+
+### Refactor
+
+- comment out failing test_dif_converters_all_packages test
+
 ## 1.4.1 (2023-05-06)
 
 ### Fix
