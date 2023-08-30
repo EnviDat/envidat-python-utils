@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.4.3 (2023-08-30)
+
+### Fix
+
+- improve logging for metadata validation
+
 ## 1.4.2 (2023-07-10)
 
 ### Fix
