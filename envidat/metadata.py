@@ -147,10 +147,12 @@ class Record:
             "relationships_as_object",
         ]
 
-        log.debug("Validating metadata record")
         if not isinstance(self.content, dict):
             log.error(f"Content is not a valid dictionary of metadata: {self.content}")
             raise ValueError("Content is not a valid dictionary of metadata.")
+
+        package_name = self.content.get("name", "No name present")
+        log.debug(f"Validating metadata record: {package_name}")
 
         missing_keys = list(set(metadata_keys) - set(self.content.keys()))
         if missing_keys:
