@@ -1,21 +1,32 @@
-# Script to create a csv from all EnviDat records.
-# This rewrites some of the methods used in envidat/api/v1.py and utils.py
-# as this script was requested as a standalone script
-# Example commands to run script:
-# python .\scripts\metadata_to_csv.py -f <filename>
-# python .\scripts\metadata_to_csv.py --file <filename>
-# python .\scripts\metadata_to_csv.py
+'''
+Script to create a csv from all EnviDat records.
+This rewrites some of the methods used in envidat/api/v1.py and utils.py
+as this script was requested as a standalone script
+
+Author: Ranita Pal, Swiss Federal Research Institute WSL
+Date created: November 13, 2023
+Date last updated: November 24, 2023
+Version: 1
+
+Instructions for usage:
+    python .\scripts\metadata_to_csv.py -f <filename>
+    python .\scripts\metadata_to_csv.py --file <filename>
+    python <path_to_fle>\metadata_to_csv.py
+
+Requirements:
+    Python version >= 3.11
+
+'''
+
 
 # Imports
 import os
 import argparse
 # Setup logging
 import logging
-import time
-from logging import getLogger
-import requests
 import json
 import csv
+import requests
 
 
 # Setup program logging to console (terminal)
@@ -123,30 +134,34 @@ def get_metadata_list_with_resources(sort_result: bool = None) -> list:
     return package_names_with_resources
 
 def format_author(author_list: str) -> str | None:
-    """Formatting author name(s) in the format firstname1;lastname1::firstname2;lastname2.
+    """Formatting author name(s) in the format 
+        firstname1;lastname1::firstname2;lastname2.
 
     Args:
         author_list (json): Multiple author names in json format.
 
     Returns:
-        str: String of concatenated names in the format firstname1;lastname1::firstname2;lastname2.
+        str: String of concatenated names in the format 
+             firstname1;lastname1::firstname2;lastname2.
     """
     author_json = json.loads(author_list)
     all_names = ""
     for per in author_json:
-        if not all_names == "":
+        if all_names != "":
             all_names = f"{all_names}::"
         all_names = f"{all_names}{per['given_name']};{per['name']}"
     return all_names
 
 def format_resources(resource_list: list) -> str | None:
-    """Formatting resources(s) to have only required details like name, restriction level and URL.
+    """Formatting resources(s) to have only required details like name, 
+       restriction level and URL.
 
     Args:
         resource_list (list): Multiple resource dictionaries in list format.
 
     Returns:
-        str: String of concatenated resources, each in the format name;level;url::.
+        str: String of concatenated resources, each in the format 
+              name;level;url::.
     """
     all_res = ""
     for res in resource_list:
@@ -156,40 +171,44 @@ def format_resources(resource_list: list) -> str | None:
                 res['restricted'] = res['restricted']['level']
             else:
                 res['restricted'] = ""
-            if not all_res == "":
+            if all_res != "":
                 all_res = f"{all_res}::"
             all_res = f"{all_res}{res['name']};{res['restricted']};{res['url']}"
         except KeyError as e:
-            log.error(f"Details not found for package with name '{res['name']}': {e}")
+            log.error(f"Details not found for package with name {res['name']}: {e}")
             return None
     return all_res
 
 def format_tags(tag_dict: dict, tags: list) -> None:
-    """Formatting tags to have only required details like name, restriction level and URL.
+    """Formatting tags to have only required details like name, 
+       restriction level and URL.
 
     Args:
-        tag_dict (dictionary): The entire dictionary for that package, since tags will be stored here.
+        tag_dict (dictionary): The entire dictionary for that package, 
+                                since tags will be stored here.
         tags (list): The list of tags present for that package.
 
     Returns:
         None: Formatting already made in dictionary, nothing to return.
     """
-    #keeping the maximum number of tags to 15
-    tag_len = len(tags) if len(tags)<15 else 15
-    for i in range(tag_len):
-        tag_dict[f"tag_{i+1}"] = tags[i]['name']
+    # keeping the maximum number of tags to 15
+    tag_len = len(tags)
+    for i in range(15):
+        tag_dict[f"tag_{i+1}"] = tags[i]['name'] if i < tag_len else 'null'
     return
 
 def convert_json_to_csv(filename: str) -> None:
     """Fetching all packages and formatting them to write to a csv file.
 
     Args:
-        filename (str): The name of the csv file where all details need to be stored.
+        filename (str): The name of the csv file where all details need 
+                         to be stored.
         
     Returns:
         None: CSV already written in given location, nothing to return.
     """
-    tag_list = [f"tag_{i+1}" for i in range(15)]
+
+
     try:
         resources = get_metadata_list_with_resources()
     except Exception as e:
@@ -197,21 +216,22 @@ def convert_json_to_csv(filename: str) -> None:
         return None
 
     csv_list = []
-    #modifying info
+    # modifying info
+    # put a check if resources are not empty
     for item in resources:
+        csv_dict = {}
         try:
-            csv_dict = dict.fromkeys(tag_list, "null")
+            csv_dict['title'] = item['title']
+            csv_dict['name'] = item['name']
             csv_dict['author'] = format_author(item['author'])
             csv_dict['id'] = item['id']
             csv_dict['license_title'] = item['license_title']
             csv_dict['metadata_created'] = item['metadata_created']
             csv_dict['metadata_modified'] = item['metadata_modified']
-            csv_dict['name'] = item['name']
             csv_dict['notes'] = item['notes']
             csv_dict['num_resources'] = item['num_resources']
             csv_dict['num_tags'] = item['num_tags']
             csv_dict['publication_state'] = item['publication_state']
-            csv_dict['title'] = item['title']
             csv_dict['organization'] = item['organization']['title']
             csv_dict['resources'] = format_resources(item['resources'])
             csv_dict['resource_type'] = item['resource_type']
@@ -221,20 +241,24 @@ def convert_json_to_csv(filename: str) -> None:
             csv_dict['publisher'] = publication['publisher']
             format_tags(csv_dict, item['tags'])
         except KeyError as e:
-            log.error(f"Details not found for package with name '{csv_dict['name']}': {e}")
+            log.error(f"Details not found for package with "
+                      f"name '{item['name']}': {e}")
             return None
         except Exception as e:
-            log.error(f"Error ijn formatting various fields of package with name '{csv_dict['name']}': {e}")
+            log.error(f"Error in formatting various fields of package with name"
+                      f"{item['name']}: {e}")
             return None
         csv_list.append(csv_dict)
 
     #write to csv file
-    log.info(f"Finished formatting the packages. Starting to create CSV file: '{filename}'")
-    with open(filename, 'w', encoding='utf8') as f:
-        w = csv.DictWriter(f, csv_dict.keys())
-        w.writeheader()
-        w.writerows(csv_list)
-    log.info(f"CSV file created: '{filename}'")
+    if len(csv_list) != 0:
+        log.info(f"Finished formatting the packages. "
+                 f"Starting to create CSV file: '{filename}'")
+        with open(filename, 'w', newline='', encoding='utf8') as f:
+            w = csv.DictWriter(f, csv_list[0].keys())
+            w.writeheader()
+            w.writerows(csv_list)
+        log.info(f"CSV file created: '{filename}'")
     return
 
 
@@ -251,5 +275,5 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    #fetch the packages, format them and write to csv
+    # fetch the packages, format them and write to csv
     convert_json_to_csv(args.file)
