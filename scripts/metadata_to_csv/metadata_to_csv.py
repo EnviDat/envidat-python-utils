@@ -1,4 +1,4 @@
-'''
+"""
 Script to create a csv from all EnviDat records.
 This rewrites some of the methods used in envidat/api/v1.py and utils.py
 as this script was requested as a standalone script
@@ -16,7 +16,7 @@ Instructions for usage:
 Requirements:
     Python version >= 3.11
 
-'''
+"""
 
 
 # Imports
@@ -250,7 +250,7 @@ def convert_json_to_csv(filename: str) -> None:
             return None
         csv_list.append(csv_dict)
 
-    #write to csv file
+    # write to csv file
     if len(csv_list) != 0:
         log.info(f"Finished formatting the packages. "
                  f"Starting to create CSV file: '{filename}'")
