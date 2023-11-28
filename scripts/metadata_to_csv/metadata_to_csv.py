@@ -38,7 +38,8 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-def get_url(url: str) -> requests.Response:
+
+def get_url(url: str) -> requests.Response | None:
     """Get a URL with additional error handling.
 
     Args:
@@ -64,6 +65,7 @@ def get_url(url: str) -> requests.Response:
         log.error(f"Unhandled exception occurred on get: {r.request.url}")
 
     return None
+
 
 def get_metadata_json_with_resources(
     host: str = "https://www.envidat.ch",
@@ -133,6 +135,7 @@ def get_metadata_list_with_resources(sort_result: bool = None) -> list:
 
     return package_names_with_resources
 
+
 def format_author(author_list: str) -> str | None:
     """Formatting author name(s) in the format 
         firstname1;lastname1::firstname2;lastname2.
@@ -151,6 +154,7 @@ def format_author(author_list: str) -> str | None:
             all_names = f"{all_names}::"
         all_names = f"{all_names}{per['given_name']};{per['name']}"
     return all_names
+
 
 def format_resources(resource_list: list) -> str | None:
     """Formatting resources(s) to have only required details like name, 
@@ -179,6 +183,7 @@ def format_resources(resource_list: list) -> str | None:
             return None
     return all_res
 
+
 def format_tags(tag_dict: dict, tags: list) -> None:
     """Formatting tags to have only required details like name, 
        restriction level and URL.
@@ -197,6 +202,7 @@ def format_tags(tag_dict: dict, tags: list) -> None:
         tag_dict[f"tag_{i+1}"] = tags[i]['name'] if i < tag_len else 'null'
     return
 
+
 def convert_json_to_csv(filename: str) -> None:
     """Fetching all packages and formatting them to write to a csv file.
 
@@ -207,7 +213,6 @@ def convert_json_to_csv(filename: str) -> None:
     Returns:
         None: CSV already written in given location, nothing to return.
     """
-
 
     try:
         resources = get_metadata_list_with_resources()
@@ -226,6 +231,7 @@ def convert_json_to_csv(filename: str) -> None:
             csv_dict['author'] = format_author(item['author'])
             csv_dict['id'] = item['id']
             csv_dict['license_title'] = item['license_title']
+            csv_dict['license_url'] = item['license_url'] if 'license_url' in item else ''
             csv_dict['metadata_created'] = item['metadata_created']
             csv_dict['metadata_modified'] = item['metadata_modified']
             csv_dict['notes'] = item['notes']
