@@ -169,6 +169,67 @@ def format_author(author_list: str) -> str | None:
     return all_names
 
 
+def format_affiliation(author_list: str) -> str:
+    """Formatting author affiliation(s) in the format
+        <author1_affiliation>::<author2_affiliation>
+
+        Example:
+            WSL::EPFL::University of Zurich
+
+    If affiliation not found then affiliation is
+    assigned as string: 'null'
+
+    Args:
+        author_list (json): Multiple author names in json format.
+
+    Returns:
+        str: String of concatenated affiliations in the format
+              <author1_affiliation>::null::<author3_affiliation>
+    """
+    author_json = json.loads(author_list)
+    all_affiliations = ""
+
+    for author in author_json:
+
+        if all_affiliations != "":
+            all_affiliations = f"{all_affiliations}::"
+
+        all_affiliations = f"{all_affiliations}{author.get('affiliation', 'null')}"
+
+    return all_affiliations
+
+
+def format_data_credit(author_list: str) -> str:
+    """Formatting author data credits(s) in the format shown in the following example:
+        software;curation::null::supervision::software;supervision
+
+    If data credit(s) not found then assigned as string: 'null'
+
+    Args:
+        author_list (json): Multiple author names in json format.
+
+    Returns:
+        str: String of concatenated data credits in the format
+              software;curation::null::supervision
+    """
+    author_json = json.loads(author_list)
+    all_data_credits = ""
+
+    for author in author_json:
+
+        if all_data_credits != "":
+            all_data_credits = f"{all_data_credits}::"
+
+        data_credit = author.get("data_credit", ["null"])
+
+        if isinstance(data_credit, list):
+            data_credit = ';'.join(data_credit)
+
+        all_data_credits = f"{all_data_credits}{data_credit}"
+
+    return all_data_credits
+
+
 def format_resources(resource_list: list) -> str | None:
     """Formatting resources(s) to have only required details like name, 
        restriction level and URL.
@@ -237,11 +298,15 @@ def convert_json_to_csv(filename: str) -> None:
     # modifying info
     # put a check if resources are not empty
     for item in resources:
+
         csv_dict = {}
+
         try:
             csv_dict['title'] = item['title']
             csv_dict['name'] = item['name']
             csv_dict['author'] = format_author(item['author'])
+            csv_dict['affiliation'] = format_affiliation(item['author'])
+            csv_dict['data_credit'] = format_data_credit(item['author'])
             csv_dict['id'] = item['id']
             csv_dict['license_title'] = item['license_title']
             csv_dict['license_url'] = item['license_url'] if 'license_url' in item else ''
@@ -259,10 +324,12 @@ def convert_json_to_csv(filename: str) -> None:
             csv_dict['publication_year'] = publication['publication_year']
             csv_dict['publisher'] = publication['publisher']
             format_tags(csv_dict, item['tags'])
+
         except KeyError as e:
             log.error(f"Details not found for package with "
                       f"name '{item['name']}': {e}")
             return None
+
         except Exception as e:
             log.error(f"Error in formatting various fields of package with name"
                       f"{item['name']}: {e}")
