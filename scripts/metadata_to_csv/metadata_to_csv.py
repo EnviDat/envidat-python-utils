@@ -230,6 +230,32 @@ def format_data_credit(author_list: str) -> str:
     return all_data_credits
 
 
+def format_funding(funding: str) -> str:
+    """Formatting funding institutions in the format shown in the following example:
+        WSL::EPFL::WSL
+
+     If funding instituion not found then assigned as string: 'null'
+
+    Args:
+        funding (json): funding list in json string format
+
+    Returns:
+        str: String of concatenated funding instituions in the formst
+                WSL::EPFL::WSL
+    """
+    funders = json.loads(funding)
+    all_funders = ""
+
+    for funder in funders:
+
+        if all_funders != "":
+            all_funders = f"{all_funders}::"
+
+        all_funders = f"{all_funders}{(funder.get('institution', 'null')).strip()}"
+
+    return all_funders
+
+
 def format_resources(resource_list: list) -> str | None:
     """Formatting resources(s) to have only required details like name, 
        restriction level and URL.
@@ -304,10 +330,11 @@ def convert_json_to_csv(filename: str) -> None:
         try:
             csv_dict['title'] = item['title']
             csv_dict['name'] = item['name']
+            csv_dict['id'] = item['id']
             csv_dict['author'] = format_author(item['author'])
             csv_dict['affiliation'] = format_affiliation(item['author'])
             csv_dict['data_credit'] = format_data_credit(item['author'])
-            csv_dict['id'] = item['id']
+            csv_dict['funding'] = format_funding(item['funding'])
             csv_dict['license_title'] = item['license_title']
             csv_dict['license_url'] = item['license_url'] if 'license_url' in item else ''
             csv_dict['metadata_created'] = item['metadata_created']
