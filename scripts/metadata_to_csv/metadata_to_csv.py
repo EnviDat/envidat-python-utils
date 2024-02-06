@@ -1,7 +1,8 @@
 """
 Script to create a csv from all EnviDat records.
-This rewrites some of the methods used in envidat/api/v1.py and utils.py
-as this script was requested as a standalone script
+
+This rewrites some methods used in envidat/api/v1.py and utils.py
+as this script was requested as a stand-alone script
 
 Authors: Ranita Pal and Rebecca Kurup Buchholz, Swiss Federal Research Institute WSL
 Date created: November 13, 2023
@@ -33,7 +34,7 @@ import requests
 # Setup program logging to console (terminal)
 # Check terminal for logged information, warning and error messages
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s | %(levelname)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
@@ -123,7 +124,7 @@ def get_metadata_list_with_resources(sort_result: bool = None) -> list:
     package_names_with_resources = get_metadata_json_with_resources()
 
     # Extract results and assign them to a list
-    log.debug("Extracting [result] key from JSON.")
+    log.debug("Extracting [result] key from metadata JSON.")
     package_names_with_resources = list(package_names_with_resources["result"])
     log.info(f"Returned {len(package_names_with_resources)} metadata entries from API.")
 
@@ -135,6 +136,147 @@ def get_metadata_list_with_resources(sort_result: bool = None) -> list:
         )
 
     return package_names_with_resources
+
+
+def get_organizations_json(
+    host: str = "https://www.envidat.ch",
+    path: str = "/api/3/action/organization_list?limit=100000",
+) -> dict:
+    """Get all current organizations from API.
+
+    Args:
+        host (str): API host url. Attempts to get from environment if omitted.
+            Defaults to "https://www.envidat.ch"
+        path (str): API host path. Attempts to get from environment if omitted.
+            Defaults to "/api/3/action/organization_list?limit=100000"
+
+    Note: By default limits results to 100000
+
+    Returns:
+        dict:  Dictionary with list of organizations from CKAN API
+    """
+    if "API_HOST" in os.environ:
+        log.debug("Getting API host from environment variables.")
+        api_host = os.getenv("API_HOST")
+    else:
+        api_host = host
+
+    log.debug(f"Getting organization list with resources from {api_host}.")
+    try:
+        organizations = get_url(f"{api_host}{path}").json()
+    except AttributeError as e:
+        log.error(e)
+        log.error("Getting organization list from API failed.")
+        raise AttributeError("Failed to get organization list as JSON.")
+
+    return organizations
+
+
+def get_organization_list() -> list:
+    """Get all current organizations in CKAN API as a Python list.
+
+    Note: By default limits results to 100000
+
+    Returns:
+        list: List of organizations
+    """
+    # Get organizations as string in JSON format
+    organizations = get_organizations_json()
+
+    # Extract result key and assign value to a list
+    log.debug("Extracting 'result' key from organizations JSON")
+    organizations_list = list(organizations["result"])
+    log.debug(f"Returned {len(organizations_list)} organizations from CKAN API")
+
+    return organizations_list
+
+
+def get_organization_show_json(
+    organization_id: str,
+    host: str = "https://www.envidat.ch",
+    path: str = "/api/3/action/organization_show",
+) -> dict:
+    """Get the metadata for an organization from the CKAN API as JSON string.
+
+    Args:
+        organization_id (str): id or name of CKAN organization (Ex: 'gis')
+        host (str): API host url. Attempts to get from environment if omitted.
+            Defaults to "https://www.envidat.ch"
+        path (str): API host path. Attempts to get from environment if omitted.
+            Defaults to "/api/3/action/organization_show"
+
+    Returns:
+        dict:  Dictionary with metadata of organization from CKAN API
+    """
+    if "API_HOST" in os.environ:
+        log.debug("Getting API host from environment variables.")
+        api_host = os.getenv("API_HOST")
+    else:
+        api_host = host
+
+    log.debug(f"Getting organization metadata from {api_host} with id '{id}'")
+    try:
+        organization = get_url(f"{api_host}{path}?id={organization_id}").json()
+    except AttributeError as e:
+        log.error(e)
+        log.error(
+            f"Getting organization metadata with id '{organization_id}' from "
+            f"API failed.")
+        raise AttributeError("Failed to get organization_show metadata as JSON.")
+
+    return organization
+
+
+def get_organization_show(organization_id: str) -> dict:
+    """Get the metadata for an organization as a dictionary
+
+    Arg:
+        organization_id (str): id or name of CKAN organization (Ex: 'gis')
+
+    Returns:
+        dict: Dict with organization metadata
+    """
+    # Get organization metadata as string in JSON format
+    organization = get_organization_show_json(organization_id)
+
+    # Extract result key and assign value to a dictionary
+    log.debug("Extracting 'result' key from organization_show JSON")
+    organization_dict = dict(organization["result"])
+    log.debug(
+        f"Returned organization show from CKAN API for org with id '{organization_id}'"
+    )
+
+    return organization_dict
+
+
+# TODO write function comments and return type hint
+def get_organizations_hierarchy():
+
+    orgs_hierarchy = {}
+    orgs_titles = {}
+
+    organizations = get_organization_list()
+
+    for org in organizations:
+
+        org_show = get_organization_show(org)
+
+        orgs_titles[org] = org_show.get("title", "null")
+
+        # TODO confirm logic valid
+        groups = org_show.get("groups", [])
+        if len(groups) > 0:
+            research_unit = groups[0].get("name", "null")
+        else:
+            research_unit = "null"
+
+        orgs_hierarchy[org] = research_unit
+
+    for child_org, parent_org in orgs_hierarchy.items():
+        if parent_org in orgs_titles.keys():
+            orgs_hierarchy[child_org] = orgs_titles[parent_org]
+
+    return orgs_hierarchy
 
 
 def format_author(author_list: str) -> str | None:
@@ -340,10 +482,18 @@ def convert_json_to_csv(filename: str) -> None:
         None: CSV already written in given location, nothing to return.
     """
 
+    # Get package metadata from CKAN API
     try:
         resources = get_metadata_list_with_resources()
     except Exception as e:
         log.error(f"Cannot fetch metadata, error: {e}")
+        return None
+
+    # Get organizations hierarchy dictionary (in format {"child_org": "parent_org"}
+    try:
+        orgs_hierarchy = get_organizations_hierarchy()
+    except Exception as e:
+        log.error(f"Cannot get organization hierarchy, error: {e}")
         return None
 
     csv_list = []
@@ -371,6 +521,7 @@ def convert_json_to_csv(filename: str) -> None:
             csv_dict['num_tags'] = item['num_tags']
             csv_dict['publication_state'] = item['publication_state']
             csv_dict['organization'] = item['organization']['title']
+            csv_dict['research_unit'] = orgs_hierarchy[item['organization']['name']]
             csv_dict['resources'] = format_resources(item['resources'])
             csv_dict['resource_type'] = item['resource_type']
             csv_dict['resource_type_general'] = item['resource_type_general']
