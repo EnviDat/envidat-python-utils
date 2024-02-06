@@ -141,6 +141,9 @@ def format_author(author_list: str) -> str | None:
     """Formatting author name(s) in the format 
         firstname1;lastname1::firstname2;lastname2.
 
+        First names (referred to as 'given_name') are truncated to first letter
+        with a period. Example:   Andrea  ->  A.
+
     Args:
         author_list (json): Multiple author names in json format.
 
@@ -150,10 +153,19 @@ def format_author(author_list: str) -> str | None:
     """
     author_json = json.loads(author_list)
     all_names = ""
+
     for per in author_json:
+
         if all_names != "":
             all_names = f"{all_names}::"
-        all_names = f"{all_names}{per['given_name']};{per['name']}"
+
+        if len(per.get("given_name", "")) > 0:
+            given_name = f"{((per['given_name'])[0]).upper()}."
+        else:
+            given_name = per["given_name"]
+
+        all_names = f"{all_names}{given_name};{per['name']}"
+
     return all_names
 
 
