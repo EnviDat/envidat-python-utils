@@ -3,10 +3,10 @@ Script to create a csv from all EnviDat records.
 This rewrites some of the methods used in envidat/api/v1.py and utils.py
 as this script was requested as a standalone script
 
-Author: Ranita Pal, Swiss Federal Research Institute WSL
+Authors: Ranita Pal and Rebecca Kurup Buchholz, Swiss Federal Research Institute WSL
 Date created: November 13, 2023
-Date last updated: November 24, 2023
-Version: 1
+Date last updated: February 6, 2024
+Version: 2
 
 Instructions for usage:
     python .\scripts\metadata_to_csv.py -f <filename>
@@ -22,6 +22,7 @@ Requirements:
 # Imports
 import os
 import argparse
+
 # Setup logging
 import logging
 import json
@@ -258,13 +259,18 @@ def convert_json_to_csv(filename: str) -> None:
 
     # write to csv file
     if len(csv_list) != 0:
+
         log.info(f"Finished formatting the packages. "
                  f"Starting to create CSV file: '{filename}'")
-        with open(filename, 'w', newline='', encoding='utf8') as f:
+
+        # Encoding is 'utf-8-sig' so that Microsoft Excel can detect UTF-8 encoding of s
+        # pecial characters including umlauts
+        with open(filename, 'w', newline='', encoding='utf-8-sig') as f:
             w = csv.DictWriter(f, csv_list[0].keys())
             w.writeheader()
             w.writerows(csv_list)
         log.info(f"CSV file created: '{filename}'")
+
     return
 
 
