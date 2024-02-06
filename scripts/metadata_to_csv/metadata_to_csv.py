@@ -139,7 +139,7 @@ def get_metadata_list_with_resources(sort_result: bool = None) -> list:
 
 def format_author(author_list: str) -> str | None:
     """Formatting author name(s) in the format 
-        firstname1;lastname1::firstname2;lastname2.
+        firstname1;lastname1::firstname2;lastname2
 
         First names (referred to as 'given_name') are truncated to first letter
         with a period. Example:   Andrea  ->  A.
@@ -228,6 +228,32 @@ def format_data_credit(author_list: str) -> str:
         all_data_credits = f"{all_data_credits}{data_credit}"
 
     return all_data_credits
+
+
+def format_date(date: str) -> str:
+    """Formatting date(s) in the format:
+        date1;date_type1::date2;date_type2
+
+    If value not found then assignes as string: 'null'
+
+    Args:
+        date (json): date list in json string format
+
+    Returns:
+        str: String of concatenated dates in the format
+             date1;date_type1::date2;date_type2
+    """
+    dates = json.loads(date)
+    all_dates = ""
+
+    for dte in dates:
+
+        if all_dates != "":
+            all_dates = f"{all_dates}::"
+
+        all_dates = f"{all_dates}{dte.get('date', 'null')};{dte.get('date_type', 'null')}"
+
+    return all_dates
 
 
 def format_funding(funding: str) -> str:
@@ -334,6 +360,7 @@ def convert_json_to_csv(filename: str) -> None:
             csv_dict['author'] = format_author(item['author'])
             csv_dict['affiliation'] = format_affiliation(item['author'])
             csv_dict['data_credit'] = format_data_credit(item['author'])
+            csv_dict['date'] = format_date(item['date'])
             csv_dict['funding'] = format_funding(item['funding'])
             csv_dict['license_title'] = item['license_title']
             csv_dict['license_url'] = item['license_url'] if 'license_url' in item else ''
