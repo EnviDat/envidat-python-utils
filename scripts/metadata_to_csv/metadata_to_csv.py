@@ -6,7 +6,7 @@ as this script was requested as a stand-alone script
 
 Authors: Ranita Pal and Rebecca Kurup Buchholz, Swiss Federal Research Institute WSL
 Date created: November 13, 2023
-Date last updated: February 6, 2024
+Date last updated: February 7, 2024
 Version: 2
 
 Instructions for usage:
@@ -23,16 +23,16 @@ Requirements:
 # Imports
 import os
 import argparse
-
-# Setup logging
-import logging
 import json
 import csv
 import requests
+import urllib.parse
+import logging
 
 
 # Setup program logging to console (terminal)
 # Check terminal for logged information, warning and error messages
+# Change logging level to debug to see log debug statements in terminal: logging.DEBUG
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s: %(message)s",
@@ -69,62 +69,71 @@ def get_url(url: str) -> requests.Response | None:
     return None
 
 
-def get_metadata_json_with_resources(
-    host: str = "https://www.envidat.ch",
-    path: str = "/api/3/action/current_package_list_with_resources?limit=100000",
-) -> dict:
-    """Get all current package/metadata as dictionary with associated resources from
-    API.
+def get_ckan_dict(
+        path: str,
+        data_dict: dict[str, str] | None = None,
+        host: str = "https://www.envidat.ch"
+) -> dict | None:
+    """Return dictionary parsed from CKAN API call response.
 
     Args:
+        path (str): API host path, should start with "/".
+                Example:  "/api/3/action/current_package_list_with_resources"
+        data_dict (dict): Optional dictionary of strings with optional query parameters
+            referred to as a data_dict in CKAN documentation.
+            Defaults to None. Example: {"limit": "1000"}
         host (str): API host url. Attempts to get from environment if omitted.
-            Defaults to https://www.envidat.ch
-        path (str): API host path. Attempts to get from environment if omitted.
-            Defaults to /api/3/action/current_package_list_with_resources?limit=100000
-
-    Note:
-        Limits results to 100000, otherwise returns only 10 results.
+            Defaults to call EnviDat host at "https://www.envidat.ch"
 
     Returns:
-        dict:  Dictionary of packages, with nested resources.
+        dict: Dictionary parsed from JSON returned by CKAN API call.
     """
-    if (
-        "API_HOST" in os.environ
-        and "API_PATH_CURRENT_PACKAGE_LIST_WITH_RESOURCES" in os.environ
-    ):
-        log.debug("Getting API host and path from environment variables.")
-        host = os.getenv("API_HOST")
-        path = os.getenv("API_PATH_CURRENT_PACKAGE_LIST_WITH_RESOURCES")
 
-    log.info(f"Getting package list with resources from {host}.")
+    # Get API host from environment if it exists
+    if "API_HOST" in os.environ:
+        log.debug("Getting API host from environment variables.")
+        api_host = os.getenv("API_HOST")
+    else:
+        api_host = host
+
+    # Assign URL used to call API
+    api_url = f"{api_host}{path}"
+
+    # Add query parameter(s) if they exist
+    if data_dict:
+        query_params = urllib.parse.urlencode(data_dict)
+        api_url = f"{api_url}?{query_params}"
+
+    log.debug(f"Calling API with URL: {api_url}")
     try:
-        package_names_with_resources = get_url(f"{host}{path}").json()
-    except AttributeError as e:
-        log.error(e)
-        log.error("Getting package names with resources from API failed.")
-        raise AttributeError("Failed to extract package names as JSON.")
+        ckan_json = get_url(api_url).json()
+    except Exception as e:
+        log.exception(e)
+        raise Exception(f"Failed to retrieve JSON string from call to : {api_url}")
 
-    return package_names_with_resources
+    return ckan_json
 
 
 def get_metadata_list_with_resources(sort_result: bool = None) -> list:
-    """Get all current package/metadata as list of results with associated resources.
+    """Return all current package/metadata as list of results with associated resources.
 
     Args:
         sort_result (bool): Sort result alphabetically by metadata name.
             Default to None.
 
-    Note:
-        Limits results to 100000, otherwise returns only 10 results.
+    Note: Limits results to 100000.
 
     Returns:
         list: List of packages, with nested resources.
     """
-    # Get package/metadata as string in JSON format with associated resources from API
-    package_names_with_resources = get_metadata_json_with_resources()
+    # Get package/metadata as with associated resources from API
+    package_names_with_resources = get_ckan_dict(
+        "/api/3/action/current_package_list_with_resources",
+        {"limit": "100000"}
+    )
 
     # Extract results and assign them to a list
-    log.debug("Extracting [result] key from metadata JSON.")
+    log.debug("Extracting [result] key from metadata packages.")
     package_names_with_resources = list(package_names_with_resources["result"])
     log.info(f"Returned {len(package_names_with_resources)} metadata entries from API.")
 
@@ -138,119 +147,66 @@ def get_metadata_list_with_resources(sort_result: bool = None) -> list:
     return package_names_with_resources
 
 
-def get_organizations_json(
-    host: str = "https://www.envidat.ch",
-    path: str = "/api/3/action/organization_list?limit=100000",
-) -> dict:
-    """Get all current organizations from API.
-
-    Args:
-        host (str): API host url. Attempts to get from environment if omitted.
-            Defaults to "https://www.envidat.ch"
-        path (str): API host path. Attempts to get from environment if omitted.
-            Defaults to "/api/3/action/organization_list?limit=100000"
-
-    Note: By default limits results to 100000
-
-    Returns:
-        dict:  Dictionary with list of organizations from CKAN API
-    """
-    if "API_HOST" in os.environ:
-        log.debug("Getting API host from environment variables.")
-        api_host = os.getenv("API_HOST")
-    else:
-        api_host = host
-
-    log.debug(f"Getting organization list with resources from {api_host}.")
-    try:
-        organizations = get_url(f"{api_host}{path}").json()
-    except AttributeError as e:
-        log.error(e)
-        log.error("Getting organization list from API failed.")
-        raise AttributeError("Failed to get organization list as JSON.")
-
-    return organizations
-
-
 def get_organization_list() -> list:
-    """Get all current organizations in CKAN API as a Python list.
+    """Return all current organizations in CKAN API as a list.
 
-    Note: By default limits results to 100000
+    Note: Limits results to 100000.
 
     Returns:
-        list: List of organizations
+        list: List of organizations.
     """
     # Get organizations as string in JSON format
-    organizations = get_organizations_json()
+    organizations = get_ckan_dict(
+        "/api/3/action/organization_list",
+        {"limit": "100000"}
+    )
 
     # Extract result key and assign value to a list
-    log.debug("Extracting 'result' key from organizations JSON")
+    log.debug("Extracting 'result' key from organizations_list")
     organizations_list = list(organizations["result"])
     log.debug(f"Returned {len(organizations_list)} organizations from CKAN API")
 
     return organizations_list
 
 
-def get_organization_show_json(
-    organization_id: str,
-    host: str = "https://www.envidat.ch",
-    path: str = "/api/3/action/organization_show",
-) -> dict:
-    """Get the metadata for an organization from the CKAN API as JSON string.
-
-    Args:
-        organization_id (str): id or name of CKAN organization (Ex: 'gis')
-        host (str): API host url. Attempts to get from environment if omitted.
-            Defaults to "https://www.envidat.ch"
-        path (str): API host path. Attempts to get from environment if omitted.
-            Defaults to "/api/3/action/organization_show"
-
-    Returns:
-        dict:  Dictionary with metadata of organization from CKAN API
-    """
-    if "API_HOST" in os.environ:
-        log.debug("Getting API host from environment variables.")
-        api_host = os.getenv("API_HOST")
-    else:
-        api_host = host
-
-    log.debug(f"Getting organization metadata from {api_host} with id '{id}'")
-    try:
-        organization = get_url(f"{api_host}{path}?id={organization_id}").json()
-    except AttributeError as e:
-        log.error(e)
-        log.error(
-            f"Getting organization metadata with id '{organization_id}' from "
-            f"API failed.")
-        raise AttributeError("Failed to get organization_show metadata as JSON.")
-
-    return organization
-
-
 def get_organization_show(organization_id: str) -> dict:
-    """Get the metadata for an organization as a dictionary
+    """Return the metadata for an organization as a dictionary.
 
     Arg:
         organization_id (str): id or name of CKAN organization (Ex: 'gis')
 
     Returns:
-        dict: Dict with organization metadata
+        dict: Dictionary with organization metadata.
     """
     # Get organization metadata as string in JSON format
-    organization = get_organization_show_json(organization_id)
+    organization = get_ckan_dict(
+        "/api/3/action/organization_show",
+        {"id": organization_id}
+    )
 
     # Extract result key and assign value to a dictionary
-    log.debug("Extracting 'result' key from organization_show JSON")
+    log.debug("Extracting 'result' key from organization_show")
     organization_dict = dict(organization["result"])
     log.debug(
-        f"Returned organization show from CKAN API for org with id '{organization_id}'"
+        f"Returned organization_show from CKAN API for organization"
+        f" with id '{organization_id}'"
     )
 
     return organization_dict
 
 
-# TODO write function comments and return type hint
-def get_organizations_hierarchy():
+def get_organizations_hierarchy() -> dict[str, str]:
+    """Return dictionary of CKAN API organizations hierarchy
+        in format {"child_org_name": "parent_org_title"}
+
+    Includes all organizations in CKAN database.
+
+    Example output:
+        {
+            'dynamic-macroecology': 'Land Change Science',
+            'ecological-genetics': 'Biodiversity and Conservation Biology'
+        }
+    """
 
     orgs_hierarchy = {}
     orgs_titles = {}
