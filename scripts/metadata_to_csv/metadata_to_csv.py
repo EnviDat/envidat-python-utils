@@ -19,16 +19,19 @@ Requirements:
 
 """
 
+# TODO check about "organization-hidden"
+
 
 # Imports
 import os
 import argparse
 import json
 import csv
+from pprint import pprint
+
 import requests
 import urllib.parse
 import logging
-
 
 # Setup program logging to console (terminal)
 # Check terminal for logged information, warning and error messages
@@ -195,9 +198,97 @@ def get_organization_show(organization_id: str) -> dict:
     return organization_dict
 
 
+# TODO finish logic, possibly remove function
+def get_research_unit(
+        organization: dict,
+        wsl_name: str = "wsl",
+        slf_name: str = "wsl-institute-for-snow-and-avalanche-research-slf"
+) -> str:
+    """Return research unit that corresponds to an organization in EnviDat CKAn API.
+    For organization hiearchy see https://envidat.ch/organization
+
+    If research unit can be found then returns string "null".
+
+    Args:
+        organization (dict): Dictionary with organization metadata.
+        wsl_name (str): String with default name of WSL organization in EnviDat API.
+        slf_name (str): String with default name of SLF organization in EnviDat API.
+
+    Returns:
+        str: String with name of research unit
+    """
+    # Assign default string of "null" for research_unit
+    research_unit = "null"
+
+    # Extract groups from organization metadata
+    groups = organization.get("groups", [])
+
+    # Assign research_unit to value that best corresponds to EnviDat
+    #   organization structure
+    if len(groups) > 0:
+
+        research_unit = groups[0].get("name", "null")
+
+        # If parent organization is WSL or SLF then assign research_unit to
+        #  organization's name
+        if research_unit in [wsl_name, slf_name]:
+            research_unit = organization.get("name")
+
+    return research_unit
+
+
+# TODO finish and document test function
+def get_organizations_titles_parent(
+        slf_name: str = "wsl-institute-for-snow-and-avalanche-research-slf"
+) -> tuple[dict, dict]:
+    orgs_titles = {}
+    child_parent = {}
+
+    # Get list of organizations
+    organizations = get_organization_list()
+
+    # Remove Trusted Users Organization from list
+    if "trusted" in organizations:
+        organizations.remove("trusted")
+
+    for org in organizations:
+
+        # Get metadata for an organization
+        org_show = get_organization_show(org)
+
+        # Extract organization title and assign to orgs_title dictionary
+        orgs_titles[org] = org_show.get("title", "null")
+
+        # Extract groups from organization metadata
+        groups = org_show.get("groups", [])
+
+        # Assign research_unit to value that best corresponds to EnviDat
+        #   organization structure
+        if org == slf_name:
+            research_unit = org
+        elif len(groups) > 0:
+            research_unit = groups[0].get("name", org)
+        else:
+            research_unit = org
+
+        child_parent[org] = research_unit
+
+    return orgs_titles, child_parent
+
+
+# TODO finish WIP and test and document function
+def is_root_envidat_org(org_name: str, child_parent: dict) -> bool:
+    if child_parent.get(org_name) == org_name:
+        return True
+    return False
+
+
+# TODO finish WIP and test refactored function
+# TODO replace names with titles from orgs_titles
+# TODO review test output with https://envidat.ch/organization
 def get_organizations_hierarchy() -> dict[str, str]:
-    """Return dictionary of CKAN API organizations hierarchy
-        in format {"child_org_name": "parent_org_title"}
+    """Return dictionary of CKAN API organizations hierarchy that uses algorithm
+        to assign research unit in format {"child_org_name": "parent_org_title"}
 
     Includes all organizations in CKAN database.
 
@@ -207,32 +298,70 @@ def get_organizations_hierarchy() -> dict[str, str]:
             'ecological-genetics': 'Biodiversity and Conservation Biology'
         }
     """
-
+    # Assign dictionary to contain processed organizations hierarchy
     orgs_hierarchy = {}
-    orgs_titles = {}
 
-    organizations = get_organization_list()
+    # Get organization titles and child_parent dictionaries
+    orgs_titles, child_parent_dict = get_organizations_titles_parent()
 
-    for org in organizations:
+    for child, parent in child_parent_dict.items():
 
-        org_show = get_organization_show(org)
-
-        orgs_titles[org] = org_show.get("title", "null")
-
-        # TODO confirm logic valid
-        groups = org_show.get("groups", [])
-        if len(groups) > 0:
-            research_unit = groups[0].get("name", "null")
+        if is_root_envidat_org(child, child_parent_dict):
+            orgs_hierarchy[child] = "ROOT"
+        elif is_root_envidat_org(parent, child_parent_dict):
+            orgs_hierarchy[child] = "RESEARCH UNIT"
         else:
-            research_unit = "null"
-
-        orgs_hierarchy[org] = research_unit
-
-    for child_org, parent_org in orgs_hierarchy.items():
-        if parent_org in orgs_titles.keys():
-            orgs_hierarchy[child_org] = orgs_titles[parent_org]
+            orgs_hierarchy[child] = "GROUP"
 
     return orgs_hierarchy
+
+
+# TODO remove old function
+# def get_organizations_hierarchy() -> dict[str, str]:
+#     """Return dictionary of CKAN API organizations hierarchy that uses algorithm
+#         to assign research unit in format {"child_org_name": "parent_org_title"}
+#
+#     Includes all organizations in CKAN database.
+#
+#     Example output:
+#         {
+#             'dynamic-macroecology': 'Land Change Science',
+#             'ecological-genetics': 'Biodiversity and Conservation Biology'
+#         }
+#     """
+#
+#     orgs_hierarchy = {}
+#     orgs_titles = {}
+#
+#     organizations = get_organization_list()
+#
+#     for org in organizations:
+#
+#         # Get metadata for an organization
+#         org_show = get_organization_show(org)
+#
+#         # Extract organization title and assign to orgs_title dictionary
+#         orgs_titles[org] = org_show.get("title", "null")
+#
+#         # Old block
+#         # groups = org_show.get("groups", [])
+#         # if len(groups) > 0:
+#         #     research_unit = groups[0].get("name", "null")
+#         # else:
+#         #     research_unit = "null"
+#
+#         # Test block
+#         # Get research unit that corresponds to organization and
+#         # assign to orgs_hierarchy dictionary
+#         research_unit = get_research_unit(org_show)
+#         orgs_hierarchy[org] = research_unit
+#
+#     # Replace parent_org names with titles
+#     for child_org, parent_org in orgs_hierarchy.items():
+#         if parent_org in orgs_titles.keys():
+#             orgs_hierarchy[child_org] = orgs_titles[parent_org]
+#
+#     return orgs_hierarchy
 
 
 def format_author(author_list: str) -> str | None:
@@ -423,7 +552,7 @@ def format_tags(tag_dict: dict, tags: list) -> None:
     # keeping the maximum number of tags to 15
     tag_len = len(tags)
     for i in range(15):
-        tag_dict[f"tag_{i+1}"] = tags[i]['name'] if i < tag_len else 'null'
+        tag_dict[f"tag_{i + 1}"] = tags[i]['name'] if i < tag_len else 'null'
     return
 
 
@@ -448,6 +577,7 @@ def convert_json_to_csv(filename: str) -> None:
     # Get organizations hierarchy dictionary (in format {"child_org": "parent_org"}
     try:
         orgs_hierarchy = get_organizations_hierarchy()
+        pprint(orgs_hierarchy)  # TODO remove
     except Exception as e:
         log.error(f"Cannot get organization hierarchy, error: {e}")
         return None
@@ -469,7 +599,8 @@ def convert_json_to_csv(filename: str) -> None:
             csv_dict['date'] = format_date(item['date'])
             csv_dict['funding'] = format_funding(item['funding'])
             csv_dict['license_title'] = item['license_title']
-            csv_dict['license_url'] = item['license_url'] if 'license_url' in item else ''
+            csv_dict['license_url'] = item[
+                'license_url'] if 'license_url' in item else ''
             csv_dict['metadata_created'] = item['metadata_created']
             csv_dict['metadata_modified'] = item['metadata_modified']
             csv_dict['notes'] = item['notes']
@@ -499,7 +630,6 @@ def convert_json_to_csv(filename: str) -> None:
 
     # write to csv file
     if len(csv_list) != 0:
-
         log.info(f"Finished formatting the packages. "
                  f"Starting to create CSV file: '{filename}'")
 
@@ -527,5 +657,18 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
+    # TODO revert commented out function
     # fetch the packages, format them and write to csv
-    convert_json_to_csv(args.file)
+    # convert_json_to_csv(args.file)
+
+    # TODO remove tests
+    # TESTS
+
+    orgs_titles1, child_parent1 = get_organizations_titles_parent()
+    # pprint(orgs_titles1)
+    # pprint('\n\n\n')
+    pprint(child_parent1)
+    pprint('\n\n\n')
+
+    orgs_hierarchy_test = get_organizations_hierarchy()
+    pprint(orgs_hierarchy_test)
