@@ -19,12 +19,13 @@ Requirements:
 
 """
 
-
 # Imports
 import os
 import argparse
 import json
 import csv
+from pprint import pprint
+
 import requests
 import urllib.parse
 import logging
@@ -265,6 +266,29 @@ def get_root_or_research_unit(
     return research_unit
 
 
+# TODO test and document recursive function
+def find_root_or_research_unit(
+        org: str,
+        root_res_units: list[str],
+        child_parent: dict[str, str]
+) -> str:
+    if org in root_res_units:
+        return org
+
+    elif child_parent[org] in root_res_units:
+        return child_parent[org]
+
+    return find_root_or_research_unit(child_parent[org], root_res_units, child_parent)
+
+    # else:
+    # grandparent = child_parent[org]
+    # if child_parent[grandparent] in root_res_units:
+    #     return child_parent[grandparent]
+    # else:
+    #     log.info(f"Cannot find root org or research unit for "
+    #              f"organization '{org}'")
+
+
 # TODO test and document function
 # TODO review test output with https://envidat.ch/organization
 def get_organizations_hierarchy() -> dict[str, str]:
@@ -304,19 +328,28 @@ def get_organizations_hierarchy() -> dict[str, str]:
     # or research unit to org_hierarchy
     for gr_child, parent in subordinate_orgs.items():
 
-        if parent in root_res_units:
-            orgs_hierarchy[gr_child] = parent
+        orgs_hierarchy[gr_child] = find_root_or_research_unit(gr_child,
+                                                              root_res_units,
+                                                              child_parent)
+        print(f"{gr_child}: {orgs_hierarchy[gr_child]}")
 
-        elif child_parent[parent] in root_res_units:
-            orgs_hierarchy[gr_child] = child_parent[parent]
+        # # Working Block
+        # if parent in root_res_units:
+        #     orgs_hierarchy[gr_child] = parent
+        #
+        # elif child_parent[parent] in root_res_units:
+        #     orgs_hierarchy[gr_child] = child_parent[parent]
+        #
+        # else:
+        #     grandparent = child_parent[parent]
+        #     if child_parent[grandparent] in root_res_units:
+        #         orgs_hierarchy[gr_child] = child_parent[grandparent]
+        #     else:
+        #         log.info(f"Cannot find root org or research unit for "
+        #                  f"organization '{gr_child}'")
 
-        else:
-            grandparent = child_parent[parent]
-            if child_parent[grandparent] in root_res_units:
-                orgs_hierarchy[gr_child] = child_parent[grandparent]
-            else:
-                log.info(f"Cannot find root org or research unit for "
-                         f"organization '{gr_child}'")
+    pprint("ORGS_HIERARCHY")
+    pprint(orgs_hierarchy)
 
     # Replace parent_org names with titles
     for key, val in orgs_hierarchy.items():
