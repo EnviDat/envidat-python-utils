@@ -199,42 +199,42 @@ def get_organization_show(organization_id: str) -> dict:
 
 
 # TODO finish logic, possibly remove function
-def get_research_unit(
-        organization: dict,
-        wsl_name: str = "wsl",
-        slf_name: str = "wsl-institute-for-snow-and-avalanche-research-slf"
-) -> str:
-    """Return research unit that corresponds to an organization in EnviDat CKAn API.
-    For organization hiearchy see https://envidat.ch/organization
-
-    If research unit can be found then returns string "null".
-
-    Args:
-        organization (dict): Dictionary with organization metadata.
-        wsl_name (str): String with default name of WSL organization in EnviDat API.
-        slf_name (str): String with default name of SLF organization in EnviDat API.
-
-    Returns:
-        str: String with name of research unit
-    """
-    # Assign default string of "null" for research_unit
-    research_unit = "null"
-
-    # Extract groups from organization metadata
-    groups = organization.get("groups", [])
-
-    # Assign research_unit to value that best corresponds to EnviDat
-    #   organization structure
-    if len(groups) > 0:
-
-        research_unit = groups[0].get("name", "null")
-
-        # If parent organization is WSL or SLF then assign research_unit to
-        #  organization's name
-        if research_unit in [wsl_name, slf_name]:
-            research_unit = organization.get("name")
-
-    return research_unit
+# def get_research_unit(
+#         organization: dict,
+#         wsl_name: str = "wsl",
+#         slf_name: str = "wsl-institute-for-snow-and-avalanche-research-slf"
+# ) -> str:
+#     """Return research unit that corresponds to an organization in EnviDat CKAn API.
+#     For organization hiearchy see https://envidat.ch/organization
+#
+#     If research unit can be found then returns string "null".
+#
+#     Args:
+#         organization (dict): Dictionary with organization metadata.
+#         wsl_name (str): String with default name of WSL organization in EnviDat API.
+#         slf_name (str): String with default name of SLF organization in EnviDat API.
+#
+#     Returns:
+#         str: String with name of research unit
+#     """
+#     # Assign default string of "null" for research_unit
+#     research_unit = "null"
+#
+#     # Extract groups from organization metadata
+#     groups = organization.get("groups", [])
+#
+#     # Assign research_unit to value that best corresponds to EnviDat
+#     #   organization structure
+#     if len(groups) > 0:
+#
+#         research_unit = groups[0].get("name", "null")
+#
+#         # If parent organization is WSL or SLF then assign research_unit to
+#         #  organization's name
+#         if research_unit in [wsl_name, slf_name]:
+#             research_unit = organization.get("name")
+#
+#     return research_unit
 
 
 # TODO finish and document test function
@@ -262,16 +262,16 @@ def get_organizations_titles_parent(
         # Extract groups from organization metadata
         groups = org_show.get("groups", [])
 
-        # Assign research_unit to value that best corresponds to EnviDat
+        # Assign parent_org to value that best corresponds to EnviDat
         #   organization structure
         if org == slf_name:
-            research_unit = org
+            parent_org = org
         elif len(groups) > 0:
-            research_unit = groups[0].get("name", org)
+            parent_org = groups[0].get("name", org)
         else:
-            research_unit = org
+            parent_org = org
 
-        child_parent[org] = research_unit
+        child_parent[org] = parent_org
 
     return orgs_titles, child_parent
 
@@ -281,6 +281,28 @@ def is_root_envidat_org(org_name: str, child_parent: dict) -> bool:
     if child_parent.get(org_name) == org_name:
         return True
     return False
+
+
+# TODO finish WIP and test and document function
+def get_research_unit(child: str, child_parent: dict) -> str | None:
+
+    research_unit = None
+
+    # Return child if it is a root organization
+    if is_root_envidat_org(child, child_parent):
+        research_unit = child
+
+    # Return child if it's parent is a root organization
+    elif is_root_envidat_org(child_parent[child], child_parent):
+        research_unit = child
+
+    # elif research_unit == "":
+    #     research_unit = get_research_unit(child_parent[child], child_parent)
+
+    # else:
+    #     research_unit = get_research_unit(child_parent[child], child_parent)
+
+    return research_unit
 
 
 # TODO finish WIP and test refactored function
@@ -298,20 +320,84 @@ def get_organizations_hierarchy() -> dict[str, str]:
             'ecological-genetics': 'Biodiversity and Conservation Biology'
         }
     """
-    # Assign dictionary to contain processed organizations hierarchy
+    # Initialize variables
     orgs_hierarchy = {}
+    r_units = []
 
     # Get organization titles and child_parent dictionaries
-    orgs_titles, child_parent_dict = get_organizations_titles_parent()
+    orgs_titles, child_parent = get_organizations_titles_parent()
 
-    for child, parent in child_parent_dict.items():
+    # Get list of resarch units
+    for child in child_parent.keys():
 
-        if is_root_envidat_org(child, child_parent_dict):
-            orgs_hierarchy[child] = "ROOT"
-        elif is_root_envidat_org(parent, child_parent_dict):
-            orgs_hierarchy[child] = "RESEARCH UNIT"
-        else:
-            orgs_hierarchy[child] = "GROUP"
+        research_unit = get_research_unit(child, child_parent)
+
+        if research_unit:
+            r_units.append(research_unit)
+
+        # orgs_hierarchy[child] = research_unit
+
+
+    # pprint(orgs_titles)
+    # print("\n\n\n")
+    # pprint(child_parent_dict)
+
+    # Old block
+    # for child, parent in child_parent_dict.items():
+    #
+    #     if is_root_envidat_org(child, child_parent_dict):
+    #         orgs_hierarchy[child] = "ROOT"
+    #     elif is_root_envidat_org(parent, child_parent_dict):
+    #         orgs_hierarchy[child] = "RESEARCH UNIT"
+    #     else:
+    #         orgs_hierarchy[child] = "GROUP"
+
+    # Test block
+    # roots = []
+    # research_units = []
+
+    # for child, parent in child_parent.items():
+    #     pass
+
+        # if is_root_envidat_org(child, child_parent):
+        #     research_unit = child
+        #     orgs_hierarchy[child] = research_unit
+            # roots.append(child)
+        # elif is_root_envidat_org(parent, child_parent_dict):
+        #     orgs_hierarchy[child] = "RESEARCH UNIT"
+        #     # research_units.append(parent)
+        # else:
+        #     orgs_hierarchy[child] = "GROUP"
+
+        # orgs_hierarchy[child] = research_unit
+
+    # for child, parent in child_parent_dict.items():
+    #
+    #     if is_root_envidat_org(child, child_parent_dict):
+    #         orgs_hierarchy[child] = "ROOT"
+    #         roots.append(child)
+    #     elif is_root_envidat_org(parent, child_parent_dict):
+    #         orgs_hierarchy[child] = "RESEARCH UNIT"
+    #         research_units.append(parent)
+    #     else:
+    #         orgs_hierarchy[child] = "GROUP"
+
+    # pprint("ROOTS:")
+    # pprint(roots)
+    # print("\n\n\n")
+    #
+    # # Remove duplicates from research_units list
+    # research_units = list(set(research_units))
+    #
+    # pprint("RESEARCH UNITS:")
+    # pprint(research_units)
+    # print("\n\n\n")
+
+    pprint(child_parent)
+    print("\n\n")
+    # pprint(orgs_hierarchy)
+
+    pprint(r_units)
 
     return orgs_hierarchy
 
@@ -577,7 +663,6 @@ def convert_json_to_csv(filename: str) -> None:
     # Get organizations hierarchy dictionary (in format {"child_org": "parent_org"}
     try:
         orgs_hierarchy = get_organizations_hierarchy()
-        pprint(orgs_hierarchy)  # TODO remove
     except Exception as e:
         log.error(f"Cannot get organization hierarchy, error: {e}")
         return None
@@ -664,11 +749,11 @@ if __name__ == '__main__':
     # TODO remove tests
     # TESTS
 
-    orgs_titles1, child_parent1 = get_organizations_titles_parent()
-    # pprint(orgs_titles1)
+    # orgs_titles1, child_parent1 = get_organizations_titles_parent()
+    # # # pprint(orgs_titles1)
+    # # # pprint('\n\n\n')
+    # pprint(child_parent1)
     # pprint('\n\n\n')
-    pprint(child_parent1)
-    pprint('\n\n\n')
 
     orgs_hierarchy_test = get_organizations_hierarchy()
-    pprint(orgs_hierarchy_test)
+    # pprint(orgs_hierarchy_test)
