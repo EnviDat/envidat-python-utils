@@ -26,6 +26,7 @@ import json
 import csv
 import urllib.parse
 import logging
+
 import requests
 
 # Setup program logging to console (terminal)
@@ -236,32 +237,50 @@ def get_organizations_titles_parent(
     return orgs_titles, child_parent
 
 
-# TODO test and document function
-def is_root_envidat_org(org_name: str, child_parent: dict) -> bool:
+def is_root_org(org_name: str, child_parent: dict[str, str]) -> bool:
+    """Return True if org_name is same as child_parent[org_name], else return False.
+
+    Args:
+        org_name (str): name of organization to check
+        child_parent (dict): dictionary of strings in format: {"org": "parent_org"}
+
+    Returns:
+        bool
+    """
     if child_parent.get(org_name) == org_name:
         return True
     return False
 
 
-# TODO finish WIP and test and document function
-def get_root_or_research_unit(
+def is_root_or_research_unit(
         org: str,
         child_parent: dict,
         wsl_name: str = "wsl",
         slf_name: str = "wsl-institute-for-snow-and-avalanche-research-slf"
-) -> str | None:
-    research_unit = None
+) -> bool:
+    """Return True if org is determined to be an EnviDat root organization or
+       research unit (external org, WSL research unit, or SLF research unit).
+       Else return False.
 
-    # Assign research_unit to org if it is a root organization
-    if is_root_envidat_org(org, child_parent):
-        research_unit = org
+    Args:
+        org (str): name of organization being checked
+        child_parent (dict): dictionary of strings in format: {"org": "parent_org"}
+        wsl_name (str): string with name of WSL in EnviDat CKAN API, has default value
+        slf_name (str): string with name of SLF in EnviDat CKAN API, has default value
 
-    # Assign research_unit to org if its parent is a root organization
-    elif is_root_envidat_org(child_parent[org], child_parent) \
+    Returns:
+        bool
+    """
+    # Return True if org is a root organization
+    if is_root_org(org, child_parent):
+        return True
+
+    # Return True if org's parent is a root organization and parent is WSL or SLF
+    elif is_root_org(child_parent[org], child_parent) \
             and child_parent[org] in [wsl_name, slf_name]:
-        research_unit = org
+        return True
 
-    return research_unit
+    return False
 
 
 # TODO test and document recursive function
@@ -277,14 +296,6 @@ def find_root_or_research_unit(
         return child_parent[org]
 
     return find_root_or_research_unit(child_parent[org], root_res_units, child_parent)
-
-    # else:
-    # grandparent = child_parent[org]
-    # if child_parent[grandparent] in root_res_units:
-    #     return child_parent[grandparent]
-    # else:
-    #     log.info(f"Cannot find root org or research unit for "
-    #              f"organization '{org}'")
 
 
 # TODO test and document function
@@ -315,9 +326,8 @@ def get_organizations_hierarchy() -> dict[str, str]:
     # Get list of root orgs and research units and assign them to orgs_hierarchy
     # Get list of remaining subordinate orgs
     for org in child_parent.keys():
-        root_runit = get_root_or_research_unit(org, child_parent)
-        if root_runit:
-            orgs_hierarchy[org] = root_runit
+        if is_root_or_research_unit(org, child_parent):
+            orgs_hierarchy[org] = org
             root_res_units.append(org)
             subordinate_orgs.pop(org)
 
