@@ -194,10 +194,26 @@ def get_organization_show(organization_id: str) -> dict:
     return organization_dict
 
 
-# TODO document and test function
 def get_organizations_titles_parent(
         slf_name: str = "wsl-institute-for-snow-and-avalanche-research-slf"
 ) -> tuple[dict, dict]:
+    """Return dictionary with organization titles and dictionary with organization's
+    parent organization (as best matched by EnviDat organization structure).
+
+    Notes: Removes organizations "trusted" and "organization-hidden"
+             from organization list.
+           To visually see EnviDat organization strucutre
+             visit https://envidat.ch/organization
+
+    Arg:
+        slf_name (str): string with name of SLF in EnviDat CKAN API, has default value
+
+    Returns:
+        tuple(dict, dict): First dictionary format: {"org": "org_title"}
+                           Second dictionary format: {"org": "parent_org"}
+    """
+
+    # Initialize variables
     orgs_titles = {}
     child_parent = {}
 
@@ -212,6 +228,7 @@ def get_organizations_titles_parent(
     if "organization-hidden" in organizations:
         organizations.remove("organization-hidden")
 
+    # Iterate over list of organizations and get org titles and parent org
     for org in organizations:
 
         # Get metadata for an organization
@@ -283,12 +300,25 @@ def is_root_or_research_unit(
     return False
 
 
-# TODO test and document recursive function
 def find_root_or_research_unit(
         org: str,
         root_res_units: list[str],
         child_parent: dict[str, str]
 ) -> str:
+    """Return EnviDat root organization or research unit (external org, WSL research
+     unit, or SLF research unit) that best corresponds to input org.
+
+     Assumption: All input org values of its parents in child_parent dictionary have a
+     parent, grandparent, or other ancestor in organizations structure in root_res_units
+
+     Args:
+        org (str): name of organization being checked
+        root_res_units (list): list of root orgs and research units
+        child_parent (dict): dictionary of strings in format: {"org": "parent_org"}
+
+    Returns:
+        str: string of matching root org or research unit
+     """
     if org in root_res_units:
         return org
 
@@ -298,18 +328,18 @@ def find_root_or_research_unit(
     return find_root_or_research_unit(child_parent[org], root_res_units, child_parent)
 
 
-# TODO test and document function
-# TODO review test output with https://envidat.ch/organization
 def get_organizations_hierarchy() -> dict[str, str]:
-    """Return dictionary of CKAN API organizations hierarchy that uses algorithm
-        to assign research unit in format {"child_org_name": "parent_org_title"}
+    """Return dictionary of CKAN API organizations hierarchy that matches orgs to
+       WSL/SLF research unit or external organization.
 
     Includes all organizations in CKAN database.
+    EnviDat CKAN organization structure:  https://envidat.ch/organization
 
-    Example output:
+    Example output (actual output includes all orgs):
         {
-            'dynamic-macroecology': 'Land Change Science',
-            'ecological-genetics': 'Biodiversity and Conservation Biology'
+            'gis': 'forema',
+            'silviculture': 'eth-zurich',
+            'wsl': 'wsl'
         }
     """
     # Initialize variables
@@ -556,7 +586,8 @@ def convert_json_to_csv(filename: str) -> None:
         log.error(f"Cannot fetch metadata, error: {e}")
         return None
 
-    # Get organizations hierarchy dictionary (in format {"child_org": "parent_org"}
+    # Get organizations hierarchy dictionary in format
+    #   {"child_org": "research_unit/external_org"}
     try:
         orgs_hierarchy = get_organizations_hierarchy()
     except Exception as e:
