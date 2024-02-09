@@ -6,7 +6,7 @@ as this script was requested as a stand-alone script
 
 Authors: Ranita Pal and Rebecca Kurup Buchholz, Swiss Federal Research Institute WSL
 Date created: November 13, 2023
-Date last updated: February 8, 2024
+Date last updated: February 9, 2024
 Version: 2
 
 Instructions for usage:
@@ -308,8 +308,8 @@ def find_root_or_research_unit(
     """Return EnviDat root organization or research unit (external org, WSL research
      unit, or SLF research unit) that best corresponds to input org.
 
-     Assumption: All input org values of its parents in child_parent dictionary have a
-     parent, grandparent, or other ancestor in organizations structure in root_res_units
+     Assumption: All input org values and its matching parent in child_parent
+              dictionary have a parent, grandparent, or other ancestor in root_res_units
 
      Args:
         org (str): name of organization being checked
