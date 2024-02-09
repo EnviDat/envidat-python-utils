@@ -16,7 +16,7 @@ Instructions for usage:
 
 Requirements:
     Python version >= 3.11
-
+    requests >= 2.31.0
 """
 
 # Imports
@@ -24,11 +24,9 @@ import os
 import argparse
 import json
 import csv
-from pprint import pprint
-
-import requests
 import urllib.parse
 import logging
+import requests
 
 # Setup program logging to console (terminal)
 # Check terminal for logged information, warning and error messages
@@ -315,10 +313,9 @@ def get_organizations_hierarchy() -> dict[str, str]:
     subordinate_orgs = child_parent.copy()
 
     # Get list of root orgs and research units and assign them to orgs_hierarchy
+    # Get list of remaining subordinate orgs
     for org in child_parent.keys():
-
         root_runit = get_root_or_research_unit(org, child_parent)
-
         if root_runit:
             orgs_hierarchy[org] = root_runit
             root_res_units.append(org)
@@ -327,29 +324,9 @@ def get_organizations_hierarchy() -> dict[str, str]:
     # Iterate over remaining organizations and assign corresponding root org
     # or research unit to org_hierarchy
     for gr_child, parent in subordinate_orgs.items():
-
-        orgs_hierarchy[gr_child] = find_root_or_research_unit(gr_child,
+        orgs_hierarchy[gr_child] = find_root_or_research_unit(parent,
                                                               root_res_units,
                                                               child_parent)
-        print(f"{gr_child}: {orgs_hierarchy[gr_child]}")
-
-        # # Working Block
-        # if parent in root_res_units:
-        #     orgs_hierarchy[gr_child] = parent
-        #
-        # elif child_parent[parent] in root_res_units:
-        #     orgs_hierarchy[gr_child] = child_parent[parent]
-        #
-        # else:
-        #     grandparent = child_parent[parent]
-        #     if child_parent[grandparent] in root_res_units:
-        #         orgs_hierarchy[gr_child] = child_parent[grandparent]
-        #     else:
-        #         log.info(f"Cannot find root org or research unit for "
-        #                  f"organization '{gr_child}'")
-
-    pprint("ORGS_HIERARCHY")
-    pprint(orgs_hierarchy)
 
     # Replace parent_org names with titles
     for key, val in orgs_hierarchy.items():
