@@ -6,7 +6,7 @@ as this script was requested as a stand-alone script
 
 Authors: Ranita Pal and Rebecca Kurup Buchholz, Swiss Federal Research Institute WSL
 Date created: November 13, 2023
-Date last updated: February 9, 2024
+Date last updated: February 13, 2024
 Version: 2
 
 Instructions for usage:
@@ -401,7 +401,7 @@ def format_author(author_list: str) -> str | None:
         if len(per.get("given_name", "")) > 0:
             given_name = f"{((per['given_name'])[0]).upper()}."
         else:
-            given_name = per["given_name"]
+            given_name = f"{(per['given_name']).upper()}."
 
         all_names = f"{all_names}{given_name};{per['name']}"
 
