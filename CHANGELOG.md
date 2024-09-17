@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.4.5 (2024-09-17)
+
+## Fix
+
+- restore pipeline
+
 ## 1.4.4 (2024-09-17)
 
 ### Fix

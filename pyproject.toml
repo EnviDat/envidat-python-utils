@@ -64,7 +64,7 @@ build-backend = "pdm.pep517.api"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.4.4"
+version = "1.4.5"
 version_files = [
     "pyproject.toml:version",
     "envidat/__version__.py"
