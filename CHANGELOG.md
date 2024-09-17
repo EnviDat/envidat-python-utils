@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.4.4 (2024-09-17)
+
+### Fix
+
+- allow increased Python versions in project metadata
+
+
 ## 1.4.3 (2023-08-30)
 
 ### Fix
