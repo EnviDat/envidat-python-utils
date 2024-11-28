@@ -1,8 +1,14 @@
 # CHANGELOG
 
+## 1.4.6 (2024-11-28)
+
+### Fix
+
+- correct author formatting in RIS converter
+
 ## 1.4.5 (2024-09-17)
 
-## Fix
+### Fix
 
 - restore pipeline
 
