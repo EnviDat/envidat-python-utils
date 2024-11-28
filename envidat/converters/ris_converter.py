@@ -45,7 +45,7 @@ def ris_convert_dataset(dataset_dict: dict) -> str:
     for author in authors:
         author_name = author["name"].strip()
         if author.get("given_name"):
-            author_name += f", {author["given_name"].strip()}"
+            author_name += ", " + author["given_name"].strip()
         ris_list += [f"AU  - {author_name}"]
 
     #   DO  - DOI
