@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.4.8 (2024-11-28)
+
+### Fix
+
+- refactor author string formatting in RIS converter
+
 ## 1.4.7 (2024-11-28)
 
 ### Fix
