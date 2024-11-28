@@ -43,11 +43,10 @@ def ris_convert_dataset(dataset_dict: dict) -> str:
     #   AU  - Authors
     authors = json.loads(dataset_dict.get("author", "[]"))
     for author in authors:
-        author_name = ""
+        author_name = author["name"].strip()
         if author.get("given_name"):
-            author_name += author["given_name"].strip() + " "
-        author_name += author["name"].strip()
-        ris_list += ["AU  - " + author_name]
+            author_name += f", {author["given_name"].strip()}"
+        ris_list += [f"AU  - {author_name}"]
 
     #   DO  - DOI
     doi = dataset_dict.get("doi", "").strip()
