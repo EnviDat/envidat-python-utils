@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.4.9 (2024-12-17)
+
+### Feat
+
+- add relatedItems extracted from EnviDat "resources" to DataCite converter
+
 ## 1.4.8 (2024-11-28)
 
 ### Fix
