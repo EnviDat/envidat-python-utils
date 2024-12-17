@@ -21,7 +21,6 @@ log = getLogger(__name__)
 # Load config from environment variables
 load_dotenv_if_in_debug_mode()
 
-# TODO add return type hints to functions
 
 def convert_datacite(metadata_record: dict) -> str | None:
     """Generate XML formatted string in DataCite format.
@@ -87,11 +86,6 @@ def get_config_datacite_converter() -> dict | None:
             return None
 
 
-# TODO finish refactoring Datacite converter
-# TODO keep in mind that a reverse converter will
-#  also need to be written (DataCite to EnviDat)
-# TODO refactor to pass env config to all helper functions instead
-#  of loading config in helper functions
 def datacite_convert_dataset(dataset: dict, config: dict):
     """Convert EnviDat metadata package from CKAN to DataCite XML.
 
@@ -363,6 +357,54 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         dc_related_identifiers["relatedIdentifier"] = related_ids
         dc["resource"]["relatedIdentifiers"] = dc_related_identifiers
 
+        # Related Items
+        dc_related_items_tag = "relatedItems"
+        dc_related_item_tag = "relatedItem"
+        dc_related_item_type_tag = "relatedItemType"
+        dc_relation_type_tag = "relationType"
+        dc_related_item_identifier_tag = "relatedItemIdentifier"
+        dc_related_item_identifier_type_tag = "relatedItemIdentifierType"
+        dc_titles_tag = "titles"
+        dc_title_tag = "title"
+
+        dc_related_items = []
+
+        related_item_data = dataset.get(config.get('relatedItems', []), [])
+        for related_item in related_item_data:
+            # required: title and url
+            url = related_item.get(config.get('relatedItem').get('url', ""), "")
+            title = related_item.get(config.get('relatedItem').get('title'), "")
+            if url and title:
+                dc_related_item = collections.OrderedDict()
+                # relatedItemType (is always "Other")
+                related_item_type = "Other"
+                dc_related_item["@" + dc_related_item_type_tag] = related_item_type
+
+                # relationType (always references)
+                relation_type = "References"
+                dc_related_item["@" + dc_relation_type_tag] = relation_type
+
+                # relatedItemIdentifier: URL
+                dc_related_item[dc_related_item_identifier_tag] = {
+                    f"@{dc_related_item_identifier_type_tag}": "URL",
+                    "#text": url.strip()
+                }
+
+                # relatedItem title
+                # since there is only one title per resource we don't handle more than
+                # one title even though datacite allows it
+                dc_title = collections.OrderedDict()
+                dc_title[dc_title_tag] = title.strip()
+                dc_related_item[dc_titles_tag] = dc_title
+
+                dc_related_items.append(dc_related_item)
+
+        # If related items exist, add them:
+        if dc_related_items:
+            dc["resource"][dc_related_items_tag] = {
+                dc_related_item_tag: dc_related_items
+            }
+
     # Formats (from resources)
     dc_formats = get_dc_formats(resources)
     if dc_formats:
@@ -401,7 +443,6 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         rights[f"@{dc_rights_uri_tag}"] = rights_uri
 
     license_id = dataset.get(config[dc_rights_tag][dc_rights_identifier], "")
-    # TODO investigate default argument
     rights_id_spx = value_to_datacite_cv(license_id, dc_rights_identifier, default=None)
     if rights_id_spx:
         rights[f"@{dc_scheme_uri_tag}"] = default_rights_scheme_uri
@@ -890,7 +931,6 @@ def geometrycollection_to_dc_geolocations(spatial: dict):
     return dc_geolocations
 
 
-# TODO test refactored get_dc_geolocations()
 def get_dc_geolocations(spatial: dict, spatial_type: str = ""):
     """Returns spatial data in DataCite "geoLocations" format.
 
@@ -985,75 +1025,6 @@ def get_dc_geolocation_point(coordinates_pair: list[float]):
     return None
 
 
-# TODO remove legacy get_dc_geolocations() function after testing replacement
-# def get_dc_geolocations(spatial: dict):
-#     """Returns spatial data in DataCite "geoLocations" format
-#
-#     For list of required attributes for each type of GeoLocation
-#     see DataCite documentation.
-#     """
-#
-#     dc_geolocations = []
-#
-#     if spatial.get("type", "").lower() == "polygon":
-#         dc_geolocation = collections.OrderedDict()
-#         dc_gelocation_polygon_tag = "geoLocationPolygon"
-#         dc_geolocation[dc_gelocation_polygon_tag] = {"polygonPoint": []}
-#
-#         for coordinates_pair in spatial.get("coordinates", "[[]]")[0]:
-#             geolocation_point = collections.OrderedDict()
-#             geolocation_point["pointLongitude"] = coordinates_pair[0]
-#             geolocation_point["pointLatitude"] = coordinates_pair[1]
-#             dc_geolocation[dc_gelocation_polygon_tag]["polygonPoint"] += [
-#                 geolocation_point]
-#
-#         dc_geolocations += [dc_geolocation]
-#
-#     else:
-#         dc_geolocation_point_tag = "geoLocationPoint"
-#
-#         if spatial.get("type", "").lower() == "multipoint":
-#
-#             for coordinates_pair in spatial.get("coordinates", "[]"):
-#                 dc_geolocation = collections.OrderedDict()
-#                 dc_geolocation[dc_geolocation_point_tag] = collections.OrderedDict()
-#                 dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = \
-#                     coordinates_pair[0]
-#                 dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = \
-#                     coordinates_pair[1]
-#                 dc_geolocations += [dc_geolocation]
-#
-#         elif spatial.get("type", "").lower() == "geometrycollection":
-#             pass
-#         # elif spatial.get("type", "").lower() == "geometrycollection":
-#         #
-#         #     for geometry in spatial.get("geometries"):
-#         #
-#         #         if geometry.get("type", "").lower() == "point":
-#         #             coordinates = geometry.get("coordinates")
-#         #
-#         #             dc_geolocation = collections.OrderedDict()
-#         #             dc_geolocation[dc_geolocation_point_tag] =
-#         #             collections.OrderedDict()
-#         #
-#         #             dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = \
-#         #                 coordinates[0]
-#         #             dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = \
-#         #                 coordinates[1]
-#         #             dc_geolocations += [dc_geolocation]
-#
-#         else:
-#             dc_geolocation = collections.OrderedDict()
-#             dc_geolocation[dc_geolocation_point_tag] = collections.OrderedDict()
-#
-#             coordinates = flatten(spatial.get("coordinates", "[]"), reverse=True)
-#             dc_geolocation[dc_geolocation_point_tag]["pointLongitude"] = coordinates[1]
-#             dc_geolocation[dc_geolocation_point_tag]["pointLatitude"] = coordinates[0]
-#             dc_geolocations += [dc_geolocation]
-#
-#     return dc_geolocations
-
-
 def flatten(inp: list, reverse: bool = False) -> list:
     """Flatten list, i.e. remove a dimension/nesting."""
     output = []
@@ -1073,7 +1044,8 @@ def join_tags(tags: list, sep: str = ".") -> str:
     return sep.join([tag for tag in tags if tag])
 
 
-def value_to_datacite_cv(value: str, datacite_tag: str, default: str = "") -> dict:
+def value_to_datacite_cv(value: str, datacite_tag: str, default: str | None = "") -> (
+        dict):
     """Constant definitions."""
     datacite_cv = {
         "titleType": {
@@ -1177,7 +1149,6 @@ def get_doi(word: str) -> str | None:
     return doi
 
 
-# TODO possibly pass env config as argument
 def get_envidat_doi(word: str,
                     api_host="https://envidat.ch",
                     api_package_show="/api/action/package_show?id=") -> str | None:
@@ -1275,7 +1246,6 @@ def get_dora_doi(word: str) -> str | None:
     return doi
 
 
-# TODO possibly pass env config as argument
 def get_dora_doi_string(
         dora_pid: str, dora_api_url: str = "https://envidat.ch/dora") -> str | None:
     """Get DOI string from WSL DORA API using DORA PID.

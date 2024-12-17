@@ -93,6 +93,11 @@
         "@affiliationIdentifierScheme": "ROR",
         "@schemeURI": "https://ror.org/"
       }
+    },
+    "relatedItems": "resources",
+    "relatedItem":{
+      "url": "url",
+      "title": "name"
     }
   }
 }
