@@ -11,17 +11,15 @@ from envidat.utils import get_url
 
 
 def get_ckan_exporter_endpoint(
-    package: dict,
-    file_format: str,
-    extension: str,
-    host: str = "https://www.envidat.ch",
+        package: dict,
+        file_format: str,
+        host: str = "https://www.envidat.ch",
 ) -> str:
     """Get CKAN endpoint used to export datasets in various formats.
 
     Args:
         package (dict): EnviDat package in dictionary form.
         file_format (str): Format of file used in CKAN endpoint (example: "")
-        extension (str): Extension used in CKAN endpoint (example: "xml")
         host (str): Host used in CKAN endpoint (default: "https://www.envidat.ch")
 
     Returns:
@@ -32,20 +30,18 @@ def get_ckan_exporter_endpoint(
         host = os.getenv("API_HOST")
 
     package_name = package.get("name", "")
+    if not package_name:
+        package_name = package.get("id", "")
     if package_name:
-        return f"{host}/dataset/{package_name}/export/{file_format}.{extension}"
+        return f"{host}/converters-api/internal-dataset/convert/{file_format}?package-id={package_name}"
     else:
-        package_id = package.get("id", "")
-        if package_id:
-            return f"{host}/dataset/{package_id}/export/{file_format}.{extension}"
-        else:
-            raise ValueError(
-                f"Failed to get CKAN endpoint string for {file_format} format."
-            )
+        raise ValueError(
+            f"Failed to get CKAN endpoint string for {file_format} format."
+        )
 
 
 def get_converters_one_package(
-    convert_dataset, package_name, file_format, extension
+        convert_dataset, package_name, file_format
 ) -> tuple[str, str]:
     """Get CKAN output and corresponding converter output for one package.
 
@@ -53,7 +49,6 @@ def get_converters_one_package(
         convert_dataset (function): Function used to convert dataset.
         package_name (str): Name of package.
         file_format (str): Format of file used in CKAN endpoint (example: "")
-        extension (str): Extension used in CKAN endpoint (example: "xml")
 
     Returns:
         tuple (<str: ckan_output>, <str: converter_output>): CKAN output and
@@ -61,7 +56,7 @@ def get_converters_one_package(
     """
     package = get_package(package_name)
 
-    ckan_endpoint = get_ckan_exporter_endpoint(package, file_format, extension)
+    ckan_endpoint = get_ckan_exporter_endpoint(package, file_format)
     request = get_url(ckan_endpoint)
     ckan_output = request.content.decode()
 
@@ -71,14 +66,13 @@ def get_converters_one_package(
 
 
 def get_converters_all_packages(
-    convert_dataset, file_format, extension
+        convert_dataset, file_format
 ) -> tuple[list, list]:
     """Get CKAN output and corresponding converter output for all packages.
 
     Args:
         convert_dataset (function): Function used to convert dataset.
         file_format (str): Format of file used in CKAN endpoint (example: "")
-        extension (str): Extension used in CKAN endpoint (example: "xml")
 
     Returns:
         tuple (<list: ckan_packages>, <list: converter_packages>):
@@ -91,22 +85,41 @@ def get_converters_all_packages(
 
     for package in packages[:10]:
 
-        ckan_endpoint = get_ckan_exporter_endpoint(package, file_format, extension)
+        ckan_endpoint = get_ckan_exporter_endpoint(package, file_format)
         request = get_url(ckan_endpoint)
         ckan_output = request.content.decode()
-        if ckan_output.startswith("No converter"):
-            # Skip if package conversion fails in ckan
-            continue
         ckan_packages.append(ckan_output)
-
         converter_output = convert_dataset(package)
         converter_packages.append(converter_output)
-
     return ckan_packages, converter_packages
 
 
+def get_converters_spatial_packages(convert_dataset, packages) -> list:
+    """Get CKAN output and corresponding converter output for all types of spatial
+    packages which includes Point, MultiPoint, Polygon and GeometryCollection.
+
+    Args:
+        packages (list): List of names of packages that need to be converted
+        convert_dataset (function): Function used to convert dataset.
+
+    Returns:
+        list: converterted packages
+        List of all packages converted using convert_dataset function.
+    """
+
+    converter_packages = []
+
+    for package_name in packages:
+        print(package_name)
+        package = get_package(package_name)
+        converter_output = convert_dataset(package)
+        converter_packages.append(converter_output)
+
+    return converter_packages
+
+
 def get_datacite_converters_one_package(
-    convert_dataset, package_name, file_format, extension
+        convert_dataset, package_name, file_format
 ) -> tuple[str, str]:
     """Get DacaCite formatted CKAN output and DataCite converter output for one package.
 
@@ -114,7 +127,6 @@ def get_datacite_converters_one_package(
         convert_dataset (function): Function used to convert dataset.
         package_name (str): Name of package.
         file_format (str): Format of file used in CKAN endpoint (example: "datacite")
-        extension (str): Extension used in CKAN endpoint (example: "xml")
 
     Returns:
         tuple (<str: ckan_output>, <str: converter_output>): DataCite formatted
@@ -122,7 +134,7 @@ def get_datacite_converters_one_package(
     """
     package = get_package(package_name)
 
-    ckan_endpoint = get_ckan_exporter_endpoint(package, file_format, extension)
+    ckan_endpoint = get_ckan_exporter_endpoint(package, file_format)
     request = get_url(ckan_endpoint)
     ckan_output = request.content.decode()
 
@@ -132,14 +144,13 @@ def get_datacite_converters_one_package(
 
 
 def get_datacite_converters_all_packages(
-    convert_dataset, file_format, extension
+        convert_dataset, file_format
 ) -> tuple[list, list]:
     """Get DacaCite CKAN output and DataCite converter output for all packages.
 
     Args:
         convert_dataset (function): Function used to convert dataset.
         file_format (str): Format of file used in CKAN endpoint (example: "datacite")
-        extension (str): Extension used in CKAN endpoint (example: "xml")
 
     Returns:
         tuple (<list: ckan_packages>, <list: converter_packages>):
@@ -152,8 +163,8 @@ def get_datacite_converters_all_packages(
     converter_packages = []
 
     for package in packages:
-
-        ckan_endpoint = get_ckan_exporter_endpoint(package, file_format, extension)
+        package = get_package(package)
+        ckan_endpoint = get_ckan_exporter_endpoint(package, file_format)
         request = get_url(ckan_endpoint)
         ckan_output = request.content.decode()
         ckan_packages.append(ckan_output)
@@ -236,42 +247,10 @@ def get_related_identifier(related_url) -> list:
     ]
 
 
-def convert_dif_values(ckan_output):
-    """Correct typo in EnviDat API DIF output.
-
-    To make the DIF converter tests pass it was necessary to simulate correcting the
-    typo in the CKAN DIF converter 'Use_Constraints' value:
-    "Usage constraintes defined by the license" (the correct spelling is "constraints")
-    Also simulates removing extra whitespace produced by the CKAN output for
-    the 'Dataset_Creator' value.
-    """
-    # Convert xml to dict
-    ckan_out = parse(ckan_output)
-
-    # Simulate correcting 'Use_Constraints' value
-    use_constraints = ckan_out.get("DIF", {}).get("Use_Constraints", "")
-    if use_constraints:
-        use_constraints = use_constraints.replace("constraintes", "constraints")
-        ckan_out["DIF"]["Use_Constraints"] = use_constraints
-
-    # Simulate correcting 'Dataset_Creator' value
-    dataset_creator = (
-        ckan_out.get("DIF", {}).get("Dataset_Citation", {}).get("Dataset_Creator", "")
-    )
-    if dataset_creator:
-        dataset_creator = dataset_creator.replace("  ", " ").replace(" ,", ",").strip()
-        ckan_out["DIF"]["Dataset_Citation"]["Dataset_Creator"] = dataset_creator
-
-    # Convert dict back to xml
-    ckan_xml = unparse(ckan_out, pretty=True)
-
-    return ckan_xml
-
-
 def get_dcat_ap_converters_all_packages(
-    convert_dataset,
-    file_format,
-    extension,
+        convert_dataset,
+        file_format,
+        extension,
 ) -> tuple[str, str]:
     """DCAT-AP CKAN and corresponding converter XML formatted strings for all packages.
 
@@ -288,7 +267,7 @@ def get_dcat_ap_converters_all_packages(
         corresponding converter output for one package.
     """
     # FROM CKAN
-    ckan_endpoint = f"https://www.envidat.ch/opendata/export/{file_format}.{extension}"
+    ckan_endpoint = f"https://www.envidat.ch/opendata/export/{file_format}-ch.{extension}"
     request = get_url(ckan_endpoint)
     ckan_dcat_str = request.content.decode()
 
@@ -356,34 +335,54 @@ def test_dif_converters_one_package(dif_converter_one_package):
         *dif_converter_one_package
     )
 
-    # Simulate correct CKAN DIF values
-    ckan_output = convert_dif_values(ckan_output)
-
     # Convert OrderedDict to xml format
     converted_output_xml = unparse(converter_output, pretty=True)
 
     assert ckan_output == converted_output_xml
 
 
-# def test_dif_converters_all_packages(dif_converter_all_packages):
-#     """Test DIF converter for all packages."""
-#     ckan_packages, converter_packages = get_converters_all_packages(
-#         *dif_converter_all_packages
-#     )
+def test_dif_converters_all_packages(dif_converter_all_packages):
+    """Test DIF converter for all packages."""
+    ckan_packages, converter_packages = get_converters_all_packages(
+        *dif_converter_all_packages
+    )
 
-#     # Simulate correct CKAN DIF values
-#     corr_ckan_packages = []
-#     for package in ckan_packages:
-#         corr_package = convert_dif_values(package)
-#         corr_ckan_packages.append(corr_package)
+    ckan_dict = {
+        parse(pkg).get('DIF').get('Entry_ID').get('Short_Name'): parse(pkg)
+        for pkg in ckan_packages
+    }
+    # Convert OrderedDict packages to xml format
+    converter_packages_xml = []
+    ckan_packages = []
+    for package in converter_packages:
+        # the following structures are omitted from the comparison:
+        # spatial is tested separately, and metadata_dates can be added back later if required
+        package['DIF']['Spatial_Coverage'].pop('Geometry', None)
+        package.get('DIF').pop('Metadata_Dates', None)
+        ckan_pkg = ckan_dict[package['DIF']['Entry_ID']['Short_Name']]
+        ckan_pkg.get('DIF').get('Spatial_Coverage').pop('Geometry', None)
+        ckan_pkg.get('DIF').pop('Metadata_Dates', None)
 
-#     # Convert OrderedDict packages to xml format
-#     converter_packages_xml = []
-#     for package in converter_packages:
-#         package_xml = unparse(package, pretty=True)
-#         converter_packages_xml.append(package_xml)
+        ckan_packages.append(unparse(ckan_pkg, pretty=True))
+        package_xml = unparse(package, pretty=True)
+        converter_packages_xml.append(package_xml)
 
-#     assert corr_ckan_packages == converter_packages_xml
+    assert ckan_packages == converter_packages_xml
+
+
+def test_dif_converters_spatial_packages(dif_converter_spatial_packages):
+    """Test DIF converter spatial section only for certain packages."""
+    converter_packages = get_converters_spatial_packages(
+        *dif_converter_spatial_packages
+    )
+
+    for package in converter_packages:
+        pkg_geom = package['DIF']['Spatial_Coverage'].pop('Geometry', None)
+        if pkg_geom:
+            assert any(item in pkg_geom.keys() for item in ['Point', 'Line', 'Polygon'])
+            assert 'Bounding_Rectangle' in pkg_geom.keys()
+            bound_rect = pkg_geom.get('Bounding_Rectangle', {})
+            assert 'Center_Point' in bound_rect.keys()
 
 
 def test_iso_converters_one_package(iso_converter_one_package):
