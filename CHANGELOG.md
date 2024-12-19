@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.4.10 (2024-12-19)
+
+### Fix
+
+- refactor code to add Geometry Collection in Spatial section of EnviDat datasets
+- old version.py was removed and version is mentioned in pyproject.toml
+
 ## 1.4.9 (2024-12-17)
 
 ### Feat

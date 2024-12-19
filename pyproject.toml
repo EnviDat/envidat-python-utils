@@ -1,6 +1,6 @@
 [project]
 name = "envidat-utils"
-dynamic = ["version"]
+version = "1.4.10"
 description = "Utilities in Python for the WSL EnviDat project."
 authors = [
     {name = "Sam Woodcock", email = "samuel.woodcock@wsl.ch"},
@@ -37,7 +37,6 @@ dotenv = [
 [tool.pdm]
 includes = ["envidat"]
 source-includes = ["tests", "CHANGELOG.md", "LICENSE", "README.md"]
-version = {from = "envidat/__version__.py"}
 
 [[tool.pdm.source]]
 name = "pypi"
@@ -64,10 +63,8 @@ build-backend = "pdm.pep517.api"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.4.9"
 version_files = [
-    "pyproject.toml:version",
-    "envidat/__version__.py"
+    "pyproject.toml:version"
 ]
 
 [tool.pytest.ini_options]
@@ -89,7 +86,6 @@ exclude = [
     "build",
     "dist",
     "secret",
-    "envidat/__version__.py",
 ]
 [tool.ruff.pydocstyle]
 convention = "google"
