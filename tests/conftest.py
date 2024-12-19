@@ -5,7 +5,7 @@ from tempfile import NamedTemporaryFile
 from textwrap import dedent
 
 import pytest
-from moto import mock_s3
+from moto import mock_aws
 
 from envidat.converters.bibtex_converter import bibtex_convert_dataset
 from envidat.converters.datacite_converter import convert_datacite
@@ -40,7 +40,7 @@ os.environ["MOTO_ALLOW_NONEXISTENT_REGION"] = "True"
 
 
 @pytest.fixture(scope="session")
-@mock_s3
+@mock_aws
 def bucket():
     """Bucket for tests."""
     Bucket.config("testing", "testing", endpoint=None, region="testing")
@@ -49,7 +49,7 @@ def bucket():
 
 
 @pytest.fixture(scope="session")
-@mock_s3
+@mock_aws
 def bucket2():
     """Second bucket when two are required in tests."""
     Bucket.config("testing", "testing", endpoint=None, region="testing")
@@ -78,16 +78,14 @@ def bibtex_converter_one_package():
     """Single package in BibTeX format."""
     package_name = "bioclim_plus"
     file_format = "bibtex"
-    extension = "bib"
-    return bibtex_convert_dataset, package_name, file_format, extension
+    return bibtex_convert_dataset, package_name, file_format
 
 
 @pytest.fixture
 def bibtex_converter_all_packages():
     """All packages in BibTeX format."""
     file_format = "bibtex"
-    extension = "bib"
-    return bibtex_convert_dataset, file_format, extension
+    return bibtex_convert_dataset, file_format
 
 
 #
@@ -96,12 +94,10 @@ def datacite_converter_one_package():
     """Single package in Datacite format."""
     package_name = "10-16904-3"
     file_format = "datacite"
-    extension = "xml"
     return (
         convert_datacite,
         package_name,
         file_format,
-        extension,
     )
 
 
@@ -109,48 +105,53 @@ def datacite_converter_one_package():
 def datacite_converter_all_packages():
     """All packages in Datacite format."""
     file_format = "datacite"
-    extension = "xml"
-    return convert_datacite, file_format, extension
+    return convert_datacite, file_format
 
 
 @pytest.fixture
 def dif_converter_one_package():
     """Single package in Diff format."""
     package_name = "resolution-in-sdms-shapes-plant-multifaceted-diversity"
-    file_format = "gcmd_dif"
-    extension = "xml"
-    return dif_convert_dataset, package_name, file_format, extension
+    file_format = "dif"
+    return dif_convert_dataset, package_name, file_format
 
 
 @pytest.fixture
 def dif_converter_all_packages():
     """All packages in Diff format."""
-    file_format = "gcmd_dif"
-    extension = "xml"
-    return dif_convert_dataset, file_format, extension
+    file_format = "dif"
+    return dif_convert_dataset, file_format
 
+
+@pytest.fixture
+def dif_converter_spatial_packages():
+    """All types of spatial packages in Diff format."""
+    packages = ["spot6-avalanche-outlines-24-january-2018",  # polygon
+                "secondary-ice-production-processes-in-wintertime-alpine-mixed-phase-clouds",  # point
+                "alan---nature-sustainability",  # geometrycollection
+                "gcos-swe-data"  # MultiPoint
+                ]
+    return dif_convert_dataset, packages
 
 @pytest.fixture
 def iso_converter_one_package():
     """Single package in ISO format."""
     package_name = "intratrait"
-    file_format = "iso19139"
-    extension = "xml"
-    return iso_convert_dataset, package_name, file_format, extension
+    file_format = "iso"
+    return iso_convert_dataset, package_name, file_format
 
 
 @pytest.fixture
 def iso_converter_all_packages():
     """All packages in ISO format."""
-    file_format = "iso19139"
-    extension = "xml"
-    return iso_convert_dataset, file_format, extension
+    file_format = "iso"
+    return iso_convert_dataset, file_format
 
 
 @pytest.fixture
 def dcat_ap_converter_all_packages():
     """All packages in DCAT-AP format."""
-    file_format = "dcat-ap-ch"
+    file_format = "dcat-ap"
     extension = "xml"
     return dcat_ap_convert_dataset, file_format, extension
 
@@ -160,16 +161,14 @@ def ris_converter_one_package():
     """Single package in RIS format."""
     package_name = "bioclim_plus"
     file_format = "ris"
-    extension = "ris"
-    return ris_convert_dataset, package_name, file_format, extension
+    return ris_convert_dataset, package_name, file_format
 
 
 @pytest.fixture
 def ris_converter_all_packages():
     """All packages in RIS format."""
     file_format = "ris"
-    extension = "ris"
-    return ris_convert_dataset, file_format, extension
+    return ris_convert_dataset, file_format
 
 
 @pytest.fixture

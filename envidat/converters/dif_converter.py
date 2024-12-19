@@ -185,7 +185,7 @@ def dif_convert_dataset(dataset_dict: dict):
 
     # default set to publication year
     dif_metadata_dict["Temporal_Coverage"]["Single_DateTime"] = (
-        publication_year + "-01-01"
+            publication_year + "-01-01"
     )
 
     # "Dataset_Progress" draft or private -> IN WORK, doi -> COMPLETE (otherwise empty)
@@ -194,85 +194,42 @@ def dif_convert_dataset(dataset_dict: dict):
     elif dataset_dict.get("doi", ""):
         dif_metadata_dict["Dataset_Progress"] = "COMPLETE"
 
-    # Spatial_Coverage
-    dif_metadata_dict["Spatial_Coverage"] = OrderedDict()
-    # "Spatial_Coverage_Type"
-    # "Granule_Spatial_Representation"
-    dif_metadata_dict["Spatial_Coverage"][
-        "Granule_Spatial_Representation"
-    ] = "CARTESIAN"
+        # Spatial_Coverage
+        dif_metadata_dict["Spatial_Coverage"] = OrderedDict()
+        # "Spatial_Coverage_Type"
+        # "Granule_Spatial_Representation"
+        dif_metadata_dict["Spatial_Coverage"]["Granule_Spatial_Representation"] = "CARTESIAN"
+        # dif_metadata_dict["Spatial_Coverage"]["Granule_Spatial_Representation"] = "GEODETIC"
+        # <xs:element name="Zone_Identifier" type="xs:string" minOccurs="0"/>
 
-    # <xs:element name="Zone_Identifier" type="xs:string" minOccurs="0"/>
+        # "Geometry" [1]
+        try:
+            spatial = json.loads(dataset_dict.get("spatial", "{}"))
+        except ValueError:
+            spatial = {}
+        if spatial:
+            dif_metadata_dict["Spatial_Coverage"]["Geometry"] = OrderedDict()
+            dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Coordinate_System"] = "CARTESIAN"
 
-    # "Geometry" [1]
-    try:
-        spatial = json.loads(dataset_dict.get("spatial", "{}"))
-    except ValueError:
-        spatial = {}
-    if spatial:
-        dif_metadata_dict["Spatial_Coverage"]["Geometry"] = OrderedDict()
-        dif_metadata_dict["Spatial_Coverage"]["Geometry"][
-            "Coordinate_System"
-        ] = "CARTESIAN"
+            coordinates = spatial.get("coordinates", [])
+            if coordinates:
+                bounding_rectangle = get_bounding_rectangle_dict(spatial)
+                dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Bounding_Rectangle"] = bounding_rectangle
+                dif_metadata_dict["Spatial_Coverage"]["Geometry"] |= set_geometry(dataset_dict.get("name", ""), spatial)
+                if spatial.get("type") == "Polygon":
+                    dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Polygon"]["Center_Point"] = copy.deepcopy(
+                        bounding_rectangle["Center_Point"]
+                    )
 
-        coordinates = spatial.get("coordinates", [])
-        if coordinates:
-            bounding_rectangle = get_bounding_rectangle_dict(spatial)
-            dif_metadata_dict["Spatial_Coverage"]["Geometry"][
-                "Bounding_Rectangle"
-            ] = bounding_rectangle
-
-        # <xs:element name="Point" type="Point"/>
-        if spatial.get("type") == "Point":
-            bound_box_coordinates = get_bounding_rectangle(
-                spatial.get("coordinates", [])
-            )
-            dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Point"] = OrderedDict()
-            dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Point"][
-                "Point_Longitude"
-            ] = bound_box_coordinates[0]
-            dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Point"][
-                "Point_Latitude"
-            ] = bound_box_coordinates[3]
-            # latitude = bound_box_coordinates[3]
-        elif spatial.get("type") == "MultiPoint":
-            points = []
-            for coordinate_pair in spatial.get("coordinates", []):
-                point = OrderedDict()
-                point["Point_Longitude"] = str(coordinate_pair[0])
-                point["Point_Latitude"] = str(coordinate_pair[1])
-                points += [point]
-            dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Point"] = points
-        elif spatial.get("type") == "Polygon":
-            # <xs:element name="Polygon" type="GPolygon"/>
-            points = []
-            for coordinate_pair in spatial.get("coordinates", [])[0]:
-                point = OrderedDict()
-                point["Point_Longitude"] = str(coordinate_pair[0])
-                point["Point_Latitude"] = str(coordinate_pair[1])
-                points += [point]
-            if len(points) > 1:
-                points.pop()
-
-            if is_counter_clockwise(points):
-                log.debug(
-                    dataset_dict.get("name", "") + " ** Counterclockwise REVERSING!! **"
-                )
-                points.reverse()
-            else:
-                log.debug(dataset_dict.get("name", "") + " Clockwise OK")
-
-            dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Polygon"] = OrderedDict()
-            dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Polygon"]["Boundary"] = {
-                "Point": points
-            }
-            dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Polygon"][
-                "Center_Point"
-            ] = copy.deepcopy(
-                dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Bounding_Rectangle"][
-                    "Center_Point"
-                ]
-            )
+            elif geometries := spatial.get("geometries", []):
+                points = []
+                for geom in geometries:
+                    points += geom['coordinates']
+                    dif_metadata_dict["Spatial_Coverage"]["Geometry"] = (
+                            dif_metadata_dict["Spatial_Coverage"]["Geometry"] |
+                            set_geometry(dataset_dict.get("name", ""), geom))
+                dif_metadata_dict["Spatial_Coverage"]["Geometry"]["Bounding_Rectangle"] = get_bounding_rectangle_dict(
+                    {'coordinates': points})
 
     # <xs:element name="Orbit_Parameters" type="OrbitParameters" minOccurs="0"/>
     # <xs:element name="Vertical_Spatial_Info" type="VerticalSpatialInfo" minOccurs="0"
@@ -297,9 +254,9 @@ def dif_convert_dataset(dataset_dict: dict):
             "Access_Constraints"
         ] = "Registration is required to access the data"
     elif (
-        ("any_organization" in dataset_restrictions)
-        or ("same_organization" in dataset_restrictions)
-        or ("only_allowed_users" in dataset_restrictions)
+            ("any_organization" in dataset_restrictions)
+            or ("same_organization" in dataset_restrictions)
+            or ("only_allowed_users" in dataset_restrictions)
     ):
         dif_metadata_dict["Access_Constraints"] = "Access to the data upon request"
 
@@ -311,10 +268,10 @@ def dif_convert_dataset(dataset_dict: dict):
         "license_url", "http://www.opendefinition.org/licenses/odc-odbl"
     )
     dif_metadata_dict["Use_Constraints"] = (
-        'Usage constraints defined by the license "'
-        + license.strip()
-        + '", see '
-        + license_url
+            'Usage constraints defined by the license "'
+            + license.strip()
+            + '", see '
+            + license_url
     )
 
     # Dataset_Language
@@ -671,6 +628,61 @@ def get_dif_language_code(code):
     return lookup_dict.get(lang_code, "English").title()
 
 
+def set_geometry(name: str, geometry: dict) -> dict:
+    """Generate spatial_coverage section for the diff dataset.
+
+        Args:
+            name (str): Name of the EnviDat package.
+            geometry(dict): Spatial dict from Envidat dataset
+
+        Returns:
+            dict: Spatial data containing Points,Polygons,etc with GCMD DIF 10.3 standard
+
+    """
+    # <xs:element name="Point" type="Point"/>
+    single_geom_dict = {}
+    if geometry.get("type") == "Point":
+        point = OrderedDict()
+        coordinate_pair = geometry.get("coordinates", [])
+        point["Point_Longitude"] = str(coordinate_pair[0])
+        point["Point_Latitude"] = str(coordinate_pair[1])
+        single_geom_dict["Point"] = point
+        # latitude = bound_box_coordinates[3]
+    elif geometry.get("type") == "MultiPoint":
+        points = []
+        for coordinate_pair in geometry.get("coordinates", []):
+            point = OrderedDict()
+            point["Point_Longitude"] = str(coordinate_pair[0])
+            point["Point_Latitude"] = str(coordinate_pair[1])
+            points += [point]
+        single_geom_dict["Point"] = points
+    elif geometry.get("type") == "Polygon":
+        # <xs:element name="Polygon" type="GPolygon"/>
+        points = []
+        for coordinate_pair in geometry.get("coordinates", [])[0]:
+            point = OrderedDict()
+            point["Point_Longitude"] = str(coordinate_pair[0])
+            point["Point_Latitude"] = str(coordinate_pair[1])
+            points += [point]
+        if len(points) > 1:
+            points.pop()
+
+        if is_counter_clockwise(points):
+            log.debug(
+                name + " ** Counterclockwise REVERSING!! **"
+            )
+            points.reverse()
+        else:
+            log.debug(name + " Clockwise OK")
+
+        single_geom_dict["Polygon"] = OrderedDict()
+        single_geom_dict["Polygon"]["Boundary"] = {
+            "Point": points
+        }
+
+    return single_geom_dict
+
+
 def get_bounding_rectangle(coordinates: list) -> list:
     """Geometry bounding rectangle as coordinate list."""
     flatten_coordinates = coordinates
@@ -728,7 +740,7 @@ def is_counter_clockwise(points):
                 p2 = points[i + 1]
 
             akku += (float(p2["Point_Longitude"]) - float(p1["Point_Longitude"])) * (
-                float(p2["Point_Latitude"]) + float(p1["Point_Latitude"])
+                    float(p2["Point_Latitude"]) + float(p1["Point_Latitude"])
             )
 
         if akku >= 0:
