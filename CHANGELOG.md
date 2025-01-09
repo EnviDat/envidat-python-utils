@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.4.11 (2025-01-09)
+
+### Fix
+
+- Changing the http links to the NASA DIF schema
+
 ## 1.4.10 (2024-12-19)
 
 ### Fix

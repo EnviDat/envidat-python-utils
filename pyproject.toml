@@ -1,10 +1,11 @@
 [project]
 name = "envidat-utils"
-version = "1.4.10"
+version = "1.4.11"
 description = "Utilities in Python for the WSL EnviDat project."
 authors = [
     {name = "Sam Woodcock", email = "samuel.woodcock@wsl.ch"},
     {name = "Rebecca Kurup Buchholz", email = "rebecca.kurup@wsl.ch"},
+    {name = "Ranita Pal", email = "ranita.pal@wsl.ch"},
 ]
 dependencies = [
     "requests>=2.27.1",
