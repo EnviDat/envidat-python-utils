@@ -49,8 +49,8 @@ def dif_convert_dataset(dataset_dict: dict):
     dif_metadata_dict["@xmlns"] = "http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/"
     dif_metadata_dict["@xmlns:dif"] = "http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/"
     dif_metadata_dict["@xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
-    namespace = "http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/"
-    schema = "http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v10.2.xsd"
+    namespace = "https://cdn.earthdata.nasa.gov/dif/10.x/"
+    schema = "https://cdn.earthdata.nasa.gov/dif/10.x/dif_v10.2.xsd"
     dif_metadata_dict["@xsi:schemaLocation"] = f"{namespace} {schema}"
 
     # Entry_ID
