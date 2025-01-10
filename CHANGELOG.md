@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.4.12 (2025-01-10)
+
+### Fix
+
+- Fixing the parentheses for the coordinates of Point, multipoint, polygon
+
 ## 1.4.11 (2025-01-09)
 
 ### Fix
