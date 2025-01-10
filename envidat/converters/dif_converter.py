@@ -224,7 +224,15 @@ def dif_convert_dataset(dataset_dict: dict):
             elif geometries := spatial.get("geometries", []):
                 points = []
                 for geom in geometries:
-                    points += geom['coordinates']
+                    # if it is a point
+                    if not isinstance(geom['coordinates'][0], list):
+                        points += [geom['coordinates']]
+                    # for multipoint
+                    elif not isinstance(geom['coordinates'][0][0], list):
+                        points += geom['coordinates']
+                    # for polygon
+                    else:
+                        points += geom['coordinates'][0]
                     dif_metadata_dict["Spatial_Coverage"]["Geometry"] = (
                             dif_metadata_dict["Spatial_Coverage"]["Geometry"] |
                             set_geometry(dataset_dict.get("name", ""), geom))
