@@ -907,7 +907,7 @@ def get_dc_formats(resources) -> list[dict[str, str]]:
                 resource_format = mimetypes.guess_type(url)[0]
             if not resource_format:
                 path = urlparse(url).path
-                _, mimetype3 = os.path.splitext(path)
+                _, resource_format = os.path.splitext(path)
             if not resource_format:
                 resource_format = "No Info"
 
