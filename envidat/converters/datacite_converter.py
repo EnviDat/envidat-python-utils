@@ -2,9 +2,12 @@
 
 import collections
 import json
+import mimetypes
+from urllib.parse import urlparse
+
 import os
 import re
-from datetime import date
+import datetime
 from json import JSONDecodeError
 from logging import getLogger
 from pathlib import Path
@@ -75,8 +78,8 @@ def get_config_datacite_converter() -> dict | None:
         datacite_config: dict = config["datacite_converter"]
 
         # Validate DataCite config has keys REQUIRED by DataCite Metadata
-        # Schema 4.4,
-        # for documentation see https://schema.datacite.org/meta/kernel-4.4/
+        # Schema 4.6,
+        # for documentation see https://schema.datacite.org/meta/kernel-4.6/
         try:
             validate_dc_config(datacite_config)
             return datacite_config
@@ -89,8 +92,8 @@ def get_config_datacite_converter() -> dict | None:
 def datacite_convert_dataset(dataset: dict, config: dict):
     """Convert EnviDat metadata package from CKAN to DataCite XML.
 
-    Notes: This converter is compatible with DataCite Metadata Schema 4.4, for
-    documentation see https://schema.datacite.org/meta/kernel-4.4/
+    Notes: This converter is compatible with DataCite Metadata Schema 4.6, for
+    documentation see https://schema.datacite.org/meta/kernel-4.6/
 
     Args:
     dataset (dict): EnviDat metadata entry record dictionary.
@@ -110,12 +113,13 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     # Header
     dc["resource"] = collections.OrderedDict()
     namespace = "http://datacite.org/schema/kernel-4"
-    schema = "http://schema.datacite.org/meta/kernel-4.4/metadata.xsd"
-    dc["resource"]["@xsi:schemaLocation"] = f"{namespace} {schema}"
-    dc["resource"]["@xmlns"] = f"{namespace}"
-    dc["resource"]["@xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
+    schema = "http://schema.datacite.org/meta/kernel-4/metadata.xsd"
 
-    # REQUIRED DataCite property: "Identifer",
+    dc["resource"]["@xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
+    dc["resource"]["@xmlns"] = f"{namespace}"
+    dc["resource"]["@xsi:schemaLocation"] = f"{namespace} {schema}"
+
+    # REQUIRED DataCite property: "Identifier",
     #   required attribute is "identifierType" (must be "DOI")
     dc_identifier_tag = "identifier"
     doi = dataset.get(config[dc_identifier_tag])
@@ -191,10 +195,29 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         publisher = "EnviDat"
 
     if publisher:
-        dc["resource"][dc_publisher_tag] = {
-            f"@{dc_xml_lang_tag}": "en-us",
-            "#text": publisher.strip(),
-        }
+        #until metadata is cleaned we need to use a workaround
+        if doi.startswith("10.16904"):
+            if doi.startswith("10.16904/1000001"):
+                dc["resource"][dc_publisher_tag] = {
+                    f"@{dc_xml_lang_tag}": "en-us",
+                    f"@publisherIdentifier": "https://www.re3data.org/repository/r3d100012587",
+                    f"@publisherIdentifierScheme": "re3data",
+                    f"@schemeURI": "https://re3data.org/",
+                    "#text": "National Forest Inventory (NFI)",
+                }
+            else:
+                dc["resource"][dc_publisher_tag] = {
+                    f"@{dc_xml_lang_tag}": "en-us",
+                    f"@publisherIdentifier": "https://www.re3data.org/repository/r3d100012587",
+                    f"@publisherIdentifierScheme": "re3data",
+                    f"@schemeURI": "https://re3data.org/",
+                    "#text": "EnviDat",
+                }
+        else:
+            dc["resource"][dc_publisher_tag] = {
+                f"@{dc_xml_lang_tag}": "en-us",
+                "#text": publisher.strip(),
+            }
 
     # REQUIRED DataCite property: "publicationYear" (default value is current year)
     dc_publication_year_tag = "publicationYear"
@@ -202,7 +225,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     if publication_year:
         dc["resource"][dc_publication_year_tag] = {"#text": publication_year}
     else:
-        publication_year = str(date.today().year)
+        publication_year = str(datetime.date.today().year)
         dc["resource"][dc_publication_year_tag] = {"#text": publication_year}
 
     # REQUIRED DataCite property: "resourceType" (default value is "dataset"),
@@ -263,6 +286,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
     # Dates
     dc_dates_tag = "dates"
     dc_date_tag = "date"
+    dc_enddate_tag = "enddate"
     dc_date_type_tag = "dateType"
     dc_dates = []
 
@@ -273,7 +297,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         dates = []
 
     # "dateType" is REQUIRED DataCite attribute for each "Date", (default value is
-    #    "Valid"), log values that are not "Created" or "colected"
+    #    "Valid"), log values that are not "Created" or "collected"
     for dte in dates:
 
         date_type = (dte.get(config[dc_date_type_tag]))
@@ -282,8 +306,15 @@ def datacite_convert_dataset(dataset: dict, config: dict):
                         f"not a valid DataCite {dc_date_type_tag} ")
             date_type = "Valid"
 
+        startdate = dte.get(config[dc_date_tag], "")
+        enddate = dte.get(config[dc_enddate_tag], "")
+        if enddate != "":
+            date = f"{startdate}/{enddate}"
+        else:
+            date = startdate
+
         dc_date = {
-            "#text": dte.get(config[dc_date_tag], ""),
+            "#text": date,
             f"@{dc_date_type_tag}": date_type.title()
         }
         dc_dates += [dc_date]
@@ -391,8 +422,7 @@ def datacite_convert_dataset(dataset: dict, config: dict):
                 }
 
                 # relatedItem title
-                # since there is only one title per resource we don't handle more than
-                # one title even though datacite allows it
+                # since there is only one title per resource we don't handle more than one title even though datacite allows it
                 dc_title = collections.OrderedDict()
                 dc_title[dc_title_tag] = title.strip()
                 dc_related_item[dc_titles_tag] = dc_title
@@ -412,11 +442,19 @@ def datacite_convert_dataset(dataset: dict, config: dict):
         dc_format_tag = "format"
         dc["resource"][dc_format_group_tag] = {dc_format_tag: dc_formats}
 
+    #Sizes (from resources)
+    dc_sizes = get_sizes(resources)
+    if dc_sizes:
+        dc_size_group_tag = "sizes"
+        dc_size_tag = "size"
+        dc["resource"][dc_size_group_tag] = {dc_size_tag: dc_sizes}
+
     # Version
     dc_version_tag = "version"
     dc_version = dataset.get(config[dc_version_tag], "")
-    if dc_version:
-        dc["resource"][dc_version_tag] = {"#text": dc_version}
+    if not dc_version:
+        dc_version = "1"
+    dc["resource"][dc_version_tag] = {"#text": dc_version}
 
     # Rights
     dc_rights_group_tag = "rightsList"
@@ -534,8 +572,8 @@ def datacite_convert_dataset(dataset: dict, config: dict):
             # NOTE: For reverse converter be sure to parse default value for
             # awardNumber, ":unav"
             # DataCite documentation for unknown information: p. 74
-            # https://schema.datacite.org/meta/kernel-4.4/doc/DataCite
-            # -MetadataKernel_v4.4.pdf
+            # https://schema.datacite.org/meta/kernel-4.6/doc/DataCite
+            # -MetadataKernel_v4.6.pdf
             if award_uri and validators.url(award_uri):
                 if award_number:
                     award = {f"@{dc_award_uri_tag}": award_uri,
@@ -674,7 +712,7 @@ def affiliation_to_dc(affiliation, config) -> dict[str, str]:
     """Returns affiliation in DataCite "affiliation" tag format.
 
     Uses config to map commonly used affiliations in EnviDat packages
-    (i.e. "WSL", "SLF") with long names of instiutions
+    (i.e. "WSL", "SLF") with long names of institutions
     and ROR identifiers when available.
     """
     # Get key from config that corresponds to affiliation
@@ -860,17 +898,55 @@ def get_dc_formats(resources) -> list[dict[str, str]]:
 
     for resource in resources:
 
-        default_format = resource.get("mimetype", resource.get("mimetype_inner", ""))
-        resource_format = resource.get("format", "")
+        resource_format = resource.get("mimetype")
 
         if not resource_format:
-            resource_format = default_format
+            url = resource.get("url")
+            #note: if this is tested on windows, mimetypes might differ. did not find a better solution so far
+            if url.startswith("https://www.envidat.ch/dataset/"):
+                resource_format = mimetypes.guess_type(url)[0]
+            if not resource_format:
+                path = urlparse(url).path
+                _, mimetype3 = os.path.splitext(path)
+            if not resource_format:
+                resource_format = "No Info"
 
-        if resource_format:
-            dc_format = {"#text": resource_format}
-            dc_formats += [dc_format]
+        dc_format = {"#text": resource_format}
+        dc_formats += [dc_format]
 
     return dc_formats
+
+
+
+def get_sizes(resources) -> list[dict[str, str]]:
+    """Returns resources formats in DataCite "formats" tag format."""
+    dc_sizes = []
+
+    for resource in resources:
+        dc_size = "NaN"
+        size = resource.get("size")
+        if not size:
+            resource_size = resource.get("resource_size")
+            if resource_size:
+                resource_size = json.loads(resource_size)
+                size_value = resource_size.get("size_value")
+                size_units = resource_size.get("size_units")
+                if size_units and size_value:
+                    units = {
+                        'kb': 1024,
+                        'mb': 1024 ** 2,
+                        'gb': 1024 ** 3,
+                        'tb': 1024 ** 4,
+                    }
+                    dc_size = f"{round(float(size_value) * units[size_units])} bytes"
+
+        else:
+            dc_size = f"{size} bytes"
+        dc_size = {"#text": dc_size}
+        dc_sizes += [dc_size]
+
+
+    return dc_sizes
 
 
 def get_dc_descriptions(notes, dc_description_type_tag, dc_xml_lang_tag) -> list[str]:
@@ -1304,8 +1380,8 @@ def log_falsy_value(key: str):
     to a required DataCite property.
 
      Notes: This function used in datacite_convert_dataset() for required properties
-     according toDataCite Metadata Schema 4.4, for documentation see
-      https://schema.datacite.org/meta/kernel-4.4/
+     according toDataCite Metadata Schema 4.6, for documentation see
+      https://schema.datacite.org/meta/kernel-4.6/
 
     Args:
         key (str): key that does not have truthy value from input EnviDat record

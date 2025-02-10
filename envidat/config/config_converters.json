@@ -24,6 +24,7 @@
     },
     "dates": "date",
     "date": "date",
+    "enddate": "end_date",
     "dateType": "date_type",
     "language": "language",
     "version": "version",
@@ -101,3 +102,4 @@
     }
   }
 }
+
