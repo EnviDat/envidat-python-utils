@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.4.13 (2025-03-31)
+
+### Fix
+
+- Fixed pipeline rules for pi-package deployment job be triggered again
+
+# CHANGELOG
+
 ## 1.4.12 (2025-01-10)
 
 ### Fix
